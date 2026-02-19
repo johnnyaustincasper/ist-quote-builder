@@ -181,6 +181,7 @@ function CustomerInfo(p){
       <div style={{marginBottom:10}}><Input label="Address" value={p.custAddr} onChange={p.setCustAddr} type="text" placeholder="123 Main St, Tulsa OK"/></div>
       <Row><Col><Input label="Phone" value={p.custPhone} onChange={p.setCustPhone} type="tel" placeholder="(918) 555-0000"/></Col><Col><Input label="Email" value={p.custEmail} onChange={p.setCustEmail} type="email" placeholder="john@email.com"/></Col></Row>
       <Input label="Job Site (if different)" value={p.jobAddr} onChange={p.setJobAddr} type="text" placeholder="456 Oak Ave"/>
+      <button onClick={function(){if(confirm("Clear customer info?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");}}} style={{width:"100%",marginTop:12,padding:"8px",borderRadius:8,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear Customer Info"}</button>
     </div>)}
   </div>);
 }
@@ -189,16 +190,18 @@ function groupMeasurements(items){var g={};items.forEach(function(m){var k=m.gro
 
 /* ──────── PRINT FUNCTIONS ──────── */
 
-function printTakeOff(custName,jobAddr,measurements){
+function printTakeOff(custName,jobAddr,jobNotes,measurements){
   var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+  var notesHtml=jobNotes?'<div style="margin-bottom:20px;padding:12px 14px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Job Notes</div><div style="font-size:13px;color:#333;white-space:pre-wrap;line-height:1.5">'+jobNotes.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div></div>':"";
   var ghtml=sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
     var rows=groups[gn].map(function(item){return '<tr style="border-bottom:1px solid #e0e0e0"><td style="padding:8px 10px;font-size:13px;color:#333">'+item.location+'</td><td style="padding:8px 10px;font-size:13px;color:#333">'+item.material+'</td><td style="padding:8px 10px;font-size:13px;color:#333;text-align:right;font-weight:600">'+item.sqft.toLocaleString()+' sf</td></tr>';}).join("");
     return '<div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f5f5f5;border:1px solid #ddd;border-bottom:2px solid #333;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#333"><span>'+gn+'</span><span>'+gt.toLocaleString()+' sq ft</span></div><table style="width:100%;border-collapse:collapse"><tbody>'+rows+'</tbody></table></div>';}).join("");
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap");*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Outfit",Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto}@media print{body{padding:16px}}</style></head><body>'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #111"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#888">'+COMPANY.tagline+'</p></div><div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#111;text-transform:uppercase">Take Off</div><div style="font-size:12px;color:#888;margin-top:2px">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:32px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(custName||"—")+'</div></div><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(jobAddr||"—")+'</div></div></div>'+
+    notesHtml+
     ghtml+'<div style="margin-top:24px;padding-top:16px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:800;text-transform:uppercase;color:#111">Total</div><div style="font-size:18px;font-weight:800;color:#111">'+total.toLocaleString()+' sq ft</div></div>'+
     '<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'</div></body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
@@ -207,13 +210,13 @@ function printTakeOff(custName,jobAddr,measurements){
 
 function generatePDF(customer,items,total){
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});var qn="IST-"+Date.now().toString(36).toUpperCase();
-  var rows=items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td><td style="padding:10px 8px;font-size:13px;text-align:center">'+item.sqft.toLocaleString()+'</td><td style="padding:10px 8px;font-size:13px;text-align:right">$'+item.pricePerUnit.toFixed(2)+'</td><td style="padding:10px 8px;font-size:13px;text-align:right">$'+item.total.toFixed(2)+'</td></tr>';}).join("");
+  var rows=items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td><td style="padding:10px 8px;font-size:13px;text-align:right">$'+item.total.toFixed(2)+'</td></tr>';}).join("");
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote '+qn+'</title><style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap");*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Outfit",Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto}@media print{body{padding:20px}}</style></head><body>'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:20px;border-bottom:3px solid #222"><div><h1 style="font-size:26px;font-weight:800;color:#111;margin-bottom:4px">'+COMPANY.name+'</h1><p style="font-size:13px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:13px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#111">QUOTE</div><div style="font-size:13px;color:#666;margin-top:4px">'+qn+'</div><div style="font-size:13px;color:#666">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:40px;margin-bottom:30px"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Prepared For</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Project</div><div style="font-size:13px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:13px;color:#666">Valid 30 days from quote date</div></div></div>'+
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:center;color:#fff">Sq Ft</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right;color:#fff">$/Sq Ft</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right;color:#fff">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right;color:#fff">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div style="display:flex;justify-content:flex-end"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>Total</span><span>$'+total.toFixed(2)+'</span></div></div></div>'+
-    '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Thank you for your business!</div></body></html>';
+    '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Thank you for your business!</div></body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
@@ -228,6 +231,10 @@ function TakeOff(p){
   var total=p.measurements.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
+    <div style={{padding:"0 16px 12px"}}>
+      <label style={{fontSize:11,fontWeight:700,color:C.dim,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
+      <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:8,color:C.white,fontSize:14,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical"}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
+    </div>
     <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/></div>
     <div style={{padding:"0 16px"}}><MeasurementForm key={"to-"+matTab} tab={matTab} onAdd={addM} hasPrice={false}/></div>
     {p.measurements.length>0&&(<div style={{padding:"20px 16px"}}>
@@ -243,7 +250,7 @@ function TakeOff(p){
           </div>
         </div>);
       })}
-      <GreenBtn onClick={function(){printTakeOff(p.custName,p.jobAddr||p.custAddr,p.measurements);}}>{"Print Take Off"}</GreenBtn>
+      <GreenBtn onClick={function(){printTakeOff(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements);}}>{"Print Take Off"}</GreenBtn>
       <GreenBtn onClick={p.onSendToQuote} mt={8}>{"Send to Quote Builder →"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
@@ -333,7 +340,7 @@ function SavedJobsPanel(p) {
     var data = {
       name: name,
       savedAt: Date.now(),
-      custName: p.custName, custAddr: p.custAddr, custPhone: p.custPhone, custEmail: p.custEmail, jobAddr: p.jobAddr,
+      custName: p.custName, custAddr: p.custAddr, custPhone: p.custPhone, custEmail: p.custEmail, jobAddr: p.jobAddr, jobNotes: p.jobNotes,
       measurements: p.measurements, quoteItems: p.quoteItems, importedItems: p.importedItems, section: p.section,
     };
     saveData(key, data).then(function(ok) {
@@ -354,6 +361,7 @@ function SavedJobsPanel(p) {
     p.setCustPhone(job.custPhone || "");
     p.setCustEmail(job.custEmail || "");
     p.setJobAddr(job.jobAddr || "");
+    p.setJobNotes(job.jobNotes || "");
     p.setMeasurements(job.measurements || []);
     p.setQuoteItems(job.quoteItems || []);
     p.setImportedItems(job.importedItems || []);
@@ -450,13 +458,14 @@ export default function App() {
   var s7 = useState(""), cph = s7[0], setCph = s7[1];
   var s8 = useState(""), ce = s8[0], setCe = s8[1];
   var s9 = useState(""), ja = s9[0], setJa = s9[1];
+  var s11 = useState(""), jn = s11[0], setJn = s11[1];
   var s10 = useState(true), initialLoad = s10[0], setInitialLoad = s10[1];
 
   // Auto-save current session
   var autoSave = useCallback(function() {
-    var data = { measurements: meas, quoteItems: qi, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, section: sec, savedAt: Date.now() };
+    var data = { measurements: meas, quoteItems: qi, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec, savedAt: Date.now() };
     saveData("ist-autosave", data);
-  }, [meas, qi, ii, cn, ca, cph, ce, ja, sec]);
+  }, [meas, qi, ii, cn, ca, cph, ce, ja, jn, sec]);
 
   useEffect(function() {
     if (initialLoad) return;
@@ -476,6 +485,7 @@ export default function App() {
         if (data.custPhone) setCph(data.custPhone);
         if (data.custEmail) setCe(data.custEmail);
         if (data.jobAddr) setJa(data.jobAddr);
+        if (data.jobNotes) setJn(data.jobNotes);
         if (data.section) setSec(data.section);
       }
       setInitialLoad(false);
@@ -491,11 +501,11 @@ export default function App() {
   function handleNewJob() {
     if ((meas.length > 0 || qi.length > 0) && !confirm("Start a new job? Make sure you've saved first.")) return;
     setMeas([]); setQi([]); setIi([]);
-    setCn(""); setCa(""); setCph(""); setCe(""); setJa("");
+    setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
     setSec("takeoff");
   }
 
-  var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa };
+  var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
     <div style={{ fontFamily: "'Outfit', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", maxWidth: 520, margin: "0 auto", paddingBottom: 100 }}>

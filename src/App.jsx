@@ -30,7 +30,6 @@ var LOCATIONS = [
   { id: "porch_blocking", label: "Porch Blocking", type: "area", group: "Porch / Blocking" },
   { id: "band_joist", label: "Band Joist Blocking", type: "area", group: "Porch / Blocking" },
   { id: "roofline", label: "Roofline", type: "roofline", group: "Roofline" },
-  { id: "roofline", label: "Roofline", type: "roofline", group: "Roofline" },
   { id: "roofline_house", label: "Roofline of House", type: "roofline", group: "Roofline" },
   { id: "roofline_garage", label: "Roofline of Garage", type: "roofline", group: "Roofline" },
   { id: "gable_end", label: "Gable End", type: "area", group: "Roofline" },

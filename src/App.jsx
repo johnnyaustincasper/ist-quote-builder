@@ -255,31 +255,42 @@ function downloadTakeOffPdf(custName,jobAddr,jobNotes,measurements,salesman){
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
-function buildQuoteHtml(customer,items,total,psoApplied,salesman){
+function buildQuoteHtml(customer,opts,salesman){
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});var qn="IST-"+Date.now().toString(36).toUpperCase();
-  var rows=items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td><td style="padding:10px 8px;font-size:13px;text-align:right">$'+Math.ceil(item.total).toLocaleString()+'</td></tr>';}).join("");
-  var psoRow=psoApplied?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px"></td><td style="padding:10px 8px;font-size:13px;font-weight:600">PSO Credit</td><td style="padding:10px 8px;font-size:13px;text-align:right;color:#dc2626;font-weight:600">-$600</td></tr>':"";
   var si=SALESMAN_INFO[salesman];
   var salesHtml=si?'<div style="flex:1;text-align:right"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Your Sales Rep</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:3px">'+si.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:1px">'+si.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">'+si.email+'</div></div>':'';
+  var optsWithItems=opts.filter(function(o){return o.items.length>0;});
+  var optSections=optsWithItems.map(function(opt,oi){
+    var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
+    var psoRow=opt.pso?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px"></td><td style="padding:10px 8px;font-size:13px;font-weight:600;color:#dc2626">PSO Credit Applied</td></tr>':"";
+    var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
+    var psoCredit=opt.pso?600:0;
+    var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
+    var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
+    var sub=lineTotal-psoCredit+el+tc;
+    var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):sub;
+    var header=optsWithItems.length>1?'<div style="font-size:18px;font-weight:800;color:#111;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
+    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+psoRow+'</tbody></table>'+
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+(optsWithItems.length>1?opt.name+" Total":"Total")+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
+  }).join("");
   return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column">'+
     '<div style="flex:1">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:20px;border-bottom:3px solid #222"><div><h1 style="font-size:26px;font-weight:800;color:#111;margin-bottom:4px">'+COMPANY.name+'</h1><p style="font-size:13px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:13px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#111">QUOTE</div><div style="font-size:13px;color:#666;margin-top:4px">'+qn+'</div><div style="font-size:13px;color:#666">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:24px;margin-bottom:30px"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Prepared For</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Project</div><div style="font-size:13px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:13px;color:#666">Valid 30 days from quote date</div></div>'+salesHtml+'</div>'+
-    '<table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right;color:#fff">Amount</th></tr></thead><tbody>'+rows+psoRow+'</tbody></table>'+
-    '<div style="display:flex;justify-content:flex-end"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>Total</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>'+
+    optSections+
     '</div>'+
     '<div style="padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
-function generatePDF(customer,items,total,psoApplied,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildQuoteHtml(customer,items,total,psoApplied,salesman)+'</body></html>';
+function generatePDF(customer,opts,salesman){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function downloadQuotePdf(customer,items,total,psoApplied,salesman){
+function downloadQuotePdf(customer,opts,salesman){
   var container=document.createElement("div");
-  container.innerHTML=buildQuoteHtml(customer,items,total,psoApplied,salesman);
+  container.innerHTML=buildQuoteHtml(customer,opts,salesman);
   document.body.appendChild(container);
   var filename="Quote"+(customer.name?" - "+customer.name:"")+".pdf";
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
@@ -323,34 +334,71 @@ function TakeOff(p){
 
 /* ══════════ QUOTE BUILDER ══════════ */
 
+function newOption(name){return{name:name,items:[],pso:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",overrideTotal:""};}
+
 function QuoteBuilderSection(p){
   var s1=useState("fiberglass"),matTab=s1[0],setMatTab=s1[1];
   var s2=useState(null),pricingId=s2[0],setPricingId=s2[1];
   var s3=useState(""),pricingPrice=s3[0],setPricingPrice=s3[1];
   var s12=useState(""),pricingMat=s12[0],setPricingMat=s12[1];
-  var s6=useState(""),overrideTotal=s6[0],setOverrideTotal=s6[1];
-  var s7=useState(false),psoChecked=s7[0],setPsoChecked=s7[1];
-  var s8=useState(false),extraLaborChecked=s8[0],setExtraLaborChecked=s8[1];
-  var s9=useState(""),extraLaborAmt=s9[0],setExtraLaborAmt=s9[1];
-  var s10=useState(false),tripChargeChecked=s10[0],setTripChargeChecked=s10[1];
-  var s11=useState(""),tripChargeAmt=s11[0],setTripChargeAmt=s11[1];
-  function addItem(item){p.setQuoteItems(function(prev){return prev.concat([Object.assign({},item,{id:Date.now()+Math.random()})]);});setOverrideTotal("");}
-  function removeItem(id){p.setQuoteItems(function(prev){return prev.filter(function(i){return i.id!==id;});});setOverrideTotal("");}
+  var s13=useState(0),activeIdx=s13[0],setActiveIdx=s13[1];
+  var s14=useState(false),editingName=s14[0],setEditingName=s14[1];
+
+  var opts=p.quoteOpts;var setOpts=p.setQuoteOpts;
+  if(activeIdx>=opts.length)setActiveIdx(0);
+  var opt=opts[activeIdx]||newOption("Option 1");
+
+  function updateOpt(changes){setOpts(function(prev){return prev.map(function(o,i){return i===activeIdx?Object.assign({},o,changes):o;});});}
+  function addItem(item){updateOpt({items:opt.items.concat([Object.assign({},item,{id:Date.now()+Math.random()})]),overrideTotal:""});}
+  function removeItem(id){updateOpt({items:opt.items.filter(function(i){return i.id!==id;}),overrideTotal:""});}
+
   var unpriced=p.importedItems.filter(function(i){return!i.priced;});
-  var lineItemsTotal=p.quoteItems.reduce(function(s,i){return s+i.total;},0);
-  var psoCredit=psoChecked?600:0;
-  var extraLabor=extraLaborChecked?(parseFloat(extraLaborAmt)||0):0;
-  var tripCharge=tripChargeChecked?(parseFloat(tripChargeAmt)||0):0;
+  var lineItemsTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
+  var psoCredit=opt.pso?600:0;
+  var extraLabor=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
+  var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
   var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge;
-  var finalTotal=overrideTotal!==""?(parseFloat(overrideTotal)||0):subtotal;
+  var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.white,fontSize:13,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
+
   function handlePriceImport(item){var pr=parseFloat(pricingPrice)||0;if(pr<=0||!pricingMat)return;
     var desc="Install "+pricingMat.toLowerCase()+" in "+item.location.toLowerCase();
     addItem(Object.assign({},item,{material:pricingMat,pricePerUnit:pr,total:Math.ceil(item.sqft*pr),description:desc}));
     p.setImportedItems(function(prev){return prev.map(function(i){return i.id===item.id?Object.assign({},i,{priced:true}):i;});});
     setPricingId(null);setPricingPrice("");setPricingMat("");}
+
+  function addOption(){setOpts(function(prev){return prev.concat([newOption("Option "+(prev.length+1))]);});setActiveIdx(opts.length);}
+  function removeOption(idx){if(opts.length<=1)return;setOpts(function(prev){return prev.filter(function(_,i){return i!==idx;});});if(activeIdx>=opts.length-1)setActiveIdx(Math.max(0,opts.length-2));}
+
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
+
+    {/* OPTION TABS */}
+    <div style={{padding:"0 16px 12px"}}>
+      <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+        {opts.map(function(o,idx){return(
+          <button key={idx} onClick={function(){setActiveIdx(idx);setPricingId(null);}}
+            style={{padding:"8px 14px",borderRadius:8,border:activeIdx===idx?"2px solid "+C.green:"1px solid "+C.border,background:activeIdx===idx?C.card:"transparent",color:activeIdx===idx?C.green:C.dim,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+            {o.name}{o.items.length>0?" ("+o.items.length+")":""}
+          </button>
+        );})}
+        <button onClick={addOption} style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+C.dim,background:"transparent",color:C.dim,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"+"}</button>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+        {editingName?(<div style={{display:"flex",gap:6,flex:1}}>
+          <input style={{flex:1,padding:"6px 10px",background:C.input,border:"1px solid "+C.green,borderRadius:6,color:C.white,fontSize:13,fontFamily:"'Outfit',sans-serif",outline:"none"}}
+            type="text" value={opt.name} onChange={function(e){updateOpt({name:e.target.value});}} autoFocus
+            onKeyDown={function(e){if(e.key==="Enter")setEditingName(false);}}/>
+          <button onClick={function(){setEditingName(false);}} style={{padding:"6px 10px",background:C.green,border:"none",borderRadius:6,color:"#000",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"OK"}</button>
+        </div>):(<div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+          <span style={{fontSize:14,fontWeight:700,color:C.white}}>{opt.name}</span>
+          <button onClick={function(){setEditingName(true);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"✏️ rename"}</button>
+          {opts.length>1&&(<button onClick={function(){if(confirm("Delete \""+opt.name+"\"?"))removeOption(activeIdx);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif",marginLeft:"auto"}}>{"🗑 delete option"}</button>)}
+        </div>)}
+      </div>
+    </div>
+
+    {/* FROM TAKE OFF */}
     {unpriced.length>0&&(<div style={{padding:"0 16px 16px"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"From Take Off — Price These ("+unpriced.length+")"}</div>
       <div style={{background:C.card,borderRadius:10,border:"1px solid "+C.border,overflow:"hidden"}}>
@@ -363,6 +411,7 @@ function QuoteBuilderSection(p){
             </div>
           </div>
           {pricingId===item.id&&(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
+            <div style={{fontSize:11,color:C.green,fontWeight:600,marginBottom:6}}>{"Adding to: "+opt.name}</div>
             <select style={matSs} value={pricingMat} onChange={function(e){setPricingMat(e.target.value);}}>
               <option value="">{"— Select Material —"}</option>
               <optgroup label="Fiberglass">{FIBERGLASS_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
@@ -379,50 +428,49 @@ function QuoteBuilderSection(p){
       </div>
       <button onClick={function(){if(confirm("Clear all imported items?"))p.setImportedItems(function(prev){return prev.filter(function(i){return i.priced;});});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
-    <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/><MeasurementForm key={"qb-"+matTab} tab={matTab} onAdd={addItem} hasPrice={true}/></div>
-    {p.quoteItems.length>0&&(<div style={{padding:"0 16px 20px"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{"Quote Items ("+p.quoteItems.length+")"}</div>
+
+    {/* ADD MANUALLY */}
+    <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/><MeasurementForm key={"qb-"+matTab+"-"+activeIdx} tab={matTab} onAdd={addItem} hasPrice={true}/></div>
+
+    {/* ITEMS FOR ACTIVE OPTION */}
+    {opt.items.length>0&&(<div style={{padding:"0 16px 20px"}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — Items ("+opt.items.length+")"}</div>
       <div style={{background:C.card,borderRadius:12,padding:16,border:"1px solid "+C.border}}>
-        {p.quoteItems.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:idx<p.quoteItems.length-1?"1px solid "+C.border:"none"}}>
+        {opt.items.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:idx<opt.items.length-1?"1px solid "+C.border:"none"}}>
           <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.description}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
           <div style={{marginLeft:12}}><button onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontWeight:600}}>{"REMOVE"}</button></div>
         </div>);})}
 
         {/* ADJUSTMENTS */}
         <div style={{paddingTop:12,marginTop:8,borderTop:"1px solid "+C.borderLight}}>
-          {/* PSO Credit */}
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
-            <input type="checkbox" checked={psoChecked} onChange={function(e){setPsoChecked(e.target.checked);setOverrideTotal("");}}
+            <input type="checkbox" checked={opt.pso} onChange={function(e){updateOpt({pso:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit"}</span>
-            {psoChecked&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$600"}</span>)}
+            {opt.pso&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$600"}</span>)}
           </label>
-
-          {/* Extra Labor */}
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
-            <input type="checkbox" checked={extraLaborChecked} onChange={function(e){setExtraLaborChecked(e.target.checked);setOverrideTotal("");}}
+            <input type="checkbox" checked={opt.extraLabor} onChange={function(e){updateOpt({extraLabor:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Extra Labor"}</span>
             <span style={{fontSize:10,color:C.dim,fontStyle:"italic"}}>{"(not on quote)"}</span>
-            {extraLaborChecked&&(
+            {opt.extraLabor&&(
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
                 <span style={{fontSize:13,color:C.white}}>{"$"}</span>
-                <input type="number" value={extraLaborAmt} onChange={function(e){setExtraLaborAmt(e.target.value);setOverrideTotal("");}}
+                <input type="number" value={opt.extraLaborAmt} onChange={function(e){updateOpt({extraLaborAmt:e.target.value,overrideTotal:""});}}
                   style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}
           </label>
-
-          {/* Trip Charge */}
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
-            <input type="checkbox" checked={tripChargeChecked} onChange={function(e){setTripChargeChecked(e.target.checked);setOverrideTotal("");}}
+            <input type="checkbox" checked={opt.tripCharge} onChange={function(e){updateOpt({tripCharge:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Trip Charge"}</span>
             <span style={{fontSize:10,color:C.dim,fontStyle:"italic"}}>{"(not on quote)"}</span>
-            {tripChargeChecked&&(
+            {opt.tripCharge&&(
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
                 <span style={{fontSize:13,color:C.white}}>{"$"}</span>
-                <input type="number" value={tripChargeAmt} onChange={function(e){setTripChargeAmt(e.target.value);setOverrideTotal("");}}
+                <input type="number" value={opt.tripChargeAmt} onChange={function(e){updateOpt({tripChargeAmt:e.target.value,overrideTotal:""});}}
                   style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}
@@ -435,18 +483,23 @@ function QuoteBuilderSection(p){
             <span style={{fontSize:18,fontWeight:800,color:C.white}}>{"TOTAL"}</span>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <span style={{fontSize:16,fontWeight:800,color:C.white}}>{"$"}</span>
-              <input type="number" value={overrideTotal!==""?overrideTotal:subtotal.toFixed(0)} onChange={function(e){setOverrideTotal(e.target.value);}}
+              <input type="number" value={opt.overrideTotal!==""?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
                 style={{width:110,padding:"6px 10px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:18,fontWeight:800,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} step="1"/>
             </div>
           </div>
-          {overrideTotal!==""&&parseFloat(overrideTotal)!==subtotal&&(<div style={{fontSize:11,color:C.dim,textAlign:"right",marginTop:4}}>{"Calculated: $"+subtotal.toFixed(0)}</div>)}
+          {opt.overrideTotal!==""&&parseFloat(opt.overrideTotal)!==subtotal&&(<div style={{fontSize:11,color:C.dim,textAlign:"right",marginTop:4}}>{"Calculated: $"+subtotal.toFixed(0)}</div>)}
         </div>
       </div>
-      <GreenBtn mt={12} onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked,p.currentUser);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked,p.currentUser);}}>{"📥 Download Quote PDF"}</GreenBtn>
-      <button onClick={function(){if(confirm("Clear all quote items?"))p.setQuoteItems([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
+      <button onClick={function(){if(confirm("Clear items from "+opt.name+"?"))updateOpt({items:[]});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear "+opt.name}</button>
     </div>)}
-    {p.quoteItems.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"💰"}</div><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
+
+    {/* PRINT/DOWNLOAD — show when ANY option has items */}
+    {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
+      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"📥 Download Quote PDF"}</GreenBtn>
+    </div>)}
+
+    {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"💰"}</div><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
   </div>);
 }
 
@@ -479,7 +532,7 @@ function SavedJobsPanel(p) {
     if (!name) return;
     var jobData = {
       custName: p.custName, custAddr: p.custAddr, custPhone: p.custPhone, custEmail: p.custEmail, jobAddr: p.jobAddr, jobNotes: p.jobNotes,
-      measurements: p.measurements, quoteItems: p.quoteItems, importedItems: p.importedItems, section: p.section,
+      measurements: p.measurements, quoteOpts: p.quoteOpts, importedItems: p.importedItems, section: p.section,
     };
     saveJob(name, p.currentUser, jobData).then(function(ok) {
       if (ok) {
@@ -502,7 +555,9 @@ function SavedJobsPanel(p) {
     p.setJobAddr(d.jobAddr || "");
     p.setJobNotes(d.jobNotes || "");
     p.setMeasurements(d.measurements || []);
-    p.setQuoteItems(d.quoteItems || []);
+    if (d.quoteOpts) p.setQuoteOpts(d.quoteOpts);
+    else if (d.quoteItems && d.quoteItems.length > 0) p.setQuoteOpts([Object.assign(newOption("Option 1"),{items:d.quoteItems})]);
+    else p.setQuoteOpts([newOption("Option 1")]);
     p.setImportedItems(d.importedItems || []);
     setStatus("Loaded: " + job.job_name);
     setTimeout(function() { setStatus(""); }, 2000);
@@ -513,7 +568,7 @@ function SavedJobsPanel(p) {
     deleteJob(job.id).then(function() { refreshJobs(); });
   }
 
-  var hasWork = p.measurements.length > 0 || p.quoteItems.length > 0;
+  var hasWork = p.measurements.length > 0 || p.quoteOpts.some(function(o){return o.items.length>0;});
 
   return (
     <div style={{ padding: "0 16px 16px" }}>
@@ -563,7 +618,7 @@ function SavedJobsPanel(p) {
                   var date = new Date(job.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   var d = job.job_data || {};
                   var measCount = (d.measurements || []).length;
-                  var quoteCount = (d.quoteItems || []).length;
+                  var quoteCount = d.quoteOpts ? d.quoteOpts.reduce(function(s,o){return s+(o.items?o.items.length:0);},0) : (d.quoteItems||[]).length;
                   var info = [];
                   if (measCount > 0) info.push(measCount + " measurements");
                   if (quoteCount > 0) info.push(quoteCount + " quote items");
@@ -628,7 +683,7 @@ export default function App() {
   var s0 = useState(function() { return localStorage.getItem("ist-user") || ""; }), currentUser = s0[0], setCurrentUser = s0[1];
   var s1 = useState("takeoff"), sec = s1[0], setSec = s1[1];
   var s2 = useState([]), meas = s2[0], setMeas = s2[1];
-  var s3 = useState([]), qi = s3[0], setQi = s3[1];
+  var s3 = useState([newOption("Option 1")]), qOpts = s3[0], setQOpts = s3[1];
   var s4 = useState([]), ii = s4[0], setIi = s4[1];
   var s5 = useState(""), cn = s5[0], setCn = s5[1];
   var s6 = useState(""), ca = s6[0], setCa = s6[1];
@@ -641,9 +696,9 @@ export default function App() {
   // Auto-save current session to Supabase
   var autoSave = useCallback(function() {
     if (!currentUser) return;
-    var data = { measurements: meas, quoteItems: qi, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec };
+    var data = { measurements: meas, quoteOpts: qOpts, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec };
     saveAutosave(currentUser, data);
-  }, [meas, qi, ii, cn, ca, cph, ce, ja, jn, sec, currentUser]);
+  }, [meas, qOpts, ii, cn, ca, cph, ce, ja, jn, sec, currentUser]);
 
   useEffect(function() {
     if (initialLoad || !currentUser) return;
@@ -657,7 +712,8 @@ export default function App() {
     loadAutosave(currentUser).then(function(data) {
       if (data) {
         if (data.measurements) setMeas(data.measurements);
-        if (data.quoteItems) setQi(data.quoteItems);
+        if (data.quoteOpts) setQOpts(data.quoteOpts);
+        else if (data.quoteItems && data.quoteItems.length > 0) setQOpts([Object.assign(newOption("Option 1"),{items:data.quoteItems})]);
         if (data.importedItems) setIi(data.importedItems);
         if (data.custName) setCn(data.custName);
         if (data.custAddr) setCa(data.custAddr);
@@ -682,8 +738,9 @@ export default function App() {
   }
 
   function handleNewJob() {
-    if ((meas.length > 0 || qi.length > 0) && !confirm("Start a new job? Make sure you've saved first.")) return;
-    setMeas([]); setQi([]); setIi([]);
+    var hasWork = meas.length > 0 || qOpts.some(function(o){return o.items.length>0;});
+    if (hasWork && !confirm("Start a new job? Make sure you've saved first.")) return;
+    setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
     setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
     setSec("takeoff");
   }
@@ -691,7 +748,7 @@ export default function App() {
   function handleLogout() {
     localStorage.removeItem("ist-user");
     setCurrentUser("");
-    setMeas([]); setQi([]); setIi([]);
+    setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
     setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
     setSec("takeoff");
     setInitialLoad(true);
@@ -715,7 +772,7 @@ export default function App() {
         <div style={{ display: "flex", gap: 0, borderRadius: 10, overflow: "hidden", border: "1px solid " + C.border, marginTop: 14 }}>
           {[
             { id: "takeoff", label: "TAKE OFF", badge: meas.length || null },
-            { id: "quote", label: "QUOTE", badge: qi.length || null },
+            { id: "quote", label: "QUOTE", badge: qOpts.reduce(function(s,o){return s+o.items.length;},0) || null },
             { id: "jobs", label: "JOBS", badge: null },
           ].map(function(t) {
             return (
@@ -731,12 +788,12 @@ export default function App() {
 
       <div style={{ paddingTop: 16 }}>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} {...cp2} />)}
-        {sec === "quote" && (<QuoteBuilderSection quoteItems={qi} setQuoteItems={setQi} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} {...cp2} />)}
+        {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} {...cp2} />)}
         {sec === "jobs" && (
           <div>
             <SavedJobsPanel
-              measurements={meas} quoteItems={qi} importedItems={ii}
-              setMeasurements={setMeas} setQuoteItems={setQi} setImportedItems={setIi}
+              measurements={meas} quoteOpts={qOpts} importedItems={ii}
+              setMeasurements={setMeas} setQuoteOpts={setQOpts} setImportedItems={setIi}
               section={sec} setSection={setSec}
               currentUser={currentUser}
               {...cp2}

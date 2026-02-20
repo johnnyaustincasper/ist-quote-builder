@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "./supabase";
 
 var COMPANY = {
   name: "Insulation Services of Tulsa",
@@ -49,42 +50,47 @@ var GROUP_ORDER = ["Walls","Attic / Ceiling","Porch / Blocking","Roofline","Othe
 
 var C = {bg:"#0A0A0A",card:"#141414",green:"#4ADE80",white:"#FFFFFF",text:"#E5E5E5",dim:"#777777",border:"#252525",borderLight:"#333333",input:"#0D0D0D",inputBorder:"#2A2A2A",danger:"#EF4444",blue:"#60A5FA"};
 
-/* ──────── STORAGE HELPERS (localStorage) ──────── */
+/* ──────── STORAGE HELPERS (Supabase) ──────── */
 
-async function saveData(key, data) {
+async function saveJob(jobName, savedBy, jobData) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
-    return true;
-  } catch (e) { console.log("Save error:", e); }
-  return false;
-}
-
-async function loadData(key) {
-  try {
-    var raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { console.log("Load error:", e); }
-  return null;
-}
-
-async function deleteData(key) {
-  try {
-    localStorage.removeItem(key);
-    return true;
-  } catch (e) { console.log("Delete error:", e); }
-  return false;
-}
-
-async function listKeys(prefix) {
-  try {
-    var keys = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf(prefix) === 0) keys.push(k);
+    // Check if job with same name by same user exists (for autosave updates)
+    var existing = await supabase.from("jobs").select("id").eq("job_name", jobName).eq("saved_by", savedBy).limit(1);
+    if (existing.data && existing.data.length > 0) {
+      var res = await supabase.from("jobs").update({ job_data: jobData, updated_at: new Date().toISOString() }).eq("id", existing.data[0].id);
+      return !res.error;
+    } else {
+      var res2 = await supabase.from("jobs").insert({ job_name: jobName, saved_by: savedBy, job_data: jobData });
+      return !res2.error;
     }
-    return keys;
-  } catch (e) { console.log("List error:", e); }
+  } catch (e) { console.log("Save error:", e); return false; }
+}
+
+async function loadAllJobs() {
+  try {
+    var res = await supabase.from("jobs").select("*").neq("job_name", "__autosave__").order("updated_at", { ascending: false });
+    if (res.data) return res.data;
+  } catch (e) { console.log("Load error:", e); }
   return [];
+}
+
+async function deleteJob(id) {
+  try {
+    var res = await supabase.from("jobs").delete().eq("id", id);
+    return !res.error;
+  } catch (e) { console.log("Delete error:", e); return false; }
+}
+
+async function saveAutosave(savedBy, jobData) {
+  return saveJob("__autosave__", savedBy, jobData);
+}
+
+async function loadAutosave(savedBy) {
+  try {
+    var res = await supabase.from("jobs").select("*").eq("job_name", "__autosave__").eq("saved_by", savedBy).limit(1);
+    if (res.data && res.data.length > 0) return res.data[0].job_data;
+  } catch (e) { console.log("Autosave load error:", e); }
+  return null;
 }
 
 /* ──────── UI COMPONENTS ──────── */
@@ -389,17 +395,9 @@ function SavedJobsPanel(p) {
 
   function refreshJobs() {
     setLoading(true);
-    listKeys("ist-job:").then(function(keys) {
-      var promises = keys.map(function(k) { return loadData(k); });
-      Promise.all(promises).then(function(results) {
-        var jobList = [];
-        results.forEach(function(data, i) {
-          if (data) { jobList.push(Object.assign({}, data, { storageKey: keys[i] })); }
-        });
-        jobList.sort(function(a, b) { return (b.savedAt || 0) - (a.savedAt || 0); });
-        setJobs(jobList);
-        setLoading(false);
-      });
+    loadAllJobs().then(function(data) {
+      setJobs(data || []);
+      setLoading(false);
     });
   }
 
@@ -408,14 +406,11 @@ function SavedJobsPanel(p) {
   function handleSave() {
     var name = saveName.trim();
     if (!name) return;
-    var key = "ist-job:" + name.replace(/[^a-zA-Z0-9_-]/g, "_");
-    var data = {
-      name: name,
-      savedAt: Date.now(),
+    var jobData = {
       custName: p.custName, custAddr: p.custAddr, custPhone: p.custPhone, custEmail: p.custEmail, jobAddr: p.jobAddr, jobNotes: p.jobNotes,
       measurements: p.measurements, quoteItems: p.quoteItems, importedItems: p.importedItems, section: p.section,
     };
-    saveData(key, data).then(function(ok) {
+    saveJob(name, p.currentUser, jobData).then(function(ok) {
       if (ok) {
         setStatus("Saved: " + name);
         setSaveName("");
@@ -427,31 +422,30 @@ function SavedJobsPanel(p) {
   }
 
   function handleLoad(job) {
-    if (!confirm("Load \"" + job.name + "\"? This will replace your current work.")) return;
-    p.setCustName(job.custName || "");
-    p.setCustAddr(job.custAddr || "");
-    p.setCustPhone(job.custPhone || "");
-    p.setCustEmail(job.custEmail || "");
-    p.setJobAddr(job.jobAddr || "");
-    p.setJobNotes(job.jobNotes || "");
-    p.setMeasurements(job.measurements || []);
-    p.setQuoteItems(job.quoteItems || []);
-    p.setImportedItems(job.importedItems || []);
-    if (job.section) p.setSection(job.section);
-    setStatus("Loaded: " + job.name);
+    if (!confirm("Load \"" + job.job_name + "\"? This will replace your current work.")) return;
+    var d = job.job_data || {};
+    p.setCustName(d.custName || "");
+    p.setCustAddr(d.custAddr || "");
+    p.setCustPhone(d.custPhone || "");
+    p.setCustEmail(d.custEmail || "");
+    p.setJobAddr(d.jobAddr || "");
+    p.setJobNotes(d.jobNotes || "");
+    p.setMeasurements(d.measurements || []);
+    p.setQuoteItems(d.quoteItems || []);
+    p.setImportedItems(d.importedItems || []);
+    setStatus("Loaded: " + job.job_name);
     setTimeout(function() { setStatus(""); }, 2000);
   }
 
   function handleDelete(job) {
-    if (!confirm("Delete \"" + job.name + "\"?")) return;
-    deleteData(job.storageKey).then(function() { refreshJobs(); });
+    if (!confirm("Delete \"" + job.job_name + "\"?")) return;
+    deleteJob(job.id).then(function() { refreshJobs(); });
   }
 
   var hasWork = p.measurements.length > 0 || p.quoteItems.length > 0;
 
   return (
     <div style={{ padding: "0 16px 16px" }}>
-      {/* Save Button */}
       {hasWork && (
         <div style={{ marginBottom: 12 }}>
           {!showSave ? (
@@ -475,27 +469,30 @@ function SavedJobsPanel(p) {
         </div>
       )}
 
-      {/* Status */}
       {status && (<div style={{ padding: "8px 12px", background: "#1a2e1a", border: "1px solid " + C.green, borderRadius: 8, fontSize: 13, color: C.green, fontWeight: 600, marginBottom: 12, textAlign: "center" }}>{status}</div>)}
 
-      {/* Saved Jobs List */}
+      {loading && (<div style={{ fontSize: 12, color: C.dim, textAlign: "center", padding: "16px 0" }}>{"Loading..."}</div>)}
+
       {jobs.length > 0 && (
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{"Saved Jobs (" + jobs.length + ")"}</div>
           <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.border, overflow: "hidden" }}>
             {jobs.map(function(job, idx) {
-              var date = new Date(job.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-              var measCount = (job.measurements || []).length;
-              var quoteCount = (job.quoteItems || []).length;
+              var date = new Date(job.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              var d = job.job_data || {};
+              var measCount = (d.measurements || []).length;
+              var quoteCount = (d.quoteItems || []).length;
               var info = [];
               if (measCount > 0) info.push(measCount + " measurements");
               if (quoteCount > 0) info.push(quoteCount + " quote items");
               return (
-                <div key={job.storageKey} style={{ padding: "12px 14px", borderBottom: idx < jobs.length - 1 ? "1px solid " + C.border : "none" }}>
+                <div key={job.id} style={{ padding: "12px 14px", borderBottom: idx < jobs.length - 1 ? "1px solid " + C.border : "none" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{job.name}</div>
-                      <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{date + (info.length > 0 ? " · " + info.join(", ") : "")}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{job.job_name}</div>
+                      <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
+                        {date + " · " + job.saved_by + (info.length > 0 ? " · " + info.join(", ") : "")}
+                      </div>
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={function() { handleLoad(job); }}
@@ -518,9 +515,39 @@ function SavedJobsPanel(p) {
   );
 }
 
+/* ══════════ LOGIN SCREEN ══════════ */
+
+var TEAM_MEMBERS = ["Johnny", "Mike", "Chris"];
+
+function LoginScreen(p) {
+  return (
+    <div style={{ fontFamily: "'Outfit', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');"}</style>
+      <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: C.white, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 }}>{"Insulation Services of Tulsa"}</h1>
+        <div style={{ fontSize: 11, color: C.dim, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
+      </div>
+      <div style={{ width: "100%", maxWidth: 320 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" }}>{"Who's working?"}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {TEAM_MEMBERS.map(function(name) {
+            return (
+              <button key={name} onClick={function() { localStorage.setItem("ist-user", name); p.onLogin(name); }}
+                style={{ width: "100%", padding: "16px 20px", borderRadius: 12, border: "1px solid " + C.border, background: C.card, color: C.white, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textAlign: "center", transition: "all 0.15s ease" }}>
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ══════════ MAIN APP ══════════ */
 
 export default function App() {
+  var s0 = useState(function() { return localStorage.getItem("ist-user") || ""; }), currentUser = s0[0], setCurrentUser = s0[1];
   var s1 = useState("takeoff"), sec = s1[0], setSec = s1[1];
   var s2 = useState([]), meas = s2[0], setMeas = s2[1];
   var s3 = useState([]), qi = s3[0], setQi = s3[1];
@@ -533,21 +560,23 @@ export default function App() {
   var s11 = useState(""), jn = s11[0], setJn = s11[1];
   var s10 = useState(true), initialLoad = s10[0], setInitialLoad = s10[1];
 
-  // Auto-save current session
+  // Auto-save current session to Supabase
   var autoSave = useCallback(function() {
-    var data = { measurements: meas, quoteItems: qi, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec, savedAt: Date.now() };
-    saveData("ist-autosave", data);
-  }, [meas, qi, ii, cn, ca, cph, ce, ja, jn, sec]);
+    if (!currentUser) return;
+    var data = { measurements: meas, quoteItems: qi, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec };
+    saveAutosave(currentUser, data);
+  }, [meas, qi, ii, cn, ca, cph, ce, ja, jn, sec, currentUser]);
 
   useEffect(function() {
-    if (initialLoad) return;
-    var timer = setTimeout(autoSave, 1000);
+    if (initialLoad || !currentUser) return;
+    var timer = setTimeout(autoSave, 2000);
     return function() { clearTimeout(timer); };
-  }, [autoSave, initialLoad]);
+  }, [autoSave, initialLoad, currentUser]);
 
-  // Load auto-saved session on mount
+  // Load auto-saved session on login
   useEffect(function() {
-    loadData("ist-autosave").then(function(data) {
+    if (!currentUser) return;
+    loadAutosave(currentUser).then(function(data) {
       if (data) {
         if (data.measurements) setMeas(data.measurements);
         if (data.quoteItems) setQi(data.quoteItems);
@@ -562,7 +591,11 @@ export default function App() {
       }
       setInitialLoad(false);
     });
-  }, []);
+  }, [currentUser]);
+
+  if (!currentUser) {
+    return <LoginScreen onLogin={function(name) { setCurrentUser(name); }} />;
+  }
 
   function sendToQuote() {
     if (meas.length === 0) return;
@@ -577,6 +610,15 @@ export default function App() {
     setSec("takeoff");
   }
 
+  function handleLogout() {
+    localStorage.removeItem("ist-user");
+    setCurrentUser("");
+    setMeas([]); setQi([]); setIi([]);
+    setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
+    setSec("takeoff");
+    setInitialLoad(true);
+  }
+
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
@@ -585,6 +627,10 @@ export default function App() {
 
       {/* HEADER */}
       <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "2px solid " + C.green, textAlign: "center", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontSize: 10, color: C.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
+          <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
+        </div>
         <h1 style={{ fontSize: 16, fontWeight: 800, color: C.white, letterSpacing: "0.04em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
         <div style={{ fontSize: 10, color: C.dim, marginTop: 3, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
 
@@ -614,6 +660,7 @@ export default function App() {
               measurements={meas} quoteItems={qi} importedItems={ii}
               setMeasurements={setMeas} setQuoteItems={setQi} setImportedItems={setIi}
               section={sec} setSection={setSec}
+              currentUser={currentUser}
               {...cp2}
             />
             <div style={{ padding: "0 16px" }}>

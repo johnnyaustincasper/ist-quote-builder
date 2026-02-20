@@ -8,6 +8,12 @@ var COMPANY = {
   phone: "1 (918) 232-9055",
 };
 
+var SALESMAN_INFO = {
+  "Johnny": { fullName: "Johnny Casper", phone: "918-550-2396", email: "Johnny@istulsa.com" },
+  "Jordan": { fullName: "Jordan Beard", phone: "918-625-7820", email: "Jordan@istulsa.com" },
+  "Skip": { fullName: "Skip Owen", phone: "918-219-7890", email: "Skip@istulsa.com" },
+};
+
 var LOCATIONS = [
   { id: "ext_walls_house", label: "Boxed Exterior Walls of House", type: "wall", group: "Walls" },
   { id: "ext_walls_garage", label: "Boxed Exterior Walls of Garage", type: "wall", group: "Walls" },
@@ -200,7 +206,12 @@ function groupMeasurements(items){var g={};items.forEach(function(m){var k=m.gro
 
 /* ──────── PRINT / DOWNLOAD FUNCTIONS ──────── */
 
-function buildTakeOffHtml(custName,jobAddr,jobNotes,measurements){
+function buildSalesmanBlock(salesman){
+  var s=SALESMAN_INFO[salesman];if(!s)return "";
+  return '<div style="margin-top:30px;padding:16px 20px;background:#f5f5f5;border:2px solid #222;border-radius:8px"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Your Sales Representative</div><div style="font-size:18px;font-weight:800;color:#111;margin-bottom:6px">'+s.fullName+'</div><div style="font-size:14px;color:#111;font-weight:600;margin-bottom:3px">📞 '+s.phone+'</div><div style="font-size:14px;color:#111;font-weight:600">✉ '+s.email+'</div></div>';
+}
+
+function buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman){
   var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
@@ -213,24 +224,25 @@ function buildTakeOffHtml(custName,jobAddr,jobNotes,measurements){
     '<div style="display:flex;gap:32px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(custName||"—")+'</div></div><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(jobAddr||"—")+'</div></div></div>'+
     notesHtml+
     ghtml+'<div style="margin-top:24px;padding-top:16px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:800;text-transform:uppercase;color:#111">Total</div><div style="font-size:18px;font-weight:800;color:#111">'+total.toLocaleString()+' sq ft</div></div>'+
+    buildSalesmanBlock(salesman)+
     '<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'</div></div>';
 }
 
-function printTakeOff(custName,jobAddr,jobNotes,measurements){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildTakeOffHtml(custName,jobAddr,jobNotes,measurements)+'</body></html>';
+function printTakeOff(custName,jobAddr,jobNotes,measurements,salesman){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function downloadTakeOffPdf(custName,jobAddr,jobNotes,measurements){
+function downloadTakeOffPdf(custName,jobAddr,jobNotes,measurements,salesman){
   var container=document.createElement("div");
-  container.innerHTML=buildTakeOffHtml(custName,jobAddr,jobNotes,measurements);
+  container.innerHTML=buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman);
   document.body.appendChild(container);
   var filename="TakeOff"+(custName?" - "+custName:"")+".pdf";
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
-function buildQuoteHtml(customer,items,total,psoApplied){
+function buildQuoteHtml(customer,items,total,psoApplied,salesman){
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});var qn="IST-"+Date.now().toString(36).toUpperCase();
   var rows=items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td><td style="padding:10px 8px;font-size:13px;text-align:right">$'+Math.ceil(item.total).toLocaleString()+'</td></tr>';}).join("");
   var psoRow=psoApplied?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px"></td><td style="padding:10px 8px;font-size:13px;font-weight:600">PSO Credit</td><td style="padding:10px 8px;font-size:13px;text-align:right;color:#dc2626;font-weight:600">-$600</td></tr>':"";
@@ -239,18 +251,19 @@ function buildQuoteHtml(customer,items,total,psoApplied){
     '<div style="display:flex;gap:40px;margin-bottom:30px"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Prepared For</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Project</div><div style="font-size:13px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:13px;color:#666">Valid 30 days from quote date</div></div></div>'+
     '<table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right;color:#fff">Amount</th></tr></thead><tbody>'+rows+psoRow+'</tbody></table>'+
     '<div style="display:flex;justify-content:flex-end"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>Total</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>'+
+    buildSalesmanBlock(salesman)+
     '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Thank you for your business!</div></div>';
 }
 
-function generatePDF(customer,items,total,psoApplied){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildQuoteHtml(customer,items,total,psoApplied)+'</body></html>';
+function generatePDF(customer,items,total,psoApplied,salesman){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildQuoteHtml(customer,items,total,psoApplied,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function downloadQuotePdf(customer,items,total,psoApplied){
+function downloadQuotePdf(customer,items,total,psoApplied,salesman){
   var container=document.createElement("div");
-  container.innerHTML=buildQuoteHtml(customer,items,total,psoApplied);
+  container.innerHTML=buildQuoteHtml(customer,items,total,psoApplied,salesman);
   document.body.appendChild(container);
   var filename="Quote"+(customer.name?" - "+customer.name:"")+".pdf";
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
@@ -285,8 +298,8 @@ function TakeOff(p){
           </div>
         </div>);
       })}
-      <GreenBtn onClick={function(){printTakeOff(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements);}}>{"Print Take Off"}</GreenBtn>
-      <GreenBtn onClick={function(){downloadTakeOffPdf(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements);}} mt={8}>{"📥 Download Take Off PDF"}</GreenBtn>
+      <GreenBtn onClick={function(){printTakeOff(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements,p.currentUser);}}>{"Print Take Off"}</GreenBtn>
+      <GreenBtn onClick={function(){downloadTakeOffPdf(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements,p.currentUser);}} mt={8}>{"📥 Download Take Off PDF"}</GreenBtn>
       <GreenBtn onClick={p.onSendToQuote} mt={8}>{"Send to Quote Builder →"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
@@ -403,8 +416,8 @@ function QuoteBuilderSection(p){
           {overrideTotal!==""&&parseFloat(overrideTotal)!==subtotal&&(<div style={{fontSize:11,color:C.dim,textAlign:"right",marginTop:4}}>{"Calculated: $"+subtotal.toFixed(0)}</div>)}
         </div>
       </div>
-      <GreenBtn mt={12} onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked);}}>{"📥 Download Quote PDF"}</GreenBtn>
+      <GreenBtn mt={12} onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked,p.currentUser);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked,p.currentUser);}}>{"📥 Download Quote PDF"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all quote items?"))p.setQuoteItems([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
     {p.quoteItems.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"💰"}</div><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
@@ -691,8 +704,8 @@ export default function App() {
       </div>
 
       <div style={{ paddingTop: 16 }}>
-        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} {...cp2} />)}
-        {sec === "quote" && (<QuoteBuilderSection quoteItems={qi} setQuoteItems={setQi} importedItems={ii} setImportedItems={setIi} {...cp2} />)}
+        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} {...cp2} />)}
+        {sec === "quote" && (<QuoteBuilderSection quoteItems={qi} setQuoteItems={setQi} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} {...cp2} />)}
         {sec === "jobs" && (
           <div>
             <SavedJobsPanel

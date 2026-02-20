@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
+import html2pdf from "html2pdf.js";
 
 var COMPANY = {
   name: "Insulation Services of Tulsa",
@@ -197,9 +198,9 @@ function CustomerInfo(p){
 
 function groupMeasurements(items){var g={};items.forEach(function(m){var k=m.group||"Other";if(!g[k])g[k]=[];g[k].push(m);});return g;}
 
-/* ──────── PRINT FUNCTIONS ──────── */
+/* ──────── PRINT / DOWNLOAD FUNCTIONS ──────── */
 
-function printTakeOff(custName,jobAddr,jobNotes,measurements){
+function buildTakeOffHtml(custName,jobAddr,jobNotes,measurements){
   var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
@@ -207,28 +208,52 @@ function printTakeOff(custName,jobAddr,jobNotes,measurements){
   var ghtml=sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
     var rows=groups[gn].map(function(item){return '<tr style="border-bottom:1px solid #e0e0e0"><td style="padding:8px 10px;font-size:13px;color:#333">'+item.location+'</td><td style="padding:8px 10px;font-size:13px;color:#333">'+item.material+'</td><td style="padding:8px 10px;font-size:13px;color:#333;text-align:right;font-weight:600">'+item.sqft.toLocaleString()+' sf</td></tr>';}).join("");
     return '<div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f5f5f5;border:1px solid #ddd;border-bottom:2px solid #333;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#333"><span>'+gn+'</span><span>'+gt.toLocaleString()+' sq ft</span></div><table style="width:100%;border-collapse:collapse"><tbody>'+rows+'</tbody></table></div>';}).join("");
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap");*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Outfit",Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto}@media print{body{padding:16px}}</style></head><body>'+
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #111"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#888">'+COMPANY.tagline+'</p></div><div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#111;text-transform:uppercase">Take Off</div><div style="font-size:12px;color:#888;margin-top:2px">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:32px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(custName||"—")+'</div></div><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(jobAddr||"—")+'</div></div></div>'+
     notesHtml+
     ghtml+'<div style="margin-top:24px;padding-top:16px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:800;text-transform:uppercase;color:#111">Total</div><div style="font-size:18px;font-weight:800;color:#111">'+total.toLocaleString()+' sq ft</div></div>'+
-    '<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'</div></body></html>';
+    '<div style="margin-top:40px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'</div></div>';
+}
+
+function printTakeOff(custName,jobAddr,jobNotes,measurements){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildTakeOffHtml(custName,jobAddr,jobNotes,measurements)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function generatePDF(customer,items,total,psoApplied){
+function downloadTakeOffPdf(custName,jobAddr,jobNotes,measurements){
+  var container=document.createElement("div");
+  container.innerHTML=buildTakeOffHtml(custName,jobAddr,jobNotes,measurements);
+  document.body.appendChild(container);
+  var filename="TakeOff"+(custName?" - "+custName:"")+".pdf";
+  html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
+}
+
+function buildQuoteHtml(customer,items,total,psoApplied){
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});var qn="IST-"+Date.now().toString(36).toUpperCase();
   var rows=items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td><td style="padding:10px 8px;font-size:13px;text-align:right">$'+Math.ceil(item.total).toLocaleString()+'</td></tr>';}).join("");
   var psoRow=psoApplied?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px"></td><td style="padding:10px 8px;font-size:13px;font-weight:600">PSO Credit</td><td style="padding:10px 8px;font-size:13px;text-align:right;color:#dc2626;font-weight:600">-$600</td></tr>':"";
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote '+qn+'</title><style>@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap");*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Outfit",Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto}@media print{body{padding:20px}}</style></head><body>'+
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:20px;border-bottom:3px solid #222"><div><h1 style="font-size:26px;font-weight:800;color:#111;margin-bottom:4px">'+COMPANY.name+'</h1><p style="font-size:13px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:13px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#111">QUOTE</div><div style="font-size:13px;color:#666;margin-top:4px">'+qn+'</div><div style="font-size:13px;color:#666">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:40px;margin-bottom:30px"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Prepared For</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Project</div><div style="font-size:13px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:13px;color:#666">Valid 30 days from quote date</div></div></div>'+
     '<table style="width:100%;border-collapse:collapse;margin-bottom:24px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right;color:#fff">Amount</th></tr></thead><tbody>'+rows+psoRow+'</tbody></table>'+
     '<div style="display:flex;justify-content:flex-end"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>Total</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>'+
-    '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Thank you for your business!</div></body></html>';
+    '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Thank you for your business!</div></div>';
+}
+
+function generatePDF(customer,items,total,psoApplied){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildQuoteHtml(customer,items,total,psoApplied)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
+}
+
+function downloadQuotePdf(customer,items,total,psoApplied){
+  var container=document.createElement("div");
+  container.innerHTML=buildQuoteHtml(customer,items,total,psoApplied);
+  document.body.appendChild(container);
+  var filename="Quote"+(customer.name?" - "+customer.name:"")+".pdf";
+  html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
 /* ══════════ TAKE OFF ══════════ */
@@ -261,6 +286,7 @@ function TakeOff(p){
         </div>);
       })}
       <GreenBtn onClick={function(){printTakeOff(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements);}}>{"Print Take Off"}</GreenBtn>
+      <GreenBtn onClick={function(){downloadTakeOffPdf(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements);}} mt={8}>{"📥 Download Take Off PDF"}</GreenBtn>
       <GreenBtn onClick={p.onSendToQuote} mt={8}>{"Send to Quote Builder →"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
@@ -377,7 +403,8 @@ function QuoteBuilderSection(p){
           {overrideTotal!==""&&parseFloat(overrideTotal)!==subtotal&&(<div style={{fontSize:11,color:C.dim,textAlign:"right",marginTop:4}}>{"Calculated: $"+subtotal.toFixed(0)}</div>)}
         </div>
       </div>
-      <GreenBtn mt={12} onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked);}}>{"Generate Quote PDF"}</GreenBtn>
+      <GreenBtn mt={12} onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},p.quoteItems,finalTotal,psoChecked);}}>{"📥 Download Quote PDF"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all quote items?"))p.setQuoteItems([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
     {p.quoteItems.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"💰"}</div><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}

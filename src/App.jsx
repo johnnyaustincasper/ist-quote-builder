@@ -262,16 +262,27 @@ function buildQuoteHtml(customer,opts,salesman){
   var optsWithItems=opts.filter(function(o){return o.items.length>0;});
   var optSections=optsWithItems.map(function(opt,oi){
     var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
-    var psoRow=opt.pso?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px"></td><td style="padding:10px 8px;font-size:13px;font-weight:600;color:#dc2626">PSO Credit Applied</td></tr>':"";
+    var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:10px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
     var psoCredit=opt.pso?600:0;
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
     var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
-    var sub=lineTotal-psoCredit+el+tc;
-    var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):sub;
+    var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
+    var sub=lineTotal+el+tc+es;
+    var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
     var header=optsWithItems.length>1?'<div style="font-size:18px;font-weight:800;color:#111;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
-    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+psoRow+'</tbody></table>'+
-    '<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+(optsWithItems.length>1?opt.name+" Total":"Total")+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
+    var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
+    var totalHtml="";
+    if(opt.pso){
+      totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:280px">'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:15px;font-weight:600;color:#333"><span>Price</span><span>$'+Math.ceil(sub).toLocaleString()+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:15px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit</span><span>-$600</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div>'+
+        '</div></div>';
+    }else{
+      totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:280px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
+    }
+    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
   }).join("");
   return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column">'+
     '<div style="flex:1">'+
@@ -357,7 +368,8 @@ function QuoteBuilderSection(p){
   var psoCredit=opt.pso?600:0;
   var extraLabor=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
   var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
-  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge;
+  var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
+  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal;
   var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.white,fontSize:13,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 
@@ -471,6 +483,18 @@ function QuoteBuilderSection(p){
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
                 <span style={{fontSize:13,color:C.white}}>{"$"}</span>
                 <input type="number" value={opt.tripChargeAmt} onChange={function(e){updateOpt({tripChargeAmt:e.target.value,overrideTotal:""});}}
+                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
+              </div>
+            )}
+          </label>
+          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+            <input type="checkbox" checked={opt.energySeal||false} onChange={function(e){updateOpt({energySeal:e.target.checked,overrideTotal:""});}}
+              style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
+            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Energy Seal & Plates"}</span>
+            {opt.energySeal&&(
+              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
+                <span style={{fontSize:13,color:C.white}}>{"$"}</span>
+                <input type="number" value={opt.energySealAmt||""} onChange={function(e){updateOpt({energySealAmt:e.target.value,overrideTotal:""});}}
                   style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}

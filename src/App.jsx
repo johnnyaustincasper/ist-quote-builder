@@ -384,6 +384,10 @@ function QuoteBuilderSection(p){
   </div>);
 }
 
+/* ══════════ TEAM ══════════ */
+
+var TEAM_MEMBERS = ["Johnny", "Skip", "Jordan"];
+
 /* ══════════ SAVED JOBS PANEL ══════════ */
 
 function SavedJobsPanel(p) {
@@ -392,6 +396,7 @@ function SavedJobsPanel(p) {
   var s3 = useState(""), saveName = s3[0], setSaveName = s3[1];
   var s4 = useState(false), showSave = s4[0], setShowSave = s4[1];
   var s5 = useState(""), status = s5[0], setStatus = s5[1];
+  var s6 = useState({}), openSections = s6[0], setOpenSections = s6[1];
 
   function refreshJobs() {
     setLoading(true);
@@ -473,51 +478,58 @@ function SavedJobsPanel(p) {
 
       {loading && (<div style={{ fontSize: 12, color: C.dim, textAlign: "center", padding: "16px 0" }}>{"Loading..."}</div>)}
 
-      {jobs.length > 0 && (
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{"Saved Jobs (" + jobs.length + ")"}</div>
-          <div style={{ background: C.card, borderRadius: 10, border: "1px solid " + C.border, overflow: "hidden" }}>
-            {jobs.map(function(job, idx) {
-              var date = new Date(job.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-              var d = job.job_data || {};
-              var measCount = (d.measurements || []).length;
-              var quoteCount = (d.quoteItems || []).length;
-              var info = [];
-              if (measCount > 0) info.push(measCount + " measurements");
-              if (quoteCount > 0) info.push(quoteCount + " quote items");
-              return (
-                <div key={job.id} style={{ padding: "12px 14px", borderBottom: idx < jobs.length - 1 ? "1px solid " + C.border : "none" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{job.job_name}</div>
-                      <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
-                        {date + " · " + job.saved_by + (info.length > 0 ? " · " + info.join(", ") : "")}
+      {!loading && TEAM_MEMBERS.map(function(member) {
+        var memberJobs = jobs.filter(function(j) { return j.saved_by === member; });
+        var isOpen = openSections[member];
+        return (
+          <div key={member} style={{ marginBottom: 10 }}>
+            <button onClick={function() { setOpenSections(function(prev) { var n = Object.assign({}, prev); n[member] = !n[member]; return n; }); }}
+              style={{ width: "100%", padding: "12px 16px", borderRadius: isOpen ? "10px 10px 0 0" : 10, border: "1px solid " + C.border, background: C.card, color: C.white, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>{member + (memberJobs.length > 0 ? " (" + memberJobs.length + ")" : "")}</span>
+              <span style={{ fontSize: 14, color: C.dim }}>{isOpen ? "▲" : "▼"}</span>
+            </button>
+            {isOpen && (
+              <div style={{ background: C.card, borderRadius: "0 0 10px 10px", border: "1px solid " + C.border, borderTop: "none", overflow: "hidden" }}>
+                {memberJobs.length === 0 && (
+                  <div style={{ padding: "12px 14px", fontSize: 12, color: C.dim, textAlign: "center" }}>{"No saved jobs"}</div>
+                )}
+                {memberJobs.map(function(job, idx) {
+                  var date = new Date(job.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  var d = job.job_data || {};
+                  var measCount = (d.measurements || []).length;
+                  var quoteCount = (d.quoteItems || []).length;
+                  var info = [];
+                  if (measCount > 0) info.push(measCount + " measurements");
+                  if (quoteCount > 0) info.push(quoteCount + " quote items");
+                  return (
+                    <div key={job.id} style={{ padding: "12px 14px", borderBottom: idx < memberJobs.length - 1 ? "1px solid " + C.border : "none" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{job.job_name}</div>
+                          <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
+                            {date + (info.length > 0 ? " · " + info.join(", ") : "")}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={function() { handleLoad(job); }}
+                            style={{ padding: "6px 12px", background: C.green, border: "none", borderRadius: 6, color: "#000", fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textTransform: "uppercase" }}>{"Load"}</button>
+                          <button onClick={function() { handleDelete(job); }}
+                            style={{ padding: "6px 8px", background: "none", border: "1px solid " + C.danger, borderRadius: 6, color: C.danger, fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{"✕"}</button>
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={function() { handleLoad(job); }}
-                        style={{ padding: "6px 12px", background: C.green, border: "none", borderRadius: 6, color: "#000", fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textTransform: "uppercase" }}>{"Load"}</button>
-                      <button onClick={function() { handleDelete(job); }}
-                        style={{ padding: "6px 8px", background: "none", border: "1px solid " + C.danger, borderRadius: 6, color: C.danger, fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{"✕"}</button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
-
-      {jobs.length === 0 && !loading && (
-        <div style={{ fontSize: 12, color: C.dim, textAlign: "center", padding: "8px 0" }}>{"No saved jobs yet"}</div>
-      )}
+        );
+      })}
     </div>
   );
 }
 
 /* ══════════ LOGIN SCREEN ══════════ */
-
-var TEAM_MEMBERS = ["Johnny", "Mike", "Chris"];
 
 function LoginScreen(p) {
   return (

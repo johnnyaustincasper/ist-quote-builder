@@ -307,7 +307,15 @@ function downloadQuotePdf(customer,opts,salesman){
 /* ══════════ TAKE OFF ══════════ */
 
 function TakeOff(p){
-  function addM(item){p.setMeasurements(function(prev){return prev.concat([Object.assign({},item,{id:Date.now()+Math.random()})]);});}
+  function addM(item){
+    p.setMeasurements(function(prev){
+      var existing=prev.find(function(m){return m.location===item.location && m.locationId===item.locationId;});
+      if(existing){
+        return prev.map(function(m){return m.id===existing.id?Object.assign({},m,{sqft:m.sqft+item.sqft}):m;});
+      }
+      return prev.concat([Object.assign({},item,{id:Date.now()+Math.random()})]);
+    });
+  }
   function removeM(id){p.setMeasurements(function(prev){return prev.filter(function(m){return m.id!==id;});});}
   var groups=groupMeasurements(p.measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=p.measurements.reduce(function(s,m){return s+m.sqft;},0);

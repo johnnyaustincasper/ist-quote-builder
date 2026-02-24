@@ -241,7 +241,7 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman){
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman)+'</body></html>';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
@@ -291,7 +291,7 @@ function buildQuoteHtml(customer,opts,salesman){
 }
 
 function generatePDF(customer,opts,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }

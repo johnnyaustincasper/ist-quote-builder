@@ -221,7 +221,7 @@ function buildSalesmanBlock(salesman){
   return '<div style="margin-top:30px;display:inline-block;padding:10px 16px;background:#f5f5f5;border:2px solid #222;border-radius:6px"><div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Your Sales Representative</div><div style="font-size:16px;font-weight:800;color:#111;margin-bottom:4px">'+s.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:2px">📞 '+s.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">✉ '+s.email+'</div></div>';
 }
 
-function buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman){
+function buildTakeOffHtml(customer,jobNotes,measurements,salesman){
   var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
@@ -231,27 +231,26 @@ function buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman){
     return '<div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f5f5f5;border:1px solid #ddd;border-bottom:2px solid #333;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#333"><span>'+gn+'</span><span>'+gt.toLocaleString()+' sq ft</span></div><table style="width:100%;border-collapse:collapse"><tbody>'+rows+'</tbody></table></div>';}).join("");
   var si=SALESMAN_INFO[salesman];
   var salesHtml=si?'<div style="text-align:right"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Your Sales Rep</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:2px">'+si.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:1px">'+si.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">'+si.email+'</div></div>':'';
-  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column">'+
-    '<div style="flex:1">'+
+  var totalRow=measurements.length>0?'<div style="margin-top:24px;padding-top:16px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:800;text-transform:uppercase;color:#111">Total</div><div style="font-size:18px;font-weight:800;color:#111">'+total.toLocaleString()+' sq ft</div></div>':'';
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #111"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#888">'+COMPANY.tagline+'</p></div><div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#111;text-transform:uppercase">Take Off</div><div style="font-size:12px;color:#888;margin-top:2px">'+today+'</div></div></div>'+
-    '<div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div style="display:flex;gap:32px"><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(custName||"—")+'</div></div><div><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(jobAddr||"—")+'</div></div></div>'+salesHtml+'</div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(customer.jobAddress||customer.address||"—")+'</div></div>'+salesHtml+'</div>'+
     notesHtml+
-    ghtml+'<div style="margin-top:24px;padding-top:16px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:800;text-transform:uppercase;color:#111">Total</div><div style="font-size:18px;font-weight:800;color:#111">'+total.toLocaleString()+' sq ft</div></div>'+
-    '</div>'+
-    '<div style="padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
+    ghtml+totalRow+
+    '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
-function printTakeOff(custName,jobAddr,jobNotes,measurements,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman)+'</body></html>';
+function printTakeOff(customer,jobNotes,measurements,salesman){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}@media print{body{padding:0}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function downloadTakeOffPdf(custName,jobAddr,jobNotes,measurements,salesman){
+function downloadTakeOffPdf(customer,jobNotes,measurements,salesman){
   var container=document.createElement("div");
-  container.innerHTML=buildTakeOffHtml(custName,jobAddr,jobNotes,measurements,salesman);
+  container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman);
   document.body.appendChild(container);
-  var filename="TakeOff"+(custName?" - "+custName:"")+".pdf";
+  var filename="TakeOff"+(customer.name?" - "+customer.name:"")+".pdf";
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
@@ -284,13 +283,11 @@ function buildQuoteHtml(customer,opts,salesman){
     }
     return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
   }).join("");
-  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column">'+
-    '<div style="flex:1">'+
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:20px;border-bottom:3px solid #222"><div><h1 style="font-size:26px;font-weight:800;color:#111;margin-bottom:4px">'+COMPANY.name+'</h1><p style="font-size:13px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:13px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#111">QUOTE</div><div style="font-size:13px;color:#666;margin-top:4px">'+qn+'</div><div style="font-size:13px;color:#666">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:24px;margin-bottom:30px"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Prepared For</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Project</div><div style="font-size:13px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:13px;color:#666">Valid 30 days from quote date</div></div>'+salesHtml+'</div>'+
     optSections+
-    '</div>'+
-    '<div style="padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
+    '<div style="margin-top:20px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
 function generatePDF(customer,opts,salesman){
@@ -334,11 +331,13 @@ function TakeOff(p){
           </div>
         </div>);
       })}
-      <GreenBtn onClick={function(){printTakeOff(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements,p.currentUser);}}>{"Print Take Off"}</GreenBtn>
-      <GreenBtn onClick={function(){downloadTakeOffPdf(p.custName,p.jobAddr||p.custAddr,p.jobNotes,p.measurements,p.currentUser);}} mt={8}>{"📥 Download Take Off PDF"}</GreenBtn>
-      <GreenBtn onClick={p.onSendToQuote} mt={8}>{"Send to Quote Builder →"}</GreenBtn>
+      <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder →"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
+    <div style={{padding:"12px 16px 0"}}>
+      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser);}}>{"Print Take Off"}</GreenBtn>
+      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser);}} mt={8}>{"📥 Download Take Off PDF"}</GreenBtn>
+    </div>
     {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"📏"}</div><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
   </div>);
 }

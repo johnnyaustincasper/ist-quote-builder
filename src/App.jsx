@@ -359,7 +359,16 @@ function QuoteBuilderSection(p){
   var opt=opts[activeIdx]||newOption("Option 1");
 
   function updateOpt(changes){setOpts(function(prev){return prev.map(function(o,i){return i===activeIdx?Object.assign({},o,changes):o;});});}
-  function addItem(item){updateOpt({items:opt.items.concat([Object.assign({},item,{id:Date.now()+Math.random()})]),overrideTotal:""});}
+  function addItem(item){
+    var existing=opt.items.find(function(i){return i.description===item.description;});
+    if(existing){
+      var newSqft=existing.sqft+item.sqft;
+      var newTotal=Math.ceil(newSqft*existing.pricePerUnit);
+      updateOpt({items:opt.items.map(function(i){return i.id===existing.id?Object.assign({},i,{sqft:newSqft,total:newTotal}):i;}),overrideTotal:""});
+    }else{
+      updateOpt({items:opt.items.concat([Object.assign({},item,{id:Date.now()+Math.random()})]),overrideTotal:""});
+    }
+  }
   function removeItem(id){updateOpt({items:opt.items.filter(function(i){return i.id!==id;}),overrideTotal:""});}
 
   var unpriced=p.importedItems.filter(function(i){return!i.priced;});

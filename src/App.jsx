@@ -304,6 +304,16 @@ function downloadQuotePdf(customer,opts,salesman){
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
+function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>'+
+    buildQuoteHtml(customer,opts,salesman)+
+    '<div class="page-break"></div>'+
+    buildTakeOffHtml(customer,jobNotes,measurements,salesman)+
+    '</body></html>';
+  var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
+  if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
+}
+
 /* ══════════ TAKE OFF ══════════ */
 
 function TakeOff(p){
@@ -536,6 +546,7 @@ function QuoteBuilderSection(p){
     {/* PRINT/DOWNLOAD — show when ANY option has items */}
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements);}}>{"Print Quote and Take Off"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Download Quote PDF"}</GreenBtn>
     </div>)}
 
@@ -829,7 +840,7 @@ export default function App() {
 
       <div style={{ paddingTop: 16 }}>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} {...cp2} />)}
-        {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} {...cp2} />)}
+        {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
         {sec === "jobs" && (
           <div>
             <SavedJobsPanel

@@ -60,7 +60,7 @@ var WALL_HEIGHTS = [
 
 var GROUP_ORDER = ["Walls","Attic / Ceiling","Porch / Blocking","Roofline","Other"];
 
-var C = {bg:"#0A0A0A",card:"#141414",green:"#4ADE80",white:"#FFFFFF",text:"#E5E5E5",dim:"#777777",border:"#252525",borderLight:"#333333",input:"#0D0D0D",inputBorder:"#2A2A2A",danger:"#EF4444",blue:"#60A5FA"};
+var C = {bg:"#f8f9fb",card:"#ffffff",accent:"#1a56db",accentHover:"#1648b8",accentBg:"#eef2ff",white:"#111827",text:"#111827",textSec:"#4b5563",dim:"#9ca3af",border:"#e2e5ea",borderLight:"#eef0f3",input:"#ffffff",inputBorder:"#e2e5ea",danger:"#dc2626",dangerBg:"#fef2f2",green:"#1a56db",blue:"#1a56db",shadow:"0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",shadowMd:"0 4px 12px rgba(0,0,0,0.08)"};
 
 /* ──────── STORAGE HELPERS (Supabase) ──────── */
 
@@ -107,17 +107,17 @@ async function loadAutosave(savedBy) {
 
 /* ──────── UI COMPONENTS ──────── */
 
-function Input(p){return(<div><label style={{fontSize:11,fontWeight:700,color:C.dim,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:8,color:C.white,fontSize:15,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box"}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
+function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
 
-function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:700,color:C.dim,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:8,color:C.white,fontSize:15,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none"}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v}>{l}</option>);})}</select></div>);}
+function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v}>{l}</option>);})}</select></div>);}
 
 function Row(p){return <div style={{display:"flex",gap:10,marginBottom:10}}>{p.children}</div>;}
 function Col(p){return <div style={{flex:1}}>{p.children}</div>;}
-function StepLabel(p){return(<label style={{fontSize:11,fontWeight:700,color:C.green,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.children}</label>);}
+function StepLabel(p){return(<label style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.children}</label>);}
 
-function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:C.bg,padding:3,borderRadius:8,marginBottom:12}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",border:"none",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?C.green:"transparent",color:p.mode===o.id?"#000":C.dim}}>{o.label}</button>);})}</div>);}
+function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:C.borderLight,padding:3,borderRadius:6,marginBottom:12}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:4,fontSize:12,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?C.accent:"transparent",color:p.mode===o.id?"#fff":C.dim}}>{o.label}</button>);})}</div>);}
 
-function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:10,border:"none",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:C.green,color:"#000",marginTop:p.mt||0}}>{p.children}</button>);}
+function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:6,border:"none",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:C.accent,color:"#fff",marginTop:p.mt||0,boxShadow:C.shadow,transition:"background 0.15s"}} onMouseOver={function(e){e.target.style.background=C.accentHover;}} onMouseOut={function(e){e.target.style.background=C.accent;}}>{p.children}</button>);}
 
 /* ──────── MEASUREMENTS ──────── */
 
@@ -131,7 +131,7 @@ function WallMeasurement(p){
   return(<div>
     <ToggleButtons mode={mode} setMode={setMode} options={[{id:"count",label:"Wall Count"},{id:"lh",label:"L × H"}]}/>
     {mode==="count"?(<Row><Col><Input label="# of Cavities" value={wc} placeholder="0" onChange={function(v){setWc(v);p.onSqftChange((parseInt(v)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0));}}/></Col><Col><AppSelect label="Wall Height" value={wi} onChange={function(v){setWi(v);p.onSqftChange((parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(v)]?WALL_HEIGHTS[parseInt(v)].sqftPer:0));}} options={WALL_HEIGHTS.map(function(w,i){return{value:String(i),label:w.label};})}/></Col></Row>):(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);p.onSqftChange((parseFloat(v)||0)*(parseFloat(ht)||0));}}/></Col><Col><Input label="Height (ft)" value={ht} placeholder="0" onChange={function(v){setHt(v);p.onSqftChange((parseFloat(ln)||0)*(parseFloat(v)||0));}}/></Col></Row>)}
-    {sq>0&&(<div style={{fontSize:13,color:C.green,fontWeight:700,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
+    {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
   </div>);
 }
 
@@ -144,7 +144,7 @@ function AreaMeasurement(p){
   return(<div>
     <ToggleButtons mode={mode} setMode={setMode} options={[{id:"dims",label:"L × W"},{id:"sqft",label:"Sq Ft"}]}/>
     {mode==="dims"?(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);p.onSqftChange((parseFloat(v)||0)*(parseFloat(wd)||0));}}/></Col><Col><Input label="Width (ft)" value={wd} placeholder="0" onChange={function(v){setWd(v);p.onSqftChange((parseFloat(ln)||0)*(parseFloat(v)||0));}}/></Col></Row>):(<div style={{marginBottom:10}}><Input label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0);}}/></div>)}
-    {sq>0&&(<div style={{fontSize:13,color:C.green,fontWeight:700,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
+    {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
   </div>);
 }
 
@@ -166,7 +166,7 @@ function MeasurementForm(p){
   var measType=loc?(loc.type==="wall"?"wall":"area"):null;
   var pf=needsPitch?(PITCH_FACTORS[pitch]||1):1;
   var adj=sqft*pf;var fin=Math.round(adj);
-  var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:8,color:C.white,fontSize:14,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none"};
+  var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"};
   var tabLabel=p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
   function handleAdd(){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
@@ -176,8 +176,8 @@ function MeasurementForm(p){
     setSqft(0);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});
   }
   var stepNum=1;
-  return(<div style={{background:C.card,borderRadius:12,padding:16,border:"1px solid "+C.border}}>
-    <div style={{fontSize:15,fontWeight:700,marginBottom:14,color:C.white}}>{hp?(tabLabel+" — Add Line Item"):"Add Measurement"}</div>
+  return(<div style={{background:C.card,borderRadius:6,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
+    <div style={{fontSize:15,fontWeight:600,marginBottom:14,color:C.text}}>{hp?(tabLabel+" — Add Line Item"):"Add Measurement"}</div>
     <div style={{marginBottom:12}}><StepLabel>{"① Location"}</StepLabel><select style={ss} value={lid} onChange={function(e){setLid(e.target.value);setSqft(0);setMk(function(k){return k+1;});}}><option value="">{"— Select Location —"}</option>{GROUP_ORDER.filter(function(g){return LOCATIONS.some(function(loc){return loc.group===g;});}).map(function(g){return(<optgroup key={g} label={g}>{LOCATIONS.filter(function(loc){return loc.group===g;}).map(function(x){return(<option key={x.id} value={x.id}>{x.label}</option>);})}</optgroup>);})}</select></div>
     {lid==="custom"&&(<div style={{marginBottom:12}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
     {loc&&(<div>
@@ -186,28 +186,28 @@ function MeasurementForm(p){
       {measType==="wall"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft}/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {hp&&(<div style={{marginBottom:12}}><StepLabel>{(hp?"④":"③")+" Price"}</StepLabel><Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/></div>)}
-      {fin>0&&(<div style={{background:C.bg,borderRadius:8,padding:12,marginBottom:12,fontSize:13,color:C.dim,border:"1px solid "+C.border}}>
+      {fin>0&&(<div style={{background:C.accentBg,borderRadius:6,padding:12,marginBottom:12,fontSize:13,color:C.textSec,border:"1px solid "+C.borderLight}}>
         <div style={{fontWeight:600,color:C.text,marginBottom:4,fontSize:14}}>{hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft")}</div>
-        <div>{"Total: "}<span style={{color:C.white,fontWeight:600}}>{fin.toLocaleString()+" sq ft"}</span>{needsPitch&&sqft!==adj&&(<span>{" (adj. from "+Math.round(sqft)+" w/ "+pitch+")"}</span>)}</div>
-        {hp&&(parseFloat(price)||0)>0&&(<div>{"Line Total: "}<span style={{color:C.green,fontWeight:700}}>{"$"+Math.ceil(fin*(parseFloat(price)||0)).toLocaleString()+".00"}</span></div>)}
+        <div>{"Total: "}<span style={{color:C.text,fontWeight:600}}>{fin.toLocaleString()+" sq ft"}</span>{needsPitch&&sqft!==adj&&(<span>{" (adj. from "+Math.round(sqft)+" w/ "+pitch+")"}</span>)}</div>
+        {hp&&(parseFloat(price)||0)>0&&(<div>{"Line Total: "}<span style={{color:C.accent,fontWeight:700}}>{"$"+Math.ceil(fin*(parseFloat(price)||0)).toLocaleString()+".00"}</span></div>)}
       </div>)}
       <GreenBtn onClick={handleAdd}>{"+ "+(hp?"Add to Quote":"Add Measurement")}</GreenBtn>
     </div>)}
   </div>);
 }
 
-function MaterialTabs(p){return(<div style={{display:"flex",gap:0,borderRadius:10,overflow:"hidden",border:"1px solid "+C.border,marginBottom:16}}>{[{id:"fiberglass",label:"FIBERGLASS"},{id:"opencell",label:"OPEN CELL"},{id:"closedcell",label:"CLOSED CELL"}].map(function(t){return(<button key={t.id} onClick={function(){p.setActiveTab(t.id);}} style={{flex:1,padding:"12px 4px",border:"none",cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontSize:11,fontWeight:800,letterSpacing:"0.04em",textTransform:"uppercase",background:p.activeTab===t.id?C.green:C.card,color:p.activeTab===t.id?"#000":C.dim}}>{t.label}</button>);})}</div>);}
+function MaterialTabs(p){return(<div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid "+C.border,marginBottom:16}}>{[{id:"fiberglass",label:"FIBERGLASS"},{id:"opencell",label:"OPEN CELL"},{id:"closedcell",label:"CLOSED CELL"}].map(function(t){return(<button key={t.id} onClick={function(){p.setActiveTab(t.id);}} style={{flex:1,padding:"12px 4px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.04em",textTransform:"uppercase",background:p.activeTab===t.id?C.accent:C.card,color:p.activeTab===t.id?"#fff":C.dim}}>{t.label}</button>);})}</div>);}
 
 function CustomerInfo(p){
   var s1=useState(false),show=s1[0],setShow=s1[1];
   return(<div style={{padding:"0 16px 12px"}}>
-    <button onClick={function(){setShow(!show);}} style={{width:"100%",padding:"12px 16px",borderRadius:10,border:"1px solid "+C.border,background:C.card,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Outfit',sans-serif",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>{p.custName?"Customer: "+p.custName:"Customer Info"}</span><span style={{fontSize:16,color:C.dim}}>{show?"▲":"▼"}</span></button>
-    {show&&(<div style={{background:C.card,borderRadius:12,padding:16,marginTop:8,border:"1px solid "+C.border}}>
+    <button onClick={function(){setShow(!show);}} style={{width:"100%",padding:"12px 16px",borderRadius:6,border:"1px solid "+C.border,background:C.card,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:C.shadow}}><span>{p.custName?"Customer: "+p.custName:"Customer Info"}</span><span style={{fontSize:16,color:C.dim}}>{show?"▲":"▼"}</span></button>
+    {show&&(<div style={{background:C.card,borderRadius:6,padding:16,marginTop:8,border:"1px solid "+C.border,boxShadow:C.shadow}}>
       <div style={{marginBottom:10}}><Input label="Customer Name" value={p.custName} onChange={p.setCustName} type="text" placeholder="John Doe"/></div>
       <div style={{marginBottom:10}}><Input label="Address" value={p.custAddr} onChange={p.setCustAddr} type="text" placeholder="123 Main St, Tulsa OK"/></div>
       <Row><Col><Input label="Phone" value={p.custPhone} onChange={p.setCustPhone} type="tel" placeholder="(918) 555-0000"/></Col><Col><Input label="Email" value={p.custEmail} onChange={p.setCustEmail} type="email" placeholder="john@email.com"/></Col></Row>
       <Input label="Job Site (if different)" value={p.jobAddr} onChange={p.setJobAddr} type="text" placeholder="456 Oak Ave"/>
-      <button onClick={function(){if(confirm("Clear customer info?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");}}} style={{width:"100%",marginTop:12,padding:"8px",borderRadius:8,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear Customer Info"}</button>
+      <button onClick={function(){if(confirm("Clear customer info?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");}}} style={{width:"100%",marginTop:12,padding:"8px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear Customer Info"}</button>
     </div>)}
   </div>);
 }
@@ -322,31 +322,31 @@ function TakeOff(p){
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
     <div style={{padding:"0 16px 12px"}}>
-      <label style={{fontSize:11,fontWeight:700,color:C.dim,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
-      <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:8,color:C.white,fontSize:14,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical"}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
+      <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
+      <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
     </div>
     <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
     {p.measurements.length>0&&(<div style={{padding:"20px 16px"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
       {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
         return(<div key={gn} style={{marginBottom:16}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.border}}>{gn}<span style={{color:C.green,marginLeft:8}}>{gt.toLocaleString()+" sq ft"}</span></div>
-          <div style={{background:C.card,borderRadius:10,border:"1px solid "+C.border,overflow:"hidden"}}>
-            {groups[gn].map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<groups[gn].length-1?"1px solid "+C.border:"none"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.border}}>{gn}<span style={{color:C.accent,marginLeft:8}}>{gt.toLocaleString()+" sq ft"}</span></div>
+          <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden",boxShadow:C.shadow}}>
+            {groups[gn].map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<groups[gn].length-1?"1px solid "+C.borderLight:"none"}}>
               <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div>{item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}</div>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.white}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontWeight:600}}>{"✕"}</button></div>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
             </div>);})}
           </div>
         </div>);
       })}
-      <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder →"}</GreenBtn>
-      <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
+      <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
+      <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
     <div style={{padding:"12px 16px 0"}}>
       <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser);}}>{"Print Take Off"}</GreenBtn>
-      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser);}} mt={8}>{"📥 Download Take Off PDF"}</GreenBtn>
+      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser);}} mt={8}>{"Download Take Off PDF"}</GreenBtn>
     </div>
-    {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"📏"}</div><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
+    {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
   </div>);
 }
 
@@ -387,7 +387,7 @@ function QuoteBuilderSection(p){
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
   var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal;
   var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
-  var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.white,fontSize:13,fontFamily:"'Outfit',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
+  var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 
   function handlePriceImport(item){var pr=parseFloat(pricingPrice)||0;if(pr<=0||!pricingMat)return;
     var desc="Install "+pricingMat.toLowerCase()+" in "+item.location.toLowerCase();
@@ -406,40 +406,40 @@ function QuoteBuilderSection(p){
       <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
         {opts.map(function(o,idx){return(
           <button key={idx} onClick={function(){setActiveIdx(idx);setPricingId(null);}}
-            style={{padding:"8px 14px",borderRadius:8,border:activeIdx===idx?"2px solid "+C.green:"1px solid "+C.border,background:activeIdx===idx?C.card:"transparent",color:activeIdx===idx?C.green:C.dim,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+            style={{padding:"8px 14px",borderRadius:6,border:activeIdx===idx?"2px solid "+C.accent:"1px solid "+C.border,background:activeIdx===idx?C.accentBg:C.card,color:activeIdx===idx?C.accent:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
             {o.name}{o.items.length>0?" ("+o.items.length+")":""}
           </button>
         );})}
-        <button onClick={addOption} style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+C.dim,background:"transparent",color:C.dim,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"+"}</button>
+        <button onClick={addOption} style={{padding:"8px 12px",borderRadius:6,border:"1px dashed "+C.dim,background:"transparent",color:C.dim,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"+"}</button>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
         {editingName?(<div style={{display:"flex",gap:6,flex:1}}>
-          <input style={{flex:1,padding:"6px 10px",background:C.input,border:"1px solid "+C.green,borderRadius:6,color:C.white,fontSize:13,fontFamily:"'Outfit',sans-serif",outline:"none"}}
+          <input style={{flex:1,padding:"6px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}
             type="text" value={opt.name} onChange={function(e){updateOpt({name:e.target.value});}} autoFocus
             onKeyDown={function(e){if(e.key==="Enter")setEditingName(false);}}/>
-          <button onClick={function(){setEditingName(false);}} style={{padding:"6px 10px",background:C.green,border:"none",borderRadius:6,color:"#000",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"OK"}</button>
+          <button onClick={function(){setEditingName(false);}} style={{padding:"6px 10px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"OK"}</button>
         </div>):(<div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
-          <span style={{fontSize:14,fontWeight:700,color:C.white}}>{opt.name}</span>
-          <button onClick={function(){setEditingName(true);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"✏️ rename"}</button>
-          {opts.length>1&&(<button onClick={function(){if(confirm("Delete \""+opt.name+"\"?"))removeOption(activeIdx);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif",marginLeft:"auto"}}>{"🗑 delete option"}</button>)}
+          <span style={{fontSize:14,fontWeight:600,color:C.text}}>{opt.name}</span>
+          <button onClick={function(){setEditingName(true);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Rename"}</button>
+          {opts.length>1&&(<button onClick={function(){if(confirm("Delete \""+opt.name+"\"?"))removeOption(activeIdx);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginLeft:"auto"}}>{"Delete option"}</button>)}
         </div>)}
       </div>
     </div>
 
     {/* FROM TAKE OFF */}
     {unpriced.length>0&&(<div style={{padding:"0 16px 16px"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"From Take Off — Price These ("+unpriced.length+")"}</div>
-      <div style={{background:C.card,borderRadius:10,border:"1px solid "+C.border,overflow:"hidden"}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"From Take Off — Price These ("+unpriced.length+")"}</div>
+      <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden"}}>
         {unpriced.map(function(item,idx){return(<div key={item.id} style={{padding:"12px 14px",borderBottom:idx<unpriced.length-1?"1px solid "+C.border:"none"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
             <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:12}}>
-              {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat("");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.green,borderRadius:8,color:C.green,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
-              <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:14,cursor:"pointer"}}>{"🗑"}</button>
+              {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat("");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.accent,borderRadius:6,color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
+              <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button>
             </div>
           </div>
           {pricingId===item.id&&(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
-            <div style={{fontSize:11,color:C.green,fontWeight:600,marginBottom:6}}>{"Adding to: "+opt.name}</div>
+            <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:6}}>{"Adding to: "+opt.name}</div>
             <select style={matSs} value={pricingMat} onChange={function(e){setPricingMat(e.target.value);}}>
               <option value="">{"— Select Material —"}</option>
               <optgroup label="Fiberglass">{FIBERGLASS_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
@@ -447,14 +447,14 @@ function QuoteBuilderSection(p){
               <optgroup label="Closed Cell Foam">{CLOSED_CELL_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
             </select>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
-              <input style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.green,borderRadius:6,color:C.white,fontSize:14,fontFamily:"'Outfit',sans-serif",outline:"none"}} type="number" value={pricingPrice} onChange={function(e){setPricingPrice(e.target.value);}} placeholder="$/sf" step="0.01" autoFocus/>
-              <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.green,border:"none",borderRadius:6,color:"#000",fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"Add"}</button>
-              <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>{"✕"}</button>
+              <input style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}} type="number" value={pricingPrice} onChange={function(e){setPricingPrice(e.target.value);}} placeholder="$/sf" step="0.01" autoFocus/>
+              <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
+              <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Remove"}</button>
             </div>
           </div>)}
         </div>);})}
       </div>
-      <button onClick={function(){if(confirm("Clear all imported items?"))p.setImportedItems(function(prev){return prev.filter(function(i){return i.priced;});});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
+      <button onClick={function(){if(confirm("Clear all imported items?"))p.setImportedItems(function(prev){return prev.filter(function(i){return i.priced;});});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
 
     {/* ADD MANUALLY */}
@@ -462,56 +462,56 @@ function QuoteBuilderSection(p){
 
     {/* ITEMS FOR ACTIVE OPTION */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 20px"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — Items ("+opt.items.length+")"}</div>
-      <div style={{background:C.card,borderRadius:12,padding:16,border:"1px solid "+C.border}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — Items ("+opt.items.length+")"}</div>
+      <div style={{background:C.card,borderRadius:6,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
         {opt.items.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:idx<opt.items.length-1?"1px solid "+C.border:"none"}}>
           <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.description}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
-          <div style={{marginLeft:12}}><button onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontWeight:600}}>{"REMOVE"}</button></div>
+          <div style={{marginLeft:12}}><button onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"REMOVE"}</button></div>
         </div>);})}
 
         {/* ADJUSTMENTS */}
         <div style={{paddingTop:12,marginTop:8,borderTop:"1px solid "+C.borderLight}}>
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.pso} onChange={function(e){updateOpt({pso:e.target.checked,overrideTotal:""});}}
-              style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit"}</span>
             {opt.pso&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$600"}</span>)}
           </label>
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.extraLabor} onChange={function(e){updateOpt({extraLabor:e.target.checked,overrideTotal:""});}}
-              style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Extra Labor"}</span>
             <span style={{fontSize:10,color:C.dim,fontStyle:"italic"}}>{"(not on quote)"}</span>
             {opt.extraLabor&&(
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
-                <span style={{fontSize:13,color:C.white}}>{"$"}</span>
+                <span style={{fontSize:13,color:C.text}}>{"$"}</span>
                 <input type="number" value={opt.extraLaborAmt} onChange={function(e){updateOpt({extraLaborAmt:e.target.value,overrideTotal:""});}}
-                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
+                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}
           </label>
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.tripCharge} onChange={function(e){updateOpt({tripCharge:e.target.checked,overrideTotal:""});}}
-              style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Trip Charge"}</span>
             <span style={{fontSize:10,color:C.dim,fontStyle:"italic"}}>{"(not on quote)"}</span>
             {opt.tripCharge&&(
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
-                <span style={{fontSize:13,color:C.white}}>{"$"}</span>
+                <span style={{fontSize:13,color:C.text}}>{"$"}</span>
                 <input type="number" value={opt.tripChargeAmt} onChange={function(e){updateOpt({tripChargeAmt:e.target.value,overrideTotal:""});}}
-                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
+                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}
           </label>
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.energySeal||false} onChange={function(e){updateOpt({energySeal:e.target.checked,overrideTotal:""});}}
-              style={{width:18,height:18,accentColor:C.green,cursor:"pointer"}}/>
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Energy Seal & Plates"}</span>
             {opt.energySeal&&(
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
-                <span style={{fontSize:13,color:C.white}}>{"$"}</span>
+                <span style={{fontSize:13,color:C.text}}>{"$"}</span>
                 <input type="number" value={opt.energySealAmt||""} onChange={function(e){updateOpt({energySealAmt:e.target.value,overrideTotal:""});}}
-                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:13,fontWeight:600,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
+                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}
           </label>
@@ -520,26 +520,26 @@ function QuoteBuilderSection(p){
         {/* TOTAL */}
         <div style={{paddingTop:12,marginTop:4,borderTop:"1px solid "+C.borderLight}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0 0"}}>
-            <span style={{fontSize:18,fontWeight:800,color:C.white}}>{"TOTAL"}</span>
+            <span style={{fontSize:18,fontWeight:800,color:C.text}}>{"TOTAL"}</span>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:16,fontWeight:800,color:C.white}}>{"$"}</span>
+              <span style={{fontSize:16,fontWeight:800,color:C.text}}>{"$"}</span>
               <input type="number" value={opt.overrideTotal!==""?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
-                style={{width:110,padding:"6px 10px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.white,fontSize:18,fontWeight:800,fontFamily:"'Outfit',sans-serif",outline:"none",textAlign:"right"}} step="1"/>
+                style={{width:110,padding:"6px 10px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:18,fontWeight:800,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} step="1"/>
             </div>
           </div>
           {opt.overrideTotal!==""&&parseFloat(opt.overrideTotal)!==subtotal&&(<div style={{fontSize:11,color:C.dim,textAlign:"right",marginTop:4}}>{"Calculated: $"+subtotal.toFixed(0)}</div>)}
         </div>
       </div>
-      <button onClick={function(){if(confirm("Clear items from "+opt.name+"?"))updateOpt({items:[]});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif",textTransform:"uppercase"}}>{"Clear "+opt.name}</button>
+      <button onClick={function(){if(confirm("Clear items from "+opt.name+"?"))updateOpt({items:[]});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear "+opt.name}</button>
     </div>)}
 
     {/* PRINT/DOWNLOAD — show when ANY option has items */}
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"📥 Download Quote PDF"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Download Quote PDF"}</GreenBtn>
     </div>)}
 
-    {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:36,marginBottom:8}}>{"💰"}</div><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
+    {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
   </div>);
 }
 
@@ -616,26 +616,27 @@ function SavedJobsPanel(p) {
         <div style={{ marginBottom: 12 }}>
           {!showSave ? (
             <button onClick={function() { setShowSave(true); setSaveName(p.custName || ""); }}
-              style={{ width: "100%", padding: "11px 16px", borderRadius: 10, border: "1px solid " + C.blue, background: "transparent", color: C.blue, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {"💾 Save Current Job"}
+              style={{ width: "100%", padding: "11px 16px", borderRadius: 6, border: "1px solid " + C.accent, background: "transparent", color: C.accent, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {"Save Current Job"}
             </button>
           ) : (
-            <div style={{ background: C.card, borderRadius: 10, padding: 14, border: "1px solid " + C.blue }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.blue, textTransform: "uppercase", marginBottom: 8 }}>{"Save Job As"}</div>
+            <div style={{ background: C.card, borderRadius: 6, padding: 14, border: "1px solid " + C.accent, boxShadow: C.shadowMd }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", marginBottom: 8 }}>{"Save Job As"}</div>
               <div style={{ display: "flex", gap: 8 }}>
-                <input style={{ flex: 1, padding: "8px 12px", background: C.input, border: "1px solid " + C.inputBorder, borderRadius: 8, color: C.white, fontSize: 14, fontFamily: "'Outfit', sans-serif", outline: "none" }}
+                <input style={{ flex: 1, padding: "8px 12px", background: C.input, border: "1px solid " + C.inputBorder, borderRadius: 6, color: C.text, fontSize: 14, fontFamily: "'Inter', sans-serif", outline: "none", transition: "border-color 0.15s" }}
                   type="text" value={saveName} onChange={function(e) { setSaveName(e.target.value); }} placeholder="Job name (e.g. Smith Residence)" autoFocus
                   onKeyDown={function(e) { if (e.key === "Enter") handleSave(); }}
+                  onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}}
                 />
-                <button onClick={handleSave} style={{ padding: "8px 16px", background: C.blue, border: "none", borderRadius: 8, color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{"Save"}</button>
-                <button onClick={function() { setShowSave(false); }} style={{ padding: "8px 12px", background: "none", border: "1px solid " + C.dim, borderRadius: 8, color: C.dim, fontSize: 13, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{"✕"}</button>
+                <button onClick={handleSave} style={{ padding: "8px 16px", background: C.accent, border: "none", borderRadius: 6, color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>{"Save"}</button>
+                <button onClick={function() { setShowSave(false); }} style={{ padding: "8px 12px", background: "none", border: "1px solid " + C.dim, borderRadius: 6, color: C.dim, fontSize: 13, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>{"Cancel"}</button>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {status && (<div style={{ padding: "8px 12px", background: "#1a2e1a", border: "1px solid " + C.green, borderRadius: 8, fontSize: 13, color: C.green, fontWeight: 600, marginBottom: 12, textAlign: "center" }}>{status}</div>)}
+      {status && (<div style={{ padding: "8px 12px", background: C.accentBg, border: "1px solid " + C.accent, borderRadius: 6, fontSize: 13, color: C.accent, fontWeight: 600, marginBottom: 12, textAlign: "center" }}>{status}</div>)}
 
       {loading && (<div style={{ fontSize: 12, color: C.dim, textAlign: "center", padding: "16px 0" }}>{"Loading..."}</div>)}
 
@@ -645,12 +646,12 @@ function SavedJobsPanel(p) {
         return (
           <div key={member} style={{ marginBottom: 10 }}>
             <button onClick={function() { setOpenSections(function(prev) { var n = Object.assign({}, prev); n[member] = !n[member]; return n; }); }}
-              style={{ width: "100%", padding: "12px 16px", borderRadius: isOpen ? "10px 10px 0 0" : 10, border: "1px solid " + C.border, background: C.card, color: C.white, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              style={{ width: "100%", padding: "12px 16px", borderRadius: isOpen ? "6px 6px 0 0" : 6, border: "1px solid " + C.border, background: C.card, color: C.text, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: C.shadow }}>
               <span>{member + (memberJobs.length > 0 ? " (" + memberJobs.length + ")" : "")}</span>
               <span style={{ fontSize: 14, color: C.dim }}>{isOpen ? "▲" : "▼"}</span>
             </button>
             {isOpen && (
-              <div style={{ background: C.card, borderRadius: "0 0 10px 10px", border: "1px solid " + C.border, borderTop: "none", overflow: "hidden" }}>
+              <div style={{ background: C.card, borderRadius: "0 0 6px 6px", border: "1px solid " + C.border, borderTop: "none", overflow: "hidden" }}>
                 {memberJobs.length === 0 && (
                   <div style={{ padding: "12px 14px", fontSize: 12, color: C.dim, textAlign: "center" }}>{"No saved jobs"}</div>
                 )}
@@ -663,19 +664,19 @@ function SavedJobsPanel(p) {
                   if (measCount > 0) info.push(measCount + " measurements");
                   if (quoteCount > 0) info.push(quoteCount + " quote items");
                   return (
-                    <div key={job.id} style={{ padding: "12px 14px", borderBottom: idx < memberJobs.length - 1 ? "1px solid " + C.border : "none" }}>
+                    <div key={job.id} style={{ padding: "12px 14px", borderBottom: idx < memberJobs.length - 1 ? "1px solid " + C.borderLight : "none" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: C.white }}>{job.job_name}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{job.job_name}</div>
                           <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
                             {date + (info.length > 0 ? " · " + info.join(", ") : "")}
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button onClick={function() { handleLoad(job); }}
-                            style={{ padding: "6px 12px", background: C.green, border: "none", borderRadius: 6, color: "#000", fontWeight: 700, fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textTransform: "uppercase" }}>{"Load"}</button>
+                            style={{ padding: "6px 12px", background: C.accent, border: "none", borderRadius: 6, color: "#fff", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: "'Inter', sans-serif", textTransform: "uppercase" }}>{"Load"}</button>
                           <button onClick={function() { handleDelete(job); }}
-                            style={{ padding: "6px 8px", background: "none", border: "1px solid " + C.danger, borderRadius: 6, color: C.danger, fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{"✕"}</button>
+                            style={{ padding: "6px 8px", background: "none", border: "1px solid " + C.danger, borderRadius: 6, color: C.danger, fontSize: 11, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>{"Delete"}</button>
                         </div>
                       </div>
                     </div>
@@ -694,19 +695,19 @@ function SavedJobsPanel(p) {
 
 function LoginScreen(p) {
   return (
-    <div style={{ fontFamily: "'Outfit', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <style>{"@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');"}</style>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: C.white, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 }}>{"Insulation Services of Tulsa"}</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: C.text, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 }}>{"Insulation Services of Tulsa"}</h1>
         <div style={{ fontSize: 11, color: C.dim, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
       </div>
       <div style={{ width: "100%", maxWidth: 320 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" }}>{"Who's working?"}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" }}>{"Who's working?"}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {TEAM_MEMBERS.map(function(name) {
             return (
               <button key={name} onClick={function() { localStorage.setItem("ist-user", name); p.onLogin(name); }}
-                style={{ width: "100%", padding: "16px 20px", borderRadius: 12, border: "1px solid " + C.border, background: C.card, color: C.white, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textAlign: "center", transition: "all 0.15s ease" }}>
+                style={{ width: "100%", padding: "16px 20px", borderRadius: 6, border: "1px solid " + C.border, background: C.card, color: C.text, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", textAlign: "center", transition: "all 0.15s ease", boxShadow: C.shadow }}>
                 {name}
               </button>
             );
@@ -797,19 +798,19 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div style={{ fontFamily: "'Outfit', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", maxWidth: 520, margin: "0 auto", paddingBottom: 100 }}>
-      <style>{"@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');"}</style>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", maxWidth: 520, margin: "0 auto", paddingBottom: 100 }}>
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
 
       {/* HEADER */}
-      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "2px solid " + C.green, textAlign: "center", position: "sticky", top: 0, zIndex: 100 }}>
+      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <div style={{ fontSize: 10, color: C.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
-          <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
+          <div style={{ fontSize: 10, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
+          <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
         </div>
-        <h1 style={{ fontSize: 16, fontWeight: 800, color: C.white, letterSpacing: "0.04em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
+        <h1 style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "0.04em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
         <div style={{ fontSize: 10, color: C.dim, marginTop: 3, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
 
-        <div style={{ display: "flex", gap: 0, borderRadius: 10, overflow: "hidden", border: "1px solid " + C.border, marginTop: 14 }}>
+        <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: "1px solid " + C.border, marginTop: 14 }}>
           {[
             { id: "takeoff", label: "TAKE OFF", badge: meas.length || null },
             { id: "quote", label: "QUOTE", badge: qOpts.reduce(function(s,o){return s+o.items.length;},0) || null },
@@ -817,9 +818,9 @@ export default function App() {
           ].map(function(t) {
             return (
               <button key={t.id} onClick={function() { setSec(t.id); }}
-                style={{ flex: 1, padding: "10px 6px", border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase", background: sec === t.id ? C.white : C.card, color: sec === t.id ? "#000" : C.dim, transition: "all 0.15s ease" }}>
+                style={{ flex: 1, padding: "10px 6px", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: sec === t.id ? C.accent : C.card, color: sec === t.id ? "#fff" : C.dim, transition: "all 0.15s ease" }}>
                 {t.label}
-                {t.badge ? (<span style={{ display: "inline-block", marginLeft: 5, background: sec === t.id ? C.green : "#333", color: sec === t.id ? "#000" : C.dim, fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 10, minWidth: 18, textAlign: "center" }}>{t.badge}</span>) : null}
+                {t.badge ? (<span style={{ display: "inline-block", marginLeft: 5, background: sec === t.id ? "rgba(255,255,255,0.25)" : C.borderLight, color: sec === t.id ? "#fff" : C.textSec, fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, minWidth: 18, textAlign: "center" }}>{t.badge}</span>) : null}
               </button>
             );
           })}
@@ -840,7 +841,7 @@ export default function App() {
             />
             <div style={{ padding: "0 16px" }}>
               <button onClick={handleNewJob}
-                style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "1px solid " + C.borderLight, background: "transparent", color: C.text, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 6, border: "1px solid " + C.borderLight, background: "transparent", color: C.text, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 {"+ New Job"}
               </button>
             </div>

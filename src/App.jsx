@@ -262,12 +262,15 @@ function buildQuoteHtml(customer,opts,salesman){
   var optSections=optsWithItems.map(function(opt,oi){
     var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
     var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:10px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
+    var removalRowNum=opt.items.length+(opt.energySeal?2:1);
+    var removalRow=opt.removal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+removalRowNum+'</td><td style="padding:10px 8px;font-size:13px">Remove existing insulation.</td></tr>':"";
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
     var psoCredit=opt.pso?600:0;
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
     var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
     var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
-    var sub=lineTotal+el+tc+es;
+    var rm=opt.removal?(parseFloat(opt.removalAmt)||0):0;
+    var sub=lineTotal+el+tc+es+rm;
     var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
     var header=optsWithItems.length>1?'<div style="font-size:18px;font-weight:800;color:#111;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
@@ -281,7 +284,7 @@ function buildQuoteHtml(customer,opts,salesman){
     }else{
       totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:280px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
     }
-    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
+    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+removalRow+'</tbody></table>'+totalHtml;
   }).join("");
   return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:20px;border-bottom:3px solid #222"><div><h1 style="font-size:26px;font-weight:800;color:#111;margin-bottom:4px">'+COMPANY.name+'</h1><p style="font-size:13px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:13px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#111">QUOTE</div><div style="font-size:13px;color:#666;margin-top:4px">'+qn+'</div><div style="font-size:13px;color:#666">'+today+'</div></div></div>'+
@@ -362,7 +365,7 @@ function TakeOff(p){
 
 /* ══════════ QUOTE BUILDER ══════════ */
 
-function newOption(name){return{name:name,items:[],pso:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",overrideTotal:""};}
+function newOption(name){return{name:name,items:[],pso:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",removal:false,removalAmt:"",overrideTotal:""};}
 
 function QuoteBuilderSection(p){
   var s1=useState("fiberglass"),matTab=s1[0],setMatTab=s1[1];
@@ -395,7 +398,8 @@ function QuoteBuilderSection(p){
   var extraLabor=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
   var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
-  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal;
+  var removal=opt.removal?(parseFloat(opt.removalAmt)||0):0;
+  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal+removal;
   var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 
@@ -521,6 +525,18 @@ function QuoteBuilderSection(p){
               <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
                 <span style={{fontSize:13,color:C.text}}>{"$"}</span>
                 <input type="number" value={opt.energySealAmt||""} onChange={function(e){updateOpt({energySealAmt:e.target.value,overrideTotal:""});}}
+                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
+              </div>
+            )}
+          </label>
+          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+            <input type="checkbox" checked={opt.removal||false} onChange={function(e){updateOpt({removal:e.target.checked,overrideTotal:""});}}
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Removal"}</span>
+            {opt.removal&&(
+              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
+                <span style={{fontSize:13,color:C.text}}>{"$"}</span>
+                <input type="number" value={opt.removalAmt||""} onChange={function(e){updateOpt({removalAmt:e.target.value,overrideTotal:""});}}
                   style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
               </div>
             )}

@@ -149,8 +149,7 @@ function AreaMeasurement(p){
 }
 
 function MeasurementForm(p){
-  var isRemoval=p.tab==="removal";
-  var mats=isRemoval?[]:p.tab==="opencell"?OPEN_CELL_MATERIALS:p.tab==="closedcell"?CLOSED_CELL_MATERIALS:FIBERGLASS_MATERIALS;
+  var mats=p.tab==="opencell"?OPEN_CELL_MATERIALS:p.tab==="closedcell"?CLOSED_CELL_MATERIALS:FIBERGLASS_MATERIALS;
   var isFoam=p.tab==="opencell"||p.tab==="closedcell";
   var hp=p.hasPrice;
   var s1=useState(""),lid=s1[0],setLid=s1[1];
@@ -163,34 +162,31 @@ function MeasurementForm(p){
   var loc=LOCATIONS.find(function(x){return x.id===lid;});
   var locLabel=loc?(loc.id==="custom"?cl:loc.label):"";
   var locGroup=loc?(loc.id==="custom"?"Other":loc.group):"Other";
-  var needsPitch=!isRemoval&&loc&&loc.type==="roofline"&&(!hp||isFoam);
+  var needsPitch=loc&&loc.type==="roofline"&&(!hp||isFoam);
   var measType=loc?(loc.type==="wall"?"wall":"area"):null;
   var pf=needsPitch?(PITCH_FACTORS[pitch]||1):1;
   var adj=sqft*pf;var fin=Math.round(adj);
   var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"};
-  var tabLabel=isRemoval?"Removal":p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
+  var tabLabel=p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
   function handleAdd(){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
-    var useMat=isRemoval?"Removal":hp?mat:"(material TBD)";
-    var desc=isRemoval?"Remove existing insulation.":hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
-    p.onAdd({type:isRemoval?"Removal":isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc});
+    var useMat=hp?mat:"(material TBD)";
+    var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
+    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc});
     setSqft(0);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});
   }
-  var showMat=hp&&!isRemoval;
-  var stepMeas=showMat?"③":"②";
-  var stepPrice=showMat?"④":"③";
   return(<div style={{background:C.card,borderRadius:6,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
     <div style={{fontSize:15,fontWeight:600,marginBottom:14,color:C.text}}>{hp?(tabLabel+" — Add Line Item"):"Add Measurement"}</div>
     <div style={{marginBottom:12}}><StepLabel>{"① Location"}</StepLabel><select style={ss} value={lid} onChange={function(e){setLid(e.target.value);setSqft(0);setMk(function(k){return k+1;});}}><option value="">{"— Select Location —"}</option>{GROUP_ORDER.filter(function(g){return LOCATIONS.some(function(loc){return loc.group===g;});}).map(function(g){return(<optgroup key={g} label={g}>{LOCATIONS.filter(function(loc){return loc.group===g;}).map(function(x){return(<option key={x.id} value={x.id}>{x.label}</option>);})}</optgroup>);})}</select></div>
     {lid==="custom"&&(<div style={{marginBottom:12}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
     {loc&&(<div>
-      {showMat&&(<div style={{marginBottom:12}}><StepLabel>{"② Material"}</StepLabel><select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select></div>)}
-      <div style={{marginBottom:4}}><StepLabel>{stepMeas+" Measurements"}</StepLabel></div>
+      {hp&&(<div style={{marginBottom:12}}><StepLabel>{"② Material"}</StepLabel><select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select></div>)}
+      <div style={{marginBottom:4}}><StepLabel>{(hp?"③":"②")+" Measurements"}</StepLabel></div>
       {measType==="wall"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft}/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
-      {hp&&(<div style={{marginBottom:12}}><StepLabel>{stepPrice+" Price"}</StepLabel><Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/></div>)}
+      {hp&&(<div style={{marginBottom:12}}><StepLabel>{(hp?"④":"③")+" Price"}</StepLabel><Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/></div>)}
       {fin>0&&(<div style={{background:C.accentBg,borderRadius:6,padding:12,marginBottom:12,fontSize:13,color:C.textSec,border:"1px solid "+C.borderLight}}>
-        <div style={{fontWeight:600,color:C.text,marginBottom:4,fontSize:14}}>{isRemoval?"Remove existing insulation.":hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft")}</div>
+        <div style={{fontWeight:600,color:C.text,marginBottom:4,fontSize:14}}>{hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft")}</div>
         <div>{"Total: "}<span style={{color:C.text,fontWeight:600}}>{fin.toLocaleString()+" sq ft"}</span>{needsPitch&&sqft!==adj&&(<span>{" (adj. from "+Math.round(sqft)+" w/ "+pitch+")"}</span>)}</div>
         {hp&&(parseFloat(price)||0)>0&&(<div>{"Line Total: "}<span style={{color:C.accent,fontWeight:700}}>{"$"+Math.ceil(fin*(parseFloat(price)||0)).toLocaleString()+".00"}</span></div>)}
       </div>)}
@@ -199,7 +195,7 @@ function MeasurementForm(p){
   </div>);
 }
 
-function MaterialTabs(p){return(<div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid "+C.border,marginBottom:16}}>{[{id:"fiberglass",label:"FIBERGLASS"},{id:"opencell",label:"OPEN CELL"},{id:"closedcell",label:"CLOSED CELL"},{id:"removal",label:"REMOVAL"}].map(function(t){return(<button key={t.id} onClick={function(){p.setActiveTab(t.id);}} style={{flex:1,padding:"12px 4px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.04em",textTransform:"uppercase",background:p.activeTab===t.id?C.accent:C.card,color:p.activeTab===t.id?"#fff":C.dim}}>{t.label}</button>);})}</div>);}
+function MaterialTabs(p){return(<div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid "+C.border,marginBottom:16}}>{[{id:"fiberglass",label:"FIBERGLASS"},{id:"opencell",label:"OPEN CELL"},{id:"closedcell",label:"CLOSED CELL"}].map(function(t){return(<button key={t.id} onClick={function(){p.setActiveTab(t.id);}} style={{flex:1,padding:"12px 4px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.04em",textTransform:"uppercase",background:p.activeTab===t.id?C.accent:C.card,color:p.activeTab===t.id?"#fff":C.dim}}>{t.label}</button>);})}</div>);}
 
 function CustomerInfo(p){
   var s1=useState(false),show=s1[0],setShow=s1[1];
@@ -320,10 +316,9 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements){
 /* ══════════ TAKE OFF ══════════ */
 
 function TakeOff(p){
-  var s0=useState("fiberglass"),toTab=s0[0],setToTab=s0[1];
   function addM(item){
     p.setMeasurements(function(prev){
-      var existing=prev.find(function(m){return m.location===item.location && m.locationId===item.locationId && (m.type||"Fiberglass")===(item.type||"Fiberglass");});
+      var existing=prev.find(function(m){return m.location===item.location && m.locationId===item.locationId;});
       if(existing){
         return prev.map(function(m){return m.id===existing.id?Object.assign({},m,{sqft:m.sqft+item.sqft}):m;});
       }
@@ -339,10 +334,7 @@ function TakeOff(p){
       <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
       <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
     </div>
-    <div style={{padding:"0 16px"}}>
-      <div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid "+C.border,marginBottom:16}}>{[{id:"fiberglass",label:"MEASURE"},{id:"removal",label:"REMOVAL"}].map(function(t){return(<button key={t.id} onClick={function(){setToTab(t.id);}} style={{flex:1,padding:"12px 4px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.04em",textTransform:"uppercase",background:toTab===t.id?C.accent:C.card,color:toTab===t.id?"#fff":C.dim}}>{t.label}</button>);})}</div>
-      <MeasurementForm key={"to-"+toTab} tab={toTab} onAdd={addM} hasPrice={false}/>
-    </div>
+    <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
     {p.measurements.length>0&&(<div style={{padding:"20px 16px"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
       {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
@@ -350,7 +342,7 @@ function TakeOff(p){
           <div style={{fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.border}}>{gn}<span style={{color:C.accent,marginLeft:8}}>{gt.toLocaleString()+" sq ft"}</span></div>
           <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden",boxShadow:C.shadow}}>
             {groups[gn].map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<groups[gn].length-1?"1px solid "+C.borderLight:"none"}}>
-              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.type==="Removal"?(<span><span style={{fontSize:10,fontWeight:700,color:C.danger,background:C.dangerBg,padding:"2px 6px",borderRadius:4,marginRight:6}}>{"REMOVAL"}</span>{item.location}</span>):item.location}</div>{item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}</div>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div>{item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}</div>
               <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
             </div>);})}
           </div>
@@ -406,12 +398,10 @@ function QuoteBuilderSection(p){
   var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 
-  function handlePriceImport(item){var pr=parseFloat(pricingPrice)||0;if(pr<=0)return;
-    var isRem=item.type==="Removal";
-    if(!isRem&&!pricingMat)return;
-    var desc=isRem?"Remove existing insulation.":"Install "+pricingMat.toLowerCase()+" in "+item.location.toLowerCase();
-    var matVal=isRem?"Removal":pricingMat;
-    addItem(Object.assign({},item,{material:matVal,pricePerUnit:pr,total:Math.ceil(item.sqft*pr),description:desc}));
+  function handlePriceImport(item){var pr=parseFloat(pricingPrice)||0;if(pr<=0||!pricingMat)return;
+    var isRem=pricingMat==="Removal";
+    var desc=isRem?("Remove existing insulation from "+item.location.toLowerCase()+"."):("Install "+pricingMat.toLowerCase()+" in "+item.location.toLowerCase());
+    addItem(Object.assign({},item,{material:pricingMat,pricePerUnit:pr,total:Math.ceil(item.sqft*pr),description:desc}));
     p.setImportedItems(function(prev){return prev.map(function(i){return i.id===item.id?Object.assign({},i,{priced:true}):i;});});
     setPricingId(null);setPricingPrice("");setPricingMat("");}
 
@@ -452,20 +442,21 @@ function QuoteBuilderSection(p){
       <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden"}}>
         {unpriced.map(function(item,idx){return(<div key={item.id} style={{padding:"12px 14px",borderBottom:idx<unpriced.length-1?"1px solid "+C.border:"none"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.type==="Removal"?(<span><span style={{fontSize:10,fontWeight:700,color:C.danger,background:C.dangerBg,padding:"2px 6px",borderRadius:4,marginRight:6}}>{"REMOVAL"}</span>{item.location}</span>):item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
             <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:12}}>
               {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat("");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.accent,borderRadius:6,color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
               <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button>
             </div>
           </div>
           {pricingId===item.id&&(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
-            <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:6}}>{item.type==="Removal"?"Remove existing insulation. — Adding to: "+opt.name:"Adding to: "+opt.name}</div>
-            {item.type!=="Removal"&&(<select style={matSs} value={pricingMat} onChange={function(e){setPricingMat(e.target.value);}}>
+            <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:6}}>{"Adding to: "+opt.name}</div>
+            <select style={matSs} value={pricingMat} onChange={function(e){setPricingMat(e.target.value);}}>
               <option value="">{"— Select Material —"}</option>
               <optgroup label="Fiberglass">{FIBERGLASS_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
               <optgroup label="Open Cell Foam">{OPEN_CELL_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
               <optgroup label="Closed Cell Foam">{CLOSED_CELL_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
-            </select>)}
+              <optgroup label="Other"><option value="Removal">{"Removal"}</option></optgroup>
+            </select>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
               <input style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}} type="number" value={pricingPrice} onChange={function(e){setPricingPrice(e.target.value);}} placeholder="$/sf" step="0.01" autoFocus/>
               <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
@@ -819,7 +810,7 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", maxWidth: 520, margin: "0 auto", paddingBottom: 100 }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", maxWidth: 800, margin: "0 auto", paddingBottom: 100 }}>
       <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
 
       {/* HEADER */}

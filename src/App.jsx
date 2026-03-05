@@ -80,7 +80,7 @@ async function saveJob(jobName, savedBy, jobData) {
 
 async function loadAllJobs() {
   try {
-    var res = await supabase.from("jobs").select("*").neq("job_name", "__autosave__").order("updated_at", { ascending: false });
+    var res = await supabase.from("jobs").select("*").neq("job_name", "__autosave__").neq("job_name", "__passcode__").order("updated_at", { ascending: false });
     if (res.data) return res.data;
   } catch (e) { console.log("Load error:", e); }
   return [];
@@ -102,6 +102,18 @@ async function loadAutosave(savedBy) {
     var res = await supabase.from("jobs").select("*").eq("job_name", "__autosave__").eq("saved_by", savedBy).limit(1);
     if (res.data && res.data.length > 0) return res.data[0].job_data;
   } catch (e) { console.log("Autosave load error:", e); }
+  return null;
+}
+
+async function savePasscode(user, code) {
+  return saveJob("__passcode__", user, { passcode: code });
+}
+
+async function loadPasscode(user) {
+  try {
+    var res = await supabase.from("jobs").select("*").eq("job_name", "__passcode__").eq("saved_by", user).limit(1);
+    if (res.data && res.data.length > 0 && res.data[0].job_data) return res.data[0].job_data.passcode || null;
+  } catch (e) { console.log("Passcode load error:", e); }
   return null;
 }
 
@@ -705,7 +717,111 @@ function SavedJobsPanel(p) {
 
 /* ══════════ LOGIN SCREEN ══════════ */
 
+function PasscodeInput(p) {
+  var s1 = useState(["","","",""]), digits = s1[0], setDigits = s1[1];
+  function handleChange(idx, val) {
+    if (val && !/^\d$/.test(val)) return;
+    var next = digits.slice();
+    next[idx] = val;
+    setDigits(next);
+    if (val && idx < 3) {
+      var el = document.getElementById("pin-" + p.id + "-" + (idx + 1));
+      if (el) el.focus();
+    }
+    if (val && idx === 3) {
+      var code = next.join("");
+      if (code.length === 4) setTimeout(function() { p.onSubmit(code); }, 100);
+    }
+  }
+  function handleKeyDown(idx, e) {
+    if (e.key === "Backspace" && !digits[idx] && idx > 0) {
+      var el = document.getElementById("pin-" + p.id + "-" + (idx - 1));
+      if (el) el.focus();
+    }
+  }
+  var boxStyle = { width: 48, height: 56, textAlign: "center", fontSize: 22, fontWeight: 700, fontFamily: "'Inter',sans-serif", border: "1px solid " + C.border, borderRadius: 6, outline: "none", background: C.card, color: C.text, transition: "border-color 0.15s", boxShadow: C.shadow };
+  return (
+    <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+      {[0,1,2,3].map(function(idx) {
+        return (<input key={idx} id={"pin-" + p.id + "-" + idx} type="tel" inputMode="numeric" maxLength={1} value={digits[idx]}
+          onChange={function(e) { handleChange(idx, e.target.value); }}
+          onKeyDown={function(e) { handleKeyDown(idx, e); }}
+          onFocus={function(e) { e.target.style.borderColor = C.accent; }}
+          onBlur={function(e) { e.target.style.borderColor = C.border; }}
+          style={boxStyle} autoFocus={idx === 0}/>);
+      })}
+    </div>
+  );
+}
+
 function LoginScreen(p) {
+  var s1 = useState(""), selectedUser = s1[0], setSelectedUser = s1[1];
+  var s2 = useState("pick"), step = s2[0], setStep = s2[1];
+  var s3 = useState(false), loading = s3[0], setLoading = s3[1];
+  var s4 = useState(""), error = s4[0], setError = s4[1];
+  var s5 = useState(""), firstCode = s5[0], setFirstCode = s5[1];
+  var s6 = useState(0), pinKey = s6[0], setPinKey = s6[1];
+
+  function handlePickUser(name) {
+    setSelectedUser(name);
+    setLoading(true);
+    setError("");
+    loadPasscode(name).then(function(code) {
+      setLoading(false);
+      if (code) {
+        setStep("enter");
+      } else {
+        setStep("create");
+      }
+    });
+  }
+
+  function handleEnter(code) {
+    setLoading(true);
+    setError("");
+    loadPasscode(selectedUser).then(function(stored) {
+      setLoading(false);
+      if (code === stored) {
+        localStorage.setItem("ist-user", selectedUser);
+        p.onLogin(selectedUser);
+      } else {
+        setError("Incorrect passcode");
+        setPinKey(function(k) { return k + 1; });
+      }
+    });
+  }
+
+  function handleCreate(code) {
+    if (!firstCode) {
+      setFirstCode(code);
+      setStep("confirm");
+      setPinKey(function(k) { return k + 1; });
+      return;
+    }
+    if (code !== firstCode) {
+      setError("Passcodes don't match. Try again.");
+      setFirstCode("");
+      setStep("create");
+      setPinKey(function(k) { return k + 1; });
+      return;
+    }
+    setLoading(true);
+    setError("");
+    savePasscode(selectedUser, code).then(function() {
+      setLoading(false);
+      localStorage.setItem("ist-user", selectedUser);
+      p.onLogin(selectedUser);
+    });
+  }
+
+  function handleBack() {
+    setSelectedUser("");
+    setStep("pick");
+    setError("");
+    setFirstCode("");
+    setPinKey(function(k) { return k + 1; });
+  }
+
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
@@ -714,17 +830,45 @@ function LoginScreen(p) {
         <div style={{ fontSize: 11, color: C.dim, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
       </div>
       <div style={{ width: "100%", maxWidth: 320 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" }}>{"Who's working?"}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {TEAM_MEMBERS.map(function(name) {
-            return (
-              <button key={name} onClick={function() { localStorage.setItem("ist-user", name); p.onLogin(name); }}
-                style={{ width: "100%", padding: "16px 20px", borderRadius: 6, border: "1px solid " + C.border, background: C.card, color: C.text, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", textAlign: "center", transition: "all 0.15s ease", boxShadow: C.shadow }}>
-                {name}
-              </button>
-            );
-          })}
-        </div>
+
+        {step === "pick" && (<div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, textAlign: "center" }}>{"Who's working?"}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {TEAM_MEMBERS.map(function(name) {
+              return (
+                <button key={name} onClick={function() { handlePickUser(name); }}
+                  style={{ width: "100%", padding: "16px 20px", borderRadius: 6, border: "1px solid " + C.border, background: C.card, color: C.text, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", textAlign: "center", transition: "all 0.15s ease", boxShadow: C.shadow }}>
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>)}
+
+        {step === "enter" && (<div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 6 }}>{selectedUser}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 20 }}>{"Enter your passcode"}</div>
+          {loading ? (<div style={{ color: C.dim, fontSize: 13 }}>{"Verifying..."}</div>) : (<PasscodeInput key={pinKey} id="enter" onSubmit={handleEnter}/>)}
+          {error && (<div style={{ marginTop: 12, fontSize: 13, color: C.danger, fontWeight: 600 }}>{error}</div>)}
+          <button onClick={handleBack} style={{ marginTop: 20, background: "none", border: "none", color: C.dim, fontSize: 12, cursor: "pointer", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>{"Back"}</button>
+        </div>)}
+
+        {step === "create" && (<div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 6 }}>{selectedUser}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 20 }}>{"Create a 4-digit passcode"}</div>
+          {loading ? (<div style={{ color: C.dim, fontSize: 13 }}>{"Loading..."}</div>) : (<PasscodeInput key={pinKey} id="create" onSubmit={handleCreate}/>)}
+          {error && (<div style={{ marginTop: 12, fontSize: 13, color: C.danger, fontWeight: 600 }}>{error}</div>)}
+          <button onClick={handleBack} style={{ marginTop: 20, background: "none", border: "none", color: C.dim, fontSize: 12, cursor: "pointer", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>{"Back"}</button>
+        </div>)}
+
+        {step === "confirm" && (<div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 6 }}>{selectedUser}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 20 }}>{"Confirm your passcode"}</div>
+          {loading ? (<div style={{ color: C.dim, fontSize: 13 }}>{"Saving..."}</div>) : (<PasscodeInput key={pinKey} id="confirm" onSubmit={handleCreate}/>)}
+          {error && (<div style={{ marginTop: 12, fontSize: 13, color: C.danger, fontWeight: 600 }}>{error}</div>)}
+          <button onClick={handleBack} style={{ marginTop: 20, background: "none", border: "none", color: C.dim, fontSize: 12, cursor: "pointer", fontFamily: "'Inter',sans-serif", fontWeight: 600 }}>{"Back"}</button>
+        </div>)}
+
       </div>
     </div>
   );
@@ -733,7 +877,7 @@ function LoginScreen(p) {
 /* ══════════ MAIN APP ══════════ */
 
 export default function App() {
-  var s0 = useState(function() { return localStorage.getItem("ist-user") || ""; }), currentUser = s0[0], setCurrentUser = s0[1];
+  var s0 = useState(""), currentUser = s0[0], setCurrentUser = s0[1];
   var s1 = useState("takeoff"), sec = s1[0], setSec = s1[1];
   var s2 = useState([]), meas = s2[0], setMeas = s2[1];
   var s3 = useState([newOption("Option 1")]), qOpts = s3[0], setQOpts = s3[1];

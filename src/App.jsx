@@ -171,6 +171,7 @@ function MeasurementForm(p){
   var s5=useState(""),price=s5[0],setPrice=s5[1];
   var s6=useState("Flat (0/12)"),pitch=s6[0],setPitch=s6[1];
   var s7=useState(0),mk=s7[0],setMk=s7[1];
+  var s8=useState(false),isRemoval=s8[0],setIsRemoval=s8[1];
   var loc=LOCATIONS.find(function(x){return x.id===lid;});
   var locLabel=loc?(loc.id==="custom"?cl:loc.label):"";
   var locGroup=loc?(loc.id==="custom"?"Other":loc.group):"Other";
@@ -184,8 +185,8 @@ function MeasurementForm(p){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
     var useMat=hp?mat:"(material TBD)";
     var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
-    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc});
-    setSqft(0);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});
+    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval});
+    setSqft(0);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);
   }
   return(<div style={{background:C.card,borderRadius:6,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
     <div style={{fontSize:15,fontWeight:600,marginBottom:14,color:C.text}}>{hp?(tabLabel+" — Add Line Item"):"Add Measurement"}</div>
@@ -202,6 +203,11 @@ function MeasurementForm(p){
         <div>{"Total: "}<span style={{color:C.text,fontWeight:600}}>{fin.toLocaleString()+" sq ft"}</span>{needsPitch&&sqft!==adj&&(<span>{" (adj. from "+Math.round(sqft)+" w/ "+pitch+")"}</span>)}</div>
         {hp&&(parseFloat(price)||0)>0&&(<div>{"Line Total: "}<span style={{color:C.accent,fontWeight:700}}>{"$"+Math.ceil(fin*(parseFloat(price)||0)).toLocaleString()+".00"}</span></div>)}
       </div>)}
+      {!hp&&fin>0&&(<label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",marginBottom:8,cursor:"pointer"}}>
+        <input type="checkbox" checked={isRemoval} onChange={function(e){setIsRemoval(e.target.checked);}}
+          style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+        <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Removal"}</span>
+      </label>)}
       <GreenBtn onClick={handleAdd}>{"+ "+(hp?"Add to Quote":"Add Measurement")}</GreenBtn>
     </div>)}
   </div>);
@@ -330,7 +336,7 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements){
 function TakeOff(p){
   function addM(item){
     p.setMeasurements(function(prev){
-      var existing=prev.find(function(m){return m.location===item.location && m.locationId===item.locationId;});
+      var existing=prev.find(function(m){return m.location===item.location && m.locationId===item.locationId && !!m.isRemoval===!!item.isRemoval;});
       if(existing){
         return prev.map(function(m){return m.id===existing.id?Object.assign({},m,{sqft:m.sqft+item.sqft}):m;});
       }
@@ -338,8 +344,11 @@ function TakeOff(p){
     });
   }
   function removeM(id){p.setMeasurements(function(prev){return prev.filter(function(m){return m.id!==id;});});}
-  var groups=groupMeasurements(p.measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
+  var regularItems=p.measurements.filter(function(m){return !m.isRemoval;});
+  var removalItems=p.measurements.filter(function(m){return m.isRemoval;});
+  var groups=groupMeasurements(regularItems);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=p.measurements.reduce(function(s,m){return s+m.sqft;},0);
+  var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
     <div style={{padding:"0 16px 12px"}}>
@@ -360,6 +369,15 @@ function TakeOff(p){
           </div>
         </div>);
       })}
+      {removalItems.length>0&&(<div style={{marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.danger,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.danger}}>{"Removal"}<span style={{color:C.danger,marginLeft:8}}>{removalTotal.toLocaleString()+" sq ft"}</span></div>
+        <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.danger,overflow:"hidden",boxShadow:C.shadow}}>
+          {removalItems.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<removalItems.length-1?"1px solid "+C.borderLight:"none"}}>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
+          </div>);})}
+        </div>
+      </div>)}
       <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
@@ -454,7 +472,7 @@ function QuoteBuilderSection(p){
       <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden"}}>
         {unpriced.map(function(item,idx){return(<div key={item.id} style={{padding:"12px 14px",borderBottom:idx<unpriced.length-1?"1px solid "+C.border:"none"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.isRemoval?(<span><span style={{fontSize:10,fontWeight:700,color:C.danger,background:C.dangerBg,padding:"2px 6px",borderRadius:4,marginRight:6}}>{"REMOVAL"}</span>{item.location}</span>):item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
             <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:12}}>
               {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat("");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.accent,borderRadius:6,color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
               <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button>

@@ -282,7 +282,7 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden}body{padding:10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
@@ -332,7 +332,7 @@ function buildQuoteHtml(customer,opts,salesman){
 }
 
 function generatePDF(customer,opts,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden}body{padding:10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
@@ -346,7 +346,7 @@ function downloadQuotePdf(customer,opts,salesman){
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>'+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden}body{padding:10mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>'+
     buildQuoteHtml(customer,opts,salesman)+
     '<div class="page-break"></div>'+
     buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+

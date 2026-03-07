@@ -238,7 +238,7 @@ function buildSalesmanBlock(salesman){
   return '<div style="margin-top:30px;display:inline-block;padding:10px 16px;background:#f5f5f5;border:2px solid #222;border-radius:6px"><div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Your Sales Representative</div><div style="font-size:16px;font-weight:800;color:#111;margin-bottom:4px">'+s.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:2px">📞 '+s.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">✉ '+s.email+'</div></div>';
 }
 
-function buildTakeOffHtml(customer,jobNotes,measurements,salesman){
+function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
   var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
@@ -254,18 +254,34 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman){
     '<div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(customer.jobAddress||customer.address||"—")+'</div></div>'+salesHtml+'</div>'+
     notesHtml+
     ghtml+totalRow+
+    (function(){
+      if(!quoteOpts||quoteOpts.length===0)return"";
+      var rows=quoteOpts.map(function(opt,idx){
+        var lines=[];
+        if(opt.pso)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">PSO Credit</span><span style="font-size:13px;font-weight:700;color:#dc2626">-$600</span></div>');
+        if(opt.extraLabor&&opt.extraLaborAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Extra Labor</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.extraLaborAmt).toFixed(0)+'</span></div>');
+        if(opt.tripCharge&&opt.tripChargeAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Trip Charge</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.tripChargeAmt).toFixed(0)+'</span></div>');
+        if(opt.energySeal&&opt.energySealAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Energy Seal & Plates</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.energySealAmt).toFixed(0)+'</span></div>');
+        if(opt.dumpster&&opt.dumpsterAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Dumpster</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.dumpsterAmt).toFixed(0)+'</span></div>');
+        if(lines.length===0)return"";
+        var header=quoteOpts.length>1?'<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">'+opt.name+'</div>':"";
+        return header+lines.join("");
+      }).join("");
+      if(!rows)return"";
+      return '<div style="margin-top:24px;padding:14px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px"><div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px">⚠ Internal Adders — Do Not Share With Customer</div>'+rows+'</div>';
+    })()+
     '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
-function printTakeOff(customer,jobNotes,measurements,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman)+'</body></html>';
+function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function downloadTakeOffPdf(customer,jobNotes,measurements,salesman){
+function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   var container=document.createElement("div");
-  container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman);
+  container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   document.body.appendChild(container);
   var filename="TakeOff"+(customer.name?" - "+customer.name:"")+".pdf";
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
@@ -321,11 +337,11 @@ function downloadQuotePdf(customer,opts,salesman){
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
-function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements){
+function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{body{padding:10mm;-webkit-print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>'+
     buildQuoteHtml(customer,opts,salesman)+
     '<div class="page-break"></div>'+
-    buildTakeOffHtml(customer,jobNotes,measurements,salesman)+
+    buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+
     '</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
@@ -382,8 +398,8 @@ function TakeOff(p){
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
     <div style={{padding:"12px 16px 0"}}>
-      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser);}}>{"Print Take Off"}</GreenBtn>
-      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser);}} mt={8}>{"Download Take Off PDF"}</GreenBtn>
+      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
+      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}} mt={8}>{"Download Take Off PDF"}</GreenBtn>
     </div>
     {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
   </div>);
@@ -391,7 +407,7 @@ function TakeOff(p){
 
 /* ══════════ QUOTE BUILDER ══════════ */
 
-function newOption(name){return{name:name,items:[],pso:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",overrideTotal:""};}
+function newOption(name){return{name:name,items:[],pso:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",dumpster:false,dumpsterAmt:"",overrideTotal:""};}
 
 function QuoteBuilderSection(p){
   var s1=useState("fiberglass"),matTab=s1[0],setMatTab=s1[1];
@@ -556,6 +572,20 @@ function QuoteBuilderSection(p){
               </div>
             )}
           </label>
+          {/* Dumpster — internal only, never on quote */}
+          <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
+            <input type="checkbox" checked={opt.dumpster||false} onChange={function(e){updateOpt({dumpster:e.target.checked});}}
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Dumpster"}</span>
+            <span style={{fontSize:11,color:C.dim,marginLeft:2}}>{"(internal only)"}</span>
+            {opt.dumpster&&(
+              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
+                <span style={{fontSize:13,color:C.text}}>{"$"}</span>
+                <input type="number" value={opt.dumpsterAmt||""} onChange={function(e){updateOpt({dumpsterAmt:e.target.value});}}
+                  style={{width:80,padding:"4px 8px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} placeholder="0" step="1"/>
+              </div>
+            )}
+          </label>
         </div>
 
         {/* TOTAL */}
@@ -577,7 +607,7 @@ function QuoteBuilderSection(p){
     {/* PRINT/DOWNLOAD — show when ANY option has items */}
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements);}}>{"Print Quote and Take Off"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Download Quote PDF"}</GreenBtn>
     </div>)}
 
@@ -1002,7 +1032,7 @@ export default function App() {
       </div>
 
       <div style={{ paddingTop: 16 }}>
-        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} {...cp2} />)}
+        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
         {sec === "jobs" && (
           <div>

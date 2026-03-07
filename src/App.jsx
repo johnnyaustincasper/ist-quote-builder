@@ -301,8 +301,8 @@ function buildQuoteHtml(customer,opts,salesman){
   var salesHtml=si?'<div style="flex:1;text-align:right"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Your Sales Rep</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:3px">'+si.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:1px">'+si.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">'+si.email+'</div></div>':'';
   var optsWithItems=opts.filter(function(o){return o.items.length>0;});
   var optSections=optsWithItems.map(function(opt,oi){
-    var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:10px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
-    var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:10px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:10px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
+    var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
+    var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:6px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
     var psoCredit=opt.pso?600:0;
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
@@ -310,25 +310,25 @@ function buildQuoteHtml(customer,opts,salesman){
     var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
     var sub=lineTotal+el+tc+es;
     var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
-    var header=optsWithItems.length>1?'<div style="font-size:18px;font-weight:800;color:#111;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
+    var header=optsWithItems.length>1?'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
     var totalHtml="";
     if(opt.pso){
-      totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:280px">'+
-        '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:15px;font-weight:600;color:#333"><span>Price</span><span>$'+Math.ceil(sub).toLocaleString()+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:15px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit</span><span>-$600</span></div>'+
-        '<div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div>'+
+      totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"20":"0")+'px"><div style="width:260px">'+
+        '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#333"><span>Price</span><span>$'+Math.ceil(sub).toLocaleString()+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit</span><span>-$600</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div>'+
         '</div></div>';
     }else{
-      totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"30":"0")+'px"><div style="width:280px"><div style="display:flex;justify-content:space-between;padding:12px 0;font-size:20px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
+      totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"20":"0")+'px"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
     }
-    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#111"><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:10px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
+    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><thead><tr style="background:#111"><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
   }).join("");
-  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto">'+
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:20px;border-bottom:3px solid #222"><div><h1 style="font-size:26px;font-weight:800;color:#111;margin-bottom:4px">'+COMPANY.name+'</h1><p style="font-size:13px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:13px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#111">QUOTE</div><div style="font-size:13px;color:#666;margin-top:4px">'+qn+'</div><div style="font-size:13px;color:#666">'+today+'</div></div></div>'+
-    '<div style="display:flex;gap:24px;margin-bottom:30px"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Prepared For</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Project</div><div style="font-size:13px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:13px;color:#666">Valid 30 days from quote date</div></div>'+salesHtml+'</div>'+
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:28px 32px;max-width:800px;margin:0 auto">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:3px solid #222"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:3px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:12px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:19px;font-weight:700;color:#111">QUOTE</div><div style="font-size:12px;color:#666;margin-top:3px">'+qn+'</div><div style="font-size:12px;color:#666">'+today+'</div></div></div>'+
+    '<div style="display:flex;gap:20px;margin-bottom:18px"><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Prepared For</div><div style="font-size:14px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:12px;color:#666">'+(customer.address||"")+'</div><div style="font-size:12px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:12px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Project</div><div style="font-size:12px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:12px;color:#666">Valid 30 days from quote date</div></div>'+salesHtml+'</div>'+
     optSections+
-    '<div style="margin-top:20px;padding-top:20px;border-top:1px solid #ddd;font-size:12px;color:#111;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
+    '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
 function generatePDF(customer,opts,salesman){

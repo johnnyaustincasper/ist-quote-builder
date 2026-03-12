@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Opening Tulsa County Assessor...</title>
+  <style>
+    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f4ff; }
+    .box { text-align: center; color: #1e40af; }
+    .box p { font-size: 14px; color: #6b7280; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div style="font-size:18px;font-weight:700;">Opening Tulsa County Assessor...</div>
+    <p id="msg">Preparing search...</p>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const addr = params.get("addr") || "";
+    document.getElementById("msg").textContent = addr ? "Searching: " + addr : "No address provided.";
+
+    const win = window.open("https://assessor.tulsacounty.org/Property/Search", "assessorTab");
+
+    // Poll until the target page loads, then inject the address and submit
+    let attempts = 0;
+    const interval = setInterval(function() {
+      attempts++;
+      try {
+        if (win && win.document && win.document.getElementById("search-bar-input")) {
+          const input = win.document.getElementById("search-bar-input");
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, "value").set;
+          nativeInputValueSetter.call(input, addr);
+          input.dispatchEvent(new win.Event("input", { bubbles: true }));
+          setTimeout(function() {
+            const form = win.document.getElementById("searchForm");
+            if (form) form.dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+          }, 300);
+          clearInterval(interval);
+          document.getElementById("msg").textContent = "Done! Check the assessor tab.";
+        }
+      } catch(e) {
+        // Cross-origin block — can't inject after redirect
+        clearInterval(interval);
+        document.getElementById("msg").textContent = "Address copied to clipboard — paste it in the search box.";
+      }
+      if (attempts > 40) clearInterval(interval);
+    }, 250);
+  </script>
+</body>
+</html>

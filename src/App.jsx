@@ -269,7 +269,8 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
           });
           if(lines.length>0)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:2px solid #d1d5db;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:#666">Total before adders</span><span style="font-size:13px;font-weight:800;color:#111">$'+(opt.overrideTotal?parseFloat(opt.overrideTotal).toLocaleString():opt.items.reduce(function(s,i){return s+i.total;},0).toLocaleString())+'</span></div>');
         }
-        if(opt.pso)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">PSO Credit</span><span style="font-size:13px;font-weight:700;color:#dc2626">-$600</span></div>');
+        if(opt.pso)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">PSO Credit Attic</span><span style="font-size:13px;font-weight:700;color:#dc2626">-$600</span></div>');
+        if(opt.psoKw)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">PSO Credit KW</span><span style="font-size:13px;font-weight:700;color:#dc2626">-$600</span></div>');
         if(opt.extraLabor&&opt.extraLaborAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Extra Labor</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.extraLaborAmt).toFixed(0)+'</span></div>');
         if(opt.tripCharge&&opt.tripChargeAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Trip Charge</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.tripChargeAmt).toFixed(0)+'</span></div>');
         if(opt.energySeal&&opt.energySealAmt)lines.push('<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee"><span style="font-size:13px;color:#333">Energy Seal & Plates</span><span style="font-size:13px;font-weight:700;color:#333">$'+parseFloat(opt.energySealAmt).toFixed(0)+'</span></div>');
@@ -307,7 +308,7 @@ function buildQuoteHtml(customer,opts,salesman){
     var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
     var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:6px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
-    var psoCredit=opt.pso?600:0;
+    var psoCredit=(opt.pso?600:0)+(opt.psoKw?600:0);
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
     var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
     var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
@@ -316,6 +317,9 @@ function buildQuoteHtml(customer,opts,salesman){
     var header=optsWithItems.length>1?'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
     var totalHtml="";
+    if(opt.psoKw){
+        s+='<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit KW</span><span>-$600</span></div>';
+      }
     if(opt.pso){
       totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"20":"0")+'px"><div style="width:260px">'+
         '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#333"><span>Price</span><span>$'+Math.ceil(sub).toLocaleString()+'</span></div>'+
@@ -418,7 +422,7 @@ function TakeOff(p){
 
 /* ══════════ QUOTE BUILDER ══════════ */
 
-function newOption(name){return{name:name,items:[],pso:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",dumpster:false,dumpsterAmt:"",overrideTotal:""};}
+function newOption(name){return{name:name,items:[],pso:false,psoKw:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",dumpster:false,dumpsterAmt:"",overrideTotal:""};}
 
 function QuoteBuilderSection(p){
   var s1=useState("fiberglass"),matTab=s1[0],setMatTab=s1[1];
@@ -447,7 +451,7 @@ function QuoteBuilderSection(p){
 
   var unpriced=p.importedItems.filter(function(i){return!i.priced;});
   var lineItemsTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
-  var psoCredit=opt.pso?600:0;
+  var psoCredit=(opt.pso?600:0)+(opt.psoKw?600:0);
   var extraLabor=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
   var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
@@ -542,8 +546,14 @@ function QuoteBuilderSection(p){
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.pso} onChange={function(e){updateOpt({pso:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
-            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit"}</span>
+            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit Attic"}</span>
             {opt.pso&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$600"}</span>)}
+          </label>
+          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+            <input type="checkbox" checked={opt.psoKw||false} onChange={function(e){updateOpt({psoKw:e.target.checked,overrideTotal:""});}}
+              style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit KW"}</span>
+            {opt.psoKw&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$600"}</span>)}
           </label>
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.extraLabor} onChange={function(e){updateOpt({extraLabor:e.target.checked,overrideTotal:""});}}

@@ -333,13 +333,13 @@ function _buildQuoteHtml(customer,opts,salesman){
     var header=optsWithItems.length>1?'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
     var totalHtml="";
-    if(opt.psoKw){
-        s+='<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit KW</span><span>-$525</span></div>';
-      }
-    if(opt.pso){
+    var creditRows="";
+    if(opt.psoKw)creditRows+='<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit KW</span><span>-$525</span></div>';
+    if(opt.pso)creditRows+='<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit Attic</span><span>-$600</span></div>';
+    if(opt.pso||opt.psoKw){
       totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"20":"0")+'px"><div style="width:260px">'+
         '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#333"><span>Price</span><span>$'+Math.ceil(sub).toLocaleString()+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit</span><span>-$600</span></div>'+
+        creditRows+
         '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div>'+
         '</div></div>';
     }else{

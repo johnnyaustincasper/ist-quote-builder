@@ -312,7 +312,8 @@ function buildQuoteHtml(customer,opts,salesman){
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
     var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
     var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
-    var sub=lineTotal+el+tc+es;
+    var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
+    var sub=lineTotal+el+tc+es+du;
     var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
     var header=optsWithItems.length>1?'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
@@ -455,7 +456,8 @@ function QuoteBuilderSection(p){
   var extraLabor=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
   var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
-  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal;
+  var dumpster=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
+  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal+dumpster;
   var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 

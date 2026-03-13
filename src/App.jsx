@@ -305,7 +305,21 @@ function buildQuoteHtml(customer,opts,salesman){
   var salesHtml=si?'<div style="flex:1;text-align:right"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Your Sales Rep</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:3px">'+si.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:1px">'+si.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">'+si.email+'</div></div>':'';
   var optsWithItems=opts.filter(function(o){return o.items.length>0;});
   var optSections=optsWithItems.map(function(opt,oi){
-    var rows=opt.items.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
+    var sortedItems=opt.items.slice().sort(function(a,b){
+      var aFoam=a.type==="Foam"||/foam/i.test(a.material||"");
+      var bFoam=b.type==="Foam"||/foam/i.test(b.material||"");
+      if(aFoam&&!bFoam)return -1;
+      if(!aFoam&&bFoam)return 1;
+      if(aFoam&&bFoam){
+        var aIn=parseFloat((a.material||"").match(/^([\d.]+)/)||[0,0])||0;
+        var bIn=parseFloat((b.material||"").match(/^([\d.]+)/)||[0,0])||0;
+        return aIn-bIn;
+      }
+      var aR=parseInt((a.material||"").match(/R(\d+)/i)||[0,0])||0;
+      var bR=parseInt((b.material||"").match(/R(\d+)/i)||[0,0])||0;
+      return aR-bR;
+    });
+    var rows=sortedItems.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
     var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:6px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
     var psoCredit=(opt.pso?600:0)+(opt.psoKw?525:0);

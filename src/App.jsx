@@ -299,7 +299,8 @@ function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
 }
 
-function buildQuoteHtml(customer,opts,salesman){
+function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
+function _buildQuoteHtml(customer,opts,salesman){
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});var qn="IST-"+Date.now().toString(36).toUpperCase();
   var si=SALESMAN_INFO[salesman];
   var salesHtml=si?'<div style="flex:1;text-align:right"><div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Your Sales Rep</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:3px">'+si.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:1px">'+si.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">'+si.email+'</div></div>':'';
@@ -322,7 +323,7 @@ function buildQuoteHtml(customer,opts,salesman){
     var rows=sortedItems.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
     var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:6px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
-    var psoCredit=(opt.pso?600:0)+(opt.psoKw?525:0);
+    var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
     var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
     var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
@@ -466,7 +467,7 @@ function QuoteBuilderSection(p){
 
   var unpriced=p.importedItems.filter(function(i){return!i.priced;});
   var lineItemsTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
-  var psoCredit=(opt.pso?600:0)+(opt.psoKw?525:0);
+  var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
   var extraLabor=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
   var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;

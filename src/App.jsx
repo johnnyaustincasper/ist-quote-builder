@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
-import html2pdf from "html2pdf.js";
+const getHtml2pdf = () => import("html2pdf.js").then(m => m.default);
 
 var COMPANY = {
   name: "Insulation Services of Tulsa",
@@ -296,7 +296,7 @@ function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   document.body.appendChild(container);
   var filename="TakeOff"+(customer.name?" - "+customer.name:"")+".pdf";
-  html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
+  getHtml2pdf().then(function(html2pdf){html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});});
 }
 
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
@@ -365,7 +365,7 @@ function downloadQuotePdf(customer,opts,salesman){
   container.innerHTML=buildQuoteHtml(customer,opts,salesman);
   document.body.appendChild(container);
   var filename="Quote"+(customer.name?" - "+customer.name:"")+".pdf";
-  html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});
+  getHtml2pdf().then(function(html2pdf){html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});});
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

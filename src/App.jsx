@@ -1060,11 +1060,11 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, flex: 1, maxWidth: 800, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 800, margin: "0 auto", paddingBottom: 80 }}>
       <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
 
       {/* HEADER */}
-      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", flexShrink: 0, zIndex: 100, boxShadow: C.shadow }}>
+      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 10, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
           <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
@@ -1089,7 +1089,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", paddingTop: 16, paddingBottom: 16, WebkitOverflowScrolling: "touch" }}>
+      <div>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
         {sec === "jobs" && (
@@ -1111,8 +1111,8 @@ export default function App() {
         )}
       </div>
 
-      {/* Clear Everything — pinned bottom bar */}
-      <div style={{ flexShrink: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
+      {/* Clear Everything — sticky bottom bar */}
+      <div style={{ position: "sticky", bottom: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
         <button
           onClick={function() {
             if (window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote. This cannot be undone.")) {

@@ -315,7 +315,7 @@ function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   var container=document.createElement("div");
   container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   document.body.appendChild(container);
-  var filename="TakeOff"+(customer.name?" - "+customer.name:"")+".pdf";
+  var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   sharePdf(container,filename);
 }
 
@@ -384,7 +384,7 @@ function downloadQuotePdf(customer,opts,salesman){
   var container=document.createElement("div");
   container.innerHTML=buildQuoteHtml(customer,opts,salesman);
   document.body.appendChild(container);
-  var filename="Quote"+(customer.name?" - "+customer.name:"")+".pdf";
+  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   sharePdf(container,filename);
 }
 

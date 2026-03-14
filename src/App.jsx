@@ -1089,7 +1089,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", paddingTop: 16, paddingBottom: 100, WebkitOverflowScrolling: "touch" }}>
+      <div style={{ flex: 1, overflowY: "auto", paddingTop: 16, paddingBottom: 16, WebkitOverflowScrolling: "touch" }}>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
         {sec === "jobs" && (
@@ -1111,8 +1111,8 @@ export default function App() {
         )}
       </div>
 
-      {/* Clear Everything — fixed bottom bar */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
+      {/* Clear Everything — pinned bottom bar */}
+      <div style={{ flexShrink: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
         <button
           onClick={function() {
             if (window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote. This cannot be undone.")) {

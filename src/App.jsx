@@ -291,12 +291,32 @@ function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
+function sharePdf(container,filename){
+  return getHtml2pdf().then(function(html2pdf){
+    var worker=html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container);
+    if(navigator.share && navigator.canShare){
+      return worker.output('blob').then(function(blob){
+        var file=new File([blob],filename,{type:"application/pdf"});
+        if(navigator.canShare({files:[file]})){
+          document.body.removeChild(container);
+          return navigator.share({files:[file],title:filename});
+        } else {
+          document.body.removeChild(container);
+          return worker.save();
+        }
+      });
+    } else {
+      return worker.save().then(function(){document.body.removeChild(container);});
+    }
+  });
+}
+
 function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   var container=document.createElement("div");
   container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   document.body.appendChild(container);
   var filename="TakeOff"+(customer.name?" - "+customer.name:"")+".pdf";
-  getHtml2pdf().then(function(html2pdf){html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});});
+  sharePdf(container,filename);
 }
 
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
@@ -365,7 +385,7 @@ function downloadQuotePdf(customer,opts,salesman){
   container.innerHTML=buildQuoteHtml(customer,opts,salesman);
   document.body.appendChild(container);
   var filename="Quote"+(customer.name?" - "+customer.name:"")+".pdf";
-  getHtml2pdf().then(function(html2pdf){html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container).save().then(function(){document.body.removeChild(container);});});
+  sharePdf(container,filename);
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

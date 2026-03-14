@@ -1060,7 +1060,7 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, height: "100dvh", maxWidth: 800, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, flex: 1, maxWidth: 800, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
 
       {/* HEADER */}

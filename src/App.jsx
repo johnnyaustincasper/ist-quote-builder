@@ -1060,11 +1060,11 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, minHeight: "100vh", maxWidth: 800, margin: "0 auto", paddingBottom: 100 }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, height: "100dvh", maxWidth: 800, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
 
       {/* HEADER */}
-      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: C.shadow }}>
+      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", flexShrink: 0, zIndex: 100, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 10, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
           <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
@@ -1089,7 +1089,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{ paddingTop: 16 }}>
+      <div style={{ flex: 1, overflowY: "auto", paddingTop: 16, paddingBottom: 100, WebkitOverflowScrolling: "touch" }}>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
         {sec === "jobs" && (

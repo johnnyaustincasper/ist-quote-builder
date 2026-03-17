@@ -1140,8 +1140,8 @@ export default function App() {
       </div>
 
       {/* Clear Everything — fixed bottom bar */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
-        <button
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "10px 20px", paddingBottom: "max(10px, env(safe-area-inset-bottom, 10px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
+        <div className="ist-clear-btn-inner"><button
           onClick={function() {
             if (window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote. This cannot be undone.")) {
               setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
@@ -1149,9 +1149,9 @@ export default function App() {
               setSec("takeoff");
             }
           }}
-          style={{ width: "100%", padding: "14px 20px", borderRadius: 8, border: "1.5px solid " + C.danger, background: "transparent", color: C.danger, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", letterSpacing: "0.03em" }}>
+          style={{ width: "100%", padding: "12px 20px", borderRadius: 8, border: "1.5px solid " + C.danger, background: "transparent", color: C.danger, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", letterSpacing: "0.03em" }}>
           🗑 Clear Everything
-        </button>
+        </button></div>
       </div>
     </div>
   );

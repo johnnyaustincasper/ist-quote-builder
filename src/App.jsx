@@ -15,25 +15,25 @@ var SALESMAN_INFO = {
 };
 
 var LOCATIONS = [
-  { id: "ext_walls_house", label: "Boxed Exterior Walls of House", type: "wall", group: "Walls" },
+  { id: "band_joist",       label: "Band Joist Blocking",          type: "area",    group: "Porch / Blocking" },
+  { id: "ext_kneewall",     label: "Boxed Exterior Kneewall",      type: "wall",    group: "Walls" },
+  { id: "ext_slopes",       label: "Boxed Exterior Slopes",        type: "slope",   group: "Attic / Ceiling" },
   { id: "ext_walls_garage", label: "Boxed Exterior Walls of Garage", type: "wall", group: "Walls" },
-  { id: "garage_common", label: "Garage Common Wall", type: "wall", group: "Walls" },
-  { id: "ext_kneewall", label: "Boxed Exterior Kneewall", type: "wall", group: "Walls" },
-  { id: "open_attic_walls", label: "Open Attic Walls", type: "wall", group: "Walls" },
-  { id: "attic_area_house", label: "Open Attic Area of House", type: "area", group: "Attic / Ceiling" },
-  { id: "attic_area_garage", label: "Open Attic Area of Garage", type: "area", group: "Attic / Ceiling" },
-  { id: "ext_slopes", label: "Boxed Exterior Slopes", type: "wall", group: "Attic / Ceiling" },
-  { id: "attic_slopes", label: "Open Attic Slopes", type: "area", group: "Attic / Ceiling" },
-  { id: "attic_kneewall", label: "Open Attic Kneewall", type: "area", group: "Attic / Ceiling" },
-  { id: "flat_ceiling", label: "Flat Ceiling", type: "area", group: "Attic / Ceiling" },
-  { id: "porch", label: "Porch", type: "area", group: "Porch / Blocking" },
-  { id: "porch_blocking", label: "Porch Blocking", type: "area", group: "Porch / Blocking" },
-  { id: "band_joist", label: "Band Joist Blocking", type: "area", group: "Porch / Blocking" },
-  { id: "roofline", label: "Roofline", type: "roofline", group: "Roofline" },
-  { id: "roofline_house", label: "Roofline of House", type: "roofline", group: "Roofline" },
-  { id: "roofline_garage", label: "Roofline of Garage", type: "roofline", group: "Roofline" },
-  { id: "gable_end", label: "Gable End", type: "area", group: "Roofline" },
-  { id: "custom", label: "Custom", type: "area", group: "Other" },
+  { id: "ext_walls_house",  label: "Boxed Exterior Walls of House",  type: "wall", group: "Walls" },
+  { id: "flat_ceiling",     label: "Flat Ceiling",                 type: "area",    group: "Attic / Ceiling" },
+  { id: "gable_end",        label: "Gable End",                    type: "area",    group: "Roofline" },
+  { id: "garage_common",    label: "Garage Common Wall",           type: "wall",    group: "Walls" },
+  { id: "attic_area_garage",label: "Open Attic Area of Garage",    type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_area_house", label: "Open Attic Area of House",     type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_kneewall",   label: "Open Attic Kneewall",          type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_slopes",     label: "Open Attic Slopes",            type: "area",    group: "Attic / Ceiling" },
+  { id: "open_attic_walls", label: "Open Attic Walls",             type: "wall",    group: "Walls" },
+  { id: "porch",            label: "Porch",                        type: "area",    group: "Porch / Blocking" },
+  { id: "porch_blocking",   label: "Porch Blocking",               type: "area",    group: "Porch / Blocking" },
+  { id: "roofline",         label: "Roofline",                     type: "roofline",group: "Roofline" },
+  { id: "roofline_garage",  label: "Roofline of Garage",           type: "roofline",group: "Roofline" },
+  { id: "roofline_house",   label: "Roofline of House",            type: "roofline",group: "Roofline" },
+  { id: "custom",           label: "Custom",                       type: "area",    group: "Other" },
 ];
 
 var FIBERGLASS_MATERIALS = [
@@ -134,14 +134,14 @@ function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",pad
 /* ──────── MEASUREMENTS ──────── */
 
 function WallMeasurement(p){
-  var s1=useState("count"),mode=s1[0],setMode=s1[1];
+  var s1=useState(p.lhOnly?"lh":"count"),mode=s1[0],setMode=s1[1];
   var s2=useState(""),wc=s2[0],setWc=s2[1];
   var s3=useState("0"),wi=s3[0],setWi=s3[1];
   var s4=useState(""),ln=s4[0],setLn=s4[1];
   var s5=useState(""),ht=s5[0],setHt=s5[1];
   var sq=mode==="count"?(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0):(parseFloat(ln)||0)*(parseFloat(ht)||0);
   return(<div>
-    <ToggleButtons mode={mode} setMode={setMode} options={[{id:"count",label:"Wall Count"},{id:"lh",label:"L × H"}]}/>
+    {!p.lhOnly&&<ToggleButtons mode={mode} setMode={setMode} options={[{id:"count",label:"Wall Count"},{id:"lh",label:"L × H"}]}/>}
     {mode==="count"?(<Row><Col><Input label="# of Cavities" value={wc} placeholder="0" onChange={function(v){setWc(v);p.onSqftChange((parseInt(v)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0));}}/></Col><Col><AppSelect label="Wall Height" value={wi} onChange={function(v){setWi(v);p.onSqftChange((parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(v)]?WALL_HEIGHTS[parseInt(v)].sqftPer:0));}} options={WALL_HEIGHTS.map(function(w,i){return{value:String(i),label:w.label};})}/></Col></Row>):(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);p.onSqftChange((parseFloat(v)||0)*(parseFloat(ht)||0));}}/></Col><Col><Input label="Height (ft)" value={ht} placeholder="0" onChange={function(v){setHt(v);p.onSqftChange((parseFloat(ln)||0)*(parseFloat(v)||0));}}/></Col></Row>)}
     {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
   </div>);
@@ -176,7 +176,7 @@ function MeasurementForm(p){
   var locLabel=loc?(loc.id==="custom"?cl:loc.label):"";
   var locGroup=loc?(loc.id==="custom"?"Other":loc.group):"Other";
   var needsPitch=loc&&loc.type==="roofline"&&(!hp||isFoam);
-  var measType=loc?(loc.type==="wall"?"wall":"area"):null;
+  var measType=loc?(loc.type==="wall"?"wall":loc.type==="slope"?"slope":"area"):null;
   var pf=needsPitch?(PITCH_FACTORS[pitch]||1):1;
   var adj=sqft*pf;var fin=Math.round(adj);
   var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"};
@@ -195,7 +195,7 @@ function MeasurementForm(p){
     {loc&&(<div>
       {hp&&(<div style={{marginBottom:12}}><StepLabel>{"② Material"}</StepLabel><select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select></div>)}
       <div style={{marginBottom:4}}><StepLabel>{(hp?"③":"②")+" Measurements"}</StepLabel></div>
-      {measType==="wall"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft}/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
+      {measType==="wall"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {hp&&(<div style={{marginBottom:12}}><StepLabel>{(hp?"④":"③")+" Price"}</StepLabel><Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/></div>)}
       {fin>0&&(<div style={{background:C.accentBg,borderRadius:6,padding:12,marginBottom:12,fontSize:13,color:C.textSec,border:"1px solid "+C.borderLight}}>
@@ -1125,8 +1125,8 @@ export default function App() {
         )}
       </div>
 
-      {/* Clear Everything — sticky bottom bar */}
-      <div style={{ position: "sticky", bottom: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
+      {/* Clear Everything — fixed bottom bar */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "12px 20px", paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
         <button
           onClick={function() {
             if (window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote. This cannot be undone.")) {

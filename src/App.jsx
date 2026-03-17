@@ -1191,7 +1191,7 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 90 }}>
+    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 32 }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         .ist-2col { display: flex; flex-direction: column; }
@@ -1210,7 +1210,10 @@ export default function App() {
       <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 10, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
-          <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={function(){if(window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote.")){setMeas([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "none", border: "1px solid "+C.danger, borderRadius: 5, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "4px 8px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
+            <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
+          </div>
         </div>
         <h1 style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "0.04em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
         <div style={{ fontSize: 10, color: C.dim, marginTop: 3, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
@@ -1254,20 +1257,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Clear Everything — fixed bottom bar */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, borderTop: "1px solid " + C.border, padding: "10px 20px", paddingBottom: "max(10px, env(safe-area-inset-bottom, 10px))", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)" }}>
-        <div className="ist-clear-btn-inner"><button
-          onClick={function() {
-            if (window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote. This cannot be undone.")) {
-              setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
-              setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
-              setSec("takeoff");
-            }
-          }}
-          style={{ width: "100%", padding: "12px 20px", borderRadius: 8, border: "1.5px solid " + C.danger, background: "transparent", color: C.danger, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", letterSpacing: "0.03em" }}>
-          🗑 Clear Everything
-        </button></div>
-      </div>
+
     </div>
   );
 }

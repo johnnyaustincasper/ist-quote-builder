@@ -15,25 +15,25 @@ var SALESMAN_INFO = {
 };
 
 var LOCATIONS = [
-  { id: "band_joist",       label: "Band Joist Blocking",          type: "area",    group: "Porch / Blocking" },
-  { id: "ext_kneewall",     label: "Boxed Exterior Kneewall",      type: "wall",    group: "Walls" },
-  { id: "ext_slopes",       label: "Boxed Exterior Slopes",        type: "slope",   group: "Attic / Ceiling" },
-  { id: "ext_walls_garage", label: "Boxed Exterior Walls of Garage", type: "wall", group: "Walls" },
-  { id: "ext_walls_house",  label: "Boxed Exterior Walls of House",  type: "wall", group: "Walls" },
-  { id: "flat_ceiling",     label: "Flat Ceiling",                 type: "area",    group: "Attic / Ceiling" },
-  { id: "gable_end",        label: "Gable End",                    type: "area",    group: "Roofline" },
-  { id: "garage_common",    label: "Garage Common Wall",           type: "wall",    group: "Walls" },
-  { id: "attic_area_garage",label: "Open Attic Area of Garage",    type: "area",    group: "Attic / Ceiling" },
-  { id: "attic_area_house", label: "Open Attic Area of House",     type: "area",    group: "Attic / Ceiling" },
-  { id: "attic_kneewall",   label: "Open Attic Kneewall",          type: "area",    group: "Attic / Ceiling" },
-  { id: "attic_slopes",     label: "Open Attic Slopes",            type: "area",    group: "Attic / Ceiling" },
-  { id: "open_attic_walls", label: "Open Attic Walls",             type: "wall",    group: "Walls" },
-  { id: "porch",            label: "Porch",                        type: "area",    group: "Porch / Blocking" },
-  { id: "porch_blocking",   label: "Porch Blocking",               type: "area",    group: "Porch / Blocking" },
-  { id: "roofline",         label: "Roofline",                     type: "roofline",group: "Roofline" },
-  { id: "roofline_garage",  label: "Roofline of Garage",           type: "roofline",group: "Roofline" },
-  { id: "roofline_house",   label: "Roofline of House",            type: "roofline",group: "Roofline" },
-  { id: "custom",           label: "Custom",                       type: "area",    group: "Other" },
+  { id: "band_joist",       label: "Band Joist Blocking",           short: "Band Joist",        type: "area",    group: "Porch / Blocking" },
+  { id: "ext_kneewall",     label: "Boxed Exterior Kneewall",       short: "Ext Kneewall",      type: "wall",    group: "Walls" },
+  { id: "ext_slopes",       label: "Boxed Exterior Slopes",         short: "Ext Slopes",        type: "slope",   group: "Attic / Ceiling" },
+  { id: "ext_walls_garage", label: "Boxed Exterior Walls of Garage",short: "Ext Walls Garage",  type: "wall",    group: "Walls" },
+  { id: "ext_walls_house",  label: "Boxed Exterior Walls of House", short: "Ext Walls House",   type: "wall",    group: "Walls" },
+  { id: "flat_ceiling",     label: "Flat Ceiling",                  short: "Flat Ceiling",      type: "area",    group: "Attic / Ceiling" },
+  { id: "gable_end",        label: "Gable End",                     short: "Gable End",         type: "area",    group: "Roofline" },
+  { id: "garage_common",    label: "Garage Common Wall",            short: "Garage Common",     type: "wall",    group: "Walls" },
+  { id: "attic_area_garage",label: "Open Attic Area of Garage",     short: "Attic Garage",      type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_area_house", label: "Open Attic Area of House",      short: "Attic House",       type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_kneewall",   label: "Open Attic Kneewall",           short: "Attic Kneewall",    type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_slopes",     label: "Open Attic Slopes",             short: "Attic Slopes",      type: "area",    group: "Attic / Ceiling" },
+  { id: "open_attic_walls", label: "Open Attic Walls",              short: "Attic Walls",       type: "wall",    group: "Walls" },
+  { id: "porch",            label: "Porch",                         short: "Porch",             type: "area",    group: "Porch / Blocking" },
+  { id: "porch_blocking",   label: "Porch Blocking",                short: "Porch Blocking",    type: "area",    group: "Porch / Blocking" },
+  { id: "roofline",         label: "Roofline",                      short: "Roofline",          type: "roofline",group: "Roofline" },
+  { id: "roofline_garage",  label: "Roofline of Garage",            short: "Roofline Garage",   type: "roofline",group: "Roofline" },
+  { id: "roofline_house",   label: "Roofline of House",             short: "Roofline House",    type: "roofline",group: "Roofline" },
+  { id: "custom",           label: "Custom",                        short: "Custom",            type: "area",    group: "Other" },
 ];
 
 var FIBERGLASS_MATERIALS = [
@@ -160,6 +160,50 @@ function AreaMeasurement(p){
   </div>);
 }
 
+function LocationGrid(p){
+  var groups=GROUP_ORDER.filter(function(g){return LOCATIONS.some(function(l){return l.group===g&&l.id!=="custom";});});
+  return(<div style={{marginBottom:4}}>
+    {groups.map(function(g){
+      var locs=LOCATIONS.filter(function(l){return l.group===g&&l.id!=="custom";});
+      return(<div key={g} style={{marginBottom:10}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>{g}</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {locs.map(function(loc){
+            var active=p.value===loc.id;
+            return(<button key={loc.id} onClick={function(){p.onChange(loc.id);}}
+              style={{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid "+C.border,background:active?C.accentBg:C.card,color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",lineHeight:1.2}}>
+              {loc.short}
+            </button>);
+          })}
+        </div>
+      </div>);
+    })}
+    <button onClick={function(){p.onChange("custom");}}
+      style={{padding:"8px 13px",borderRadius:8,border:p.value==="custom"?"2px solid "+C.accent:"1px dashed "+C.dim,background:p.value==="custom"?C.accentBg:"transparent",color:p.value==="custom"?C.accent:C.dim,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+      + Custom
+    </button>
+  </div>);
+}
+
+function StepBar(p){
+  var steps=p.steps;
+  return(<div style={{display:"flex",alignItems:"center",gap:0,marginBottom:18}}>
+    {steps.map(function(s,i){
+      var done=i<p.current;var active=i===p.current;
+      var bg=done?C.accent:active?C.accent:"transparent";
+      var col=done||active?"#fff":C.dim;
+      var borderCol=done||active?C.accent:C.border;
+      return(<div key={i} style={{display:"flex",alignItems:"center",flex:i<steps.length-1?1:"none"}}>
+        <div style={{display:"flex",alignItems:"center",gap:7,padding:"7px 12px",borderRadius:20,background:bg,border:"1.5px solid "+borderCol,transition:"all 0.15s"}}>
+          <span style={{fontSize:12,fontWeight:800,color:col}}>{done?"✓":(i+1)}</span>
+          <span style={{fontSize:12,fontWeight:600,color:col,whiteSpace:"nowrap"}}>{s}</span>
+        </div>
+        {i<steps.length-1&&(<div style={{flex:1,height:2,background:done?C.accent:C.borderLight,margin:"0 4px"}}/>)}
+      </div>);
+    })}
+  </div>);
+}
+
 function MeasurementForm(p){
   var mats=p.tab==="opencell"?OPEN_CELL_MATERIALS:p.tab==="closedcell"?CLOSED_CELL_MATERIALS:FIBERGLASS_MATERIALS;
   var isFoam=p.tab==="opencell"||p.tab==="closedcell";
@@ -181,6 +225,10 @@ function MeasurementForm(p){
   var adj=sqft*pf;var fin=Math.round(adj);
   var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"};
   var tabLabel=p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
+  // Step tracking
+  var stepsDone = lid ? ((!hp||mat) ? (fin>0 ? ((!hp||(parseFloat(price)||0)>0) ? 4 : 3) : 2) : 1) : 0;
+  var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Measure","Add"];
+  var stepCurrent = lid ? ((!hp||mat) ? (fin>0 ? (hp ? 3 : 2) : (hp?2:1)) : 1) : 0;
   function handleAdd(){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
     var useMat=hp?mat:"(material TBD)";
@@ -188,24 +236,35 @@ function MeasurementForm(p){
     p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval});
     setSqft(0);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);
   }
-  return(<div style={{background:C.card,borderRadius:6,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
-    <div style={{fontSize:15,fontWeight:600,marginBottom:14,color:C.text}}>{hp?(tabLabel+" — Add Line Item"):"Add Measurement"}</div>
-    <div style={{marginBottom:12}}><StepLabel>{"① Location"}</StepLabel><select style={ss} value={lid} onChange={function(e){setLid(e.target.value);setSqft(0);setMk(function(k){return k+1;});}}><option value="">{"— Select Location —"}</option>{GROUP_ORDER.filter(function(g){return LOCATIONS.some(function(loc){return loc.group===g;});}).map(function(g){return(<optgroup key={g} label={g}>{LOCATIONS.filter(function(loc){return loc.group===g;}).map(function(x){return(<option key={x.id} value={x.id}>{x.label}</option>);})}</optgroup>);})}</select></div>
-    {lid==="custom"&&(<div style={{marginBottom:12}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
+  return(<div style={{background:C.card,borderRadius:8,padding:18,border:"1px solid "+C.border,boxShadow:C.shadow}}>
+    <StepBar steps={stepLabels} current={stepCurrent}/>
+    {/* STEP 1: Location grid */}
+    <div style={{marginBottom:16}}>
+      <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"① Location"}</div>
+      <LocationGrid value={lid} onChange={function(v){setLid(v);setSqft(0);setMk(function(k){return k+1;});}}/>
+      {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
+    </div>
     {loc&&(<div>
-      {hp&&(<div style={{marginBottom:12}}><StepLabel>{"② Material"}</StepLabel><select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select></div>)}
-      <div style={{marginBottom:4}}><StepLabel>{(hp?"③":"②")+" Measurements"}</StepLabel></div>
+      {hp&&(<div style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"② Material"}</div>
+        <select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select>
+      </div>)}
+      <div style={{marginBottom:4}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
+      </div>
       {measType==="wall"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={setSqft} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
-      {hp&&(<div style={{marginBottom:12}}><StepLabel>{(hp?"④":"③")+" Price"}</StepLabel><Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/></div>)}
+      {hp&&(<div style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"④":"③")+" Price"}</div>
+        <Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/>
+      </div>)}
       {fin>0&&(<div style={{background:C.accentBg,borderRadius:6,padding:12,marginBottom:12,fontSize:13,color:C.textSec,border:"1px solid "+C.borderLight}}>
         <div style={{fontWeight:600,color:C.text,marginBottom:4,fontSize:14}}>{hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft")}</div>
         <div>{"Total: "}<span style={{color:C.text,fontWeight:600}}>{fin.toLocaleString()+" sq ft"}</span>{needsPitch&&sqft!==adj&&(<span>{" (adj. from "+Math.round(sqft)+" w/ "+pitch+")"}</span>)}</div>
         {hp&&(parseFloat(price)||0)>0&&(<div>{"Line Total: "}<span style={{color:C.accent,fontWeight:700}}>{"$"+Math.ceil(fin*(parseFloat(price)||0)).toLocaleString()+".00"}</span></div>)}
       </div>)}
       {!hp&&fin>0&&(<label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",marginBottom:8,cursor:"pointer"}}>
-        <input type="checkbox" checked={isRemoval} onChange={function(e){setIsRemoval(e.target.checked);}}
-          style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+        <input type="checkbox" checked={isRemoval} onChange={function(e){setIsRemoval(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
         <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Removal"}</span>
       </label>)}
       <GreenBtn onClick={handleAdd}>{"+ "+(hp?"Add to Quote":"Add Measurement")}</GreenBtn>
@@ -591,6 +650,18 @@ function QuoteBuilderSection(p){
     <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/><MeasurementForm key={"qb-"+matTab+"-"+activeIdx} tab={matTab} onAdd={addItem} hasPrice={true}/></div>
     </div>{/* end col-form */}
     <div className="ist-col-results">
+    {/* QUOTE TOTAL — pinned card */}
+    {opt.items.length>0&&(<div style={{padding:"0 16px 16px"}}>
+      <div style={{background:C.accent,borderRadius:10,padding:"18px 22px",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:"0 4px 16px rgba(37,99,235,0.18)"}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{opt.name+" · "+opt.items.length+" item"+(opt.items.length!==1?"s":"")}</div>
+          <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.85)"}}>{"Estimated Total"}</div>
+        </div>
+        <div style={{fontSize:38,fontWeight:900,color:"#fff",letterSpacing:"-0.02em"}}>
+          {"$"+(opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0).toLocaleString():((opt.items.reduce(function(s,i){return s+i.total;},0)-((opt.pso||false)?600:0)-((opt.psoKw||false)?525:0)+(opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0)+(opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0)+(opt.energySeal?(parseFloat(opt.energySealAmt)||0):0)+(opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0))).toLocaleString())}
+        </div>
+      </div>
+    </div>)}
     {/* ITEMS FOR ACTIVE OPTION */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 20px"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — Items ("+opt.items.length+")"}</div>

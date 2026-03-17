@@ -1177,9 +1177,7 @@ export default function App() {
         .ist-col-results { min-width: 0; }
         @media (min-width: 768px) {
           .ist-2col { flex-direction: row; align-items: flex-start; gap: 28px; padding: 16px 24px 0; }
-          .ist-col-form { flex: 0 0 400px; position: sticky; top: 82px; max-height: calc(100vh - 110px); overflow-y: auto; padding-bottom: 16px; }
-          .ist-col-form::-webkit-scrollbar { width: 4px; }
-          .ist-col-form::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+          .ist-col-form { flex: 0 0 400px; }
           .ist-col-results { flex: 1 1 0; padding-top: 4px; }
         }
         @media (min-width: 1024px) { .ist-col-form { flex: 0 0 440px; } }

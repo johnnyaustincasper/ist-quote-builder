@@ -432,11 +432,19 @@ function TakeOff(p){
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
-    <div style={{padding:"0 16px 12px"}}>
-      <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
-      <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
+    <div className="ist-2col">
+    <div className="ist-col-form">
+      <div style={{padding:"0 16px 12px"}}>
+        <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
+        <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
+      </div>
+      <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
+      <div style={{padding:"12px 16px 0"}}>
+        <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
+        <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}} mt={8}>{"Download Take Off PDF"}</GreenBtn>
+      </div>
     </div>
-    <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
+    <div className="ist-col-results">
     {p.measurements.length>0&&(<div style={{padding:"20px 16px"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
       {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
@@ -462,11 +470,9 @@ function TakeOff(p){
       <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
-    <div style={{padding:"12px 16px 0"}}>
-      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
-      <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}} mt={8}>{"Download Take Off PDF"}</GreenBtn>
-    </div>
     {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
+    </div>{/* end col-results */}
+    </div>{/* end ist-2col */}
   </div>);
 }
 
@@ -522,7 +528,8 @@ function QuoteBuilderSection(p){
 
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
-
+    <div className="ist-2col">
+    <div className="ist-col-form">
     {/* OPTION TABS */}
     <div style={{padding:"0 16px 12px"}}>
       <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -582,7 +589,8 @@ function QuoteBuilderSection(p){
 
     {/* ADD MANUALLY */}
     <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/><MeasurementForm key={"qb-"+matTab+"-"+activeIdx} tab={matTab} onAdd={addItem} hasPrice={true}/></div>
-
+    </div>{/* end col-form */}
+    <div className="ist-col-results">
     {/* ITEMS FOR ACTIVE OPTION */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 20px"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — Items ("+opt.items.length+")"}</div>
@@ -684,6 +692,8 @@ function QuoteBuilderSection(p){
     </div>)}
 
     {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
+    </div>{/* end col-results */}
+    </div>{/* end ist-2col */}
   </div>);
 }
 
@@ -1088,8 +1098,22 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 800, margin: "0 auto", paddingBottom: 80 }}>
-      <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');"}</style>
+    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 90 }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        .ist-2col { display: flex; flex-direction: column; }
+        .ist-col-form { min-width: 0; }
+        .ist-col-results { min-width: 0; }
+        @media (min-width: 768px) {
+          .ist-2col { flex-direction: row; align-items: flex-start; gap: 28px; padding: 16px 24px 0; }
+          .ist-col-form { flex: 0 0 400px; position: sticky; top: 82px; max-height: calc(100vh - 110px); overflow-y: auto; padding-bottom: 16px; }
+          .ist-col-form::-webkit-scrollbar { width: 4px; }
+          .ist-col-form::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+          .ist-col-results { flex: 1 1 0; padding-top: 4px; }
+        }
+        @media (min-width: 1024px) { .ist-col-form { flex: 0 0 440px; } }
+        .ist-clear-btn-inner { max-width: 1140px; margin: 0 auto; }
+      `}</style>
 
       {/* HEADER */}
       <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: C.shadow }}>
@@ -1100,7 +1124,7 @@ export default function App() {
         <h1 style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "0.04em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
         <div style={{ fontSize: 10, color: C.dim, marginTop: 3, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
 
-        <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: "1px solid " + C.border, marginTop: 14 }}>
+        <div className="ist-nav-tabs" style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: "1px solid " + C.border, marginTop: 14 }}>
           {[
             { id: "takeoff", label: "TAKE OFF", badge: meas.length || null },
             { id: "quote", label: "QUOTE", badge: qOpts.reduce(function(s,o){return s+o.items.length;},0) || null },

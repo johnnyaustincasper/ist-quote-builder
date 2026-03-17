@@ -292,22 +292,36 @@ function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
 }
 
 function sharePdf(container,filename){
+  container.style.position="absolute";
+  container.style.left="-9999px";
+  container.style.top="0";
   return getHtml2pdf().then(function(html2pdf){
-    var worker=html2pdf().set({margin:0.3,filename:filename,image:{type:"jpeg",quality:0.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}}).from(container);
-    if(navigator.share && navigator.canShare){
-      return worker.output('blob').then(function(blob){
+    return html2pdf().set({
+      margin:0.3,filename:filename,
+      image:{type:"jpeg",quality:0.98},
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
+    }).from(container).toPdf().output("blob").then(function(blob){
+      document.body.removeChild(container);
+      var url=URL.createObjectURL(blob);
+      // Try Web Share API (mobile)
+      if(navigator.share && navigator.canShare){
         var file=new File([blob],filename,{type:"application/pdf"});
         if(navigator.canShare({files:[file]})){
-          document.body.removeChild(container);
-          return navigator.share({files:[file],title:filename});
-        } else {
-          document.body.removeChild(container);
-          return worker.save();
+          return navigator.share({files:[file],title:filename}).catch(function(){
+            // Share dismissed or failed — fall back to download
+            var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+            setTimeout(function(){URL.revokeObjectURL(url);},5000);
+          });
         }
-      });
-    } else {
-      return worker.save().then(function(){document.body.removeChild(container);});
-    }
+      }
+      // Direct download
+      var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+      setTimeout(function(){URL.revokeObjectURL(url);},5000);
+    });
+  }).catch(function(err){
+    document.body.contains(container)&&document.body.removeChild(container);
+    alert("PDF generation failed: "+err.message);
   });
 }
 

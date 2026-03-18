@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
 const getHtml2pdf = () => import("html2pdf.js").then(m => m.default);
 

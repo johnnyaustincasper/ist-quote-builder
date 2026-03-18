@@ -285,11 +285,58 @@ function MeasurementForm(p){
 
 function MaterialTabs(p){return(<div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:"1px solid "+C.border,marginBottom:16}}>{[{id:"fiberglass",label:"FIBERGLASS"},{id:"opencell",label:"OPEN CELL"},{id:"closedcell",label:"CLOSED CELL"}].map(function(t){return(<button key={t.id} onClick={function(){p.setActiveTab(t.id);}} style={{flex:1,padding:"12px 4px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.04em",textTransform:"uppercase",background:p.activeTab===t.id?C.accent:C.card,color:p.activeTab===t.id?"#fff":C.dim}}>{t.label}</button>);})}</div>);}
 
+function getSavedCustomers(salesman){try{return JSON.parse(localStorage.getItem("ist-customers-"+salesman)||"[]");}catch(e){return[];}}
+function setSavedCustomers(salesman,list){localStorage.setItem("ist-customers-"+salesman,JSON.stringify(list));}
+
 function CustomerInfo(p){
   var s1=useState(false),show=s1[0],setShow=s1[1];
+  var s2=useState(false),showPicker=s2[0],setShowPicker=s2[1];
+  var saved=getSavedCustomers(p.currentUser||"default");
+
+  function saveCustomer(){
+    if(!p.custName.trim()){alert("Enter a customer name first.");return;}
+    var entry={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};
+    var list=getSavedCustomers(p.currentUser||"default");
+    var idx=list.findIndex(function(c){return c.name.toLowerCase()===entry.name.toLowerCase();});
+    if(idx>=0){if(!confirm("Update saved info for "+entry.name+"?"))return;list[idx]=entry;}else{list.unshift(entry);}
+    setSavedCustomers(p.currentUser||"default",list);
+    alert(entry.name+" saved!");
+  }
+
+  function loadCustomer(c){
+    p.setCustName(c.name||"");p.setCustAddr(c.address||"");p.setCustPhone(c.phone||"");p.setCustEmail(c.email||"");p.setJobAddr(c.jobAddress||"");
+    setShowPicker(false);
+  }
+
+  function deleteCustomer(name,e){
+    e.stopPropagation();
+    if(!confirm("Remove "+name+" from saved?"))return;
+    var list=getSavedCustomers(p.currentUser||"default").filter(function(c){return c.name!==name;});
+    setSavedCustomers(p.currentUser||"default",list);
+    setShowPicker(false);setTimeout(function(){setShowPicker(true);},10);
+  }
+
   return(<div style={{padding:"0 16px 12px"}}>
-    <button onClick={function(){setShow(!show);}} style={{width:"100%",padding:"12px 16px",borderRadius:6,border:"1px solid "+C.border,background:C.card,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:C.shadow}}><span>{p.custName?"Customer: "+p.custName:"Customer Info"}</span><span style={{fontSize:16,color:C.dim}}>{show?"▲":"▼"}</span></button>
-    {show&&(<div style={{background:C.card,borderRadius:6,padding:16,marginTop:8,border:"1px solid "+C.border,boxShadow:C.shadow}}>
+    <div style={{display:"flex",gap:8,marginBottom:6}}>
+      <button onClick={function(){setShow(!show);}} style={{flex:1,padding:"12px 16px",borderRadius:6,border:"1px solid "+C.border,background:C.card,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:C.shadow}}><span>{p.custName?"Customer: "+p.custName:"Customer Info"}</span><span style={{fontSize:16,color:C.dim}}>{show?"▲":"▼"}</span></button>
+      {saved.length>0&&<button onClick={function(){setShowPicker(!showPicker);setShow(true);}} style={{padding:"10px 14px",borderRadius:6,border:"1px solid #2563eb",background:showPicker?"#2563eb":"#eff6ff",color:showPicker?"#fff":"#2563eb",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>{"📋 Saved"}</button>}
+    </div>
+
+    {showPicker&&(<div style={{background:C.card,borderRadius:6,border:"1px solid #2563eb",boxShadow:C.shadow,marginBottom:8,maxHeight:220,overflowY:"auto"}}>
+      <div style={{padding:"8px 12px",fontSize:11,fontWeight:700,color:"#2563eb",textTransform:"uppercase",letterSpacing:0.5,borderBottom:"1px solid "+C.border}}>Select Saved Customer</div>
+      {saved.map(function(c){return(
+        <div key={c.name} onClick={function(){loadCustomer(c);}} style={{padding:"10px 12px",borderBottom:"1px solid "+C.border,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:600,color:C.text}}>{c.name}</div>
+            {c.address&&<div style={{fontSize:12,color:C.dim}}>{c.address}</div>}
+            {c.phone&&<div style={{fontSize:12,color:C.dim}}>{c.phone}</div>}
+          </div>
+          <button onClick={function(e){deleteCustomer(c.name,e);}} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0,marginLeft:8}}>✕</button>
+        </div>
+      );})}
+    </div>)}
+
+    {show&&(<div style={{background:C.card,borderRadius:6,padding:16,marginTop:4,border:"1px solid "+C.border,boxShadow:C.shadow}}>
       <div style={{marginBottom:10}}><Input label="Customer Name" value={p.custName} onChange={p.setCustName} type="text" placeholder="John Doe"/></div>
       <div style={{marginBottom:10}}>
         <Input label="Address" value={p.custAddr} onChange={p.setCustAddr} type="text" placeholder="123 Main St, Tulsa OK"/>
@@ -297,7 +344,10 @@ function CustomerInfo(p){
       </div>
       <Row><Col><Input label="Phone" value={p.custPhone} onChange={p.setCustPhone} type="tel" placeholder="(918) 555-0000"/></Col><Col><Input label="Email" value={p.custEmail} onChange={p.setCustEmail} type="email" placeholder="john@email.com"/></Col></Row>
       <Input label="Job Site (if different)" value={p.jobAddr} onChange={p.setJobAddr} type="text" placeholder="456 Oak Ave"/>
-      <button onClick={function(){if(confirm("Clear customer info?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");}}} style={{width:"100%",marginTop:12,padding:"8px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear Customer Info"}</button>
+      <div style={{display:"flex",gap:8,marginTop:12}}>
+        <button onClick={saveCustomer} style={{flex:1,padding:"8px",borderRadius:6,border:"1px solid #16a34a",background:"#f0fdf4",color:"#16a34a",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>💾 Save Customer</button>
+        <button onClick={function(){if(confirm("Clear customer info?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");}}} style={{flex:1,padding:"8px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear"}</button>
+      </div>
     </div>)}
   </div>);
 }
@@ -507,7 +557,7 @@ function TakeOff(p){
   var total=p.measurements.reduce(function(s,m){return s+m.sqft;},0);
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
-    <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
+    <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
     <div className="ist-2col">
     <div className="ist-col-form">
       <div style={{padding:"0 16px 12px"}}>
@@ -608,7 +658,7 @@ function QuoteBuilderSection(p){
   function removeOption(idx){if(opts.length<=1)return;setOpts(function(prev){return prev.filter(function(_,i){return i!==idx;});});if(activeIdx>=opts.length-1)setActiveIdx(Math.max(0,opts.length-2));}
 
   return(<div>
-    <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr}/>
+    <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
     <div className="ist-2col">
     <div className="ist-col-form">
     {/* OPTION TABS */}

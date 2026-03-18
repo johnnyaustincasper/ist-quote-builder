@@ -1266,10 +1266,15 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
   function buildMatRows(meas) {
     return (meas || []).map(function(m, i) {
       var isWall = wallIds.includes(m.locationId || "");
+      var ht = "";
+      if (isWall && m.wallHeightLabel) {
+        var match = m.wallHeightLabel.match(/(\d+)ft/);
+        ht = match ? match[1] : "";
+      }
       return {
         id: "mr-" + i,
         matType: matTypeLabel(m),
-        wallHeight: (isWall && m.wallHeightLabel) ? m.wallHeightLabel : "",
+        wallHeight: ht,
         rValue: m.rValue || "",
         width: m.width || "",
         sqft: m.sqft ? String(Math.round(m.sqft)) : "",

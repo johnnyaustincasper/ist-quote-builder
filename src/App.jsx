@@ -1261,11 +1261,15 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
   }
 
   // Build initial mat rows from measurements
+  var wallIds = ["ext_walls_house","ext_walls_garage","garage_common","ext_kneewall","open_attic_walls","attic_kneewall"];
+
   function buildMatRows(meas) {
     return (meas || []).map(function(m, i) {
+      var isWall = wallIds.includes(m.locationId || "");
       return {
         id: "mr-" + i,
         matType: matTypeLabel(m),
+        wallHeight: (isWall && m.wallHeightLabel) ? m.wallHeightLabel : "",
         rValue: m.rValue || "",
         width: m.width || "",
         sqft: m.sqft ? String(Math.round(m.sqft)) : "",
@@ -1329,7 +1333,7 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
     }).join("");
 
     var matRowsHtml = matRows.map(function(r) {
-      return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.matType+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.rValue+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.width+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matOut+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matIn+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.count+'</td></tr>';
+      return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.matType+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;color:'+(r.wallHeight?"#2563eb":"#999")+';">'+(r.wallHeight||"—")+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.rValue+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.width+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matOut+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matIn+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.count+'</td></tr>';
     }).join("");
 
     var empRowsHtml = employees.map(function(e) {
@@ -1355,6 +1359,7 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
       +'</tr></table>'
       +'<table style="margin-bottom:16px;"><thead><tr>'
       +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT TYPE</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">WALL HT</th>'
       +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th>'
       +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">WIDTH</th>'
       +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th>'
@@ -1418,7 +1423,7 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
       React.createElement("table", {style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
         React.createElement("thead", null,
           React.createElement("tr", null,
-            ["MAT TYPE","R-VALUE","WIDTH","SQ FT","MAT OUT","MAT IN","COUNT",""].map(function(h,i) {
+            ["MAT TYPE","WALL HT","R-VALUE","WIDTH","SQ FT","MAT OUT","MAT IN","COUNT",""].map(function(h,i) {
               return React.createElement("th", {key:i,style:thStyle}, h);
             })
           )
@@ -1426,7 +1431,8 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
         React.createElement("tbody", null,
           matRows.map(function(r) {
             return React.createElement("tr", {key:r.id, style:{borderBottom:"1px solid "+C.borderLight}},
-              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.matType,onChange:function(e){updateMatRow(r.id,"matType",e.target.value);},style:Object.assign({},iStyle,{width:90})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.matType,onChange:function(e){updateMatRow(r.id,"matType",e.target.value);},style:Object.assign({},iStyle,{width:110})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.wallHeight||"",onChange:function(e){updateMatRow(r.id,"wallHeight",e.target.value);},placeholder:"—",style:Object.assign({},iStyle,{width:70,color:r.wallHeight?"#2563eb":undefined})})),
               React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.rValue,onChange:function(e){updateMatRow(r.id,"rValue",e.target.value);},style:Object.assign({},iStyle,{width:70})})),
               React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.width,onChange:function(e){updateMatRow(r.id,"width",e.target.value);},style:Object.assign({},iStyle,{width:60})})),
               React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.sqft,onChange:function(e){updateMatRow(r.id,"sqft",e.target.value);},style:Object.assign({},iStyle,{width:70})})),

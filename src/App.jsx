@@ -353,14 +353,18 @@ function CustomerInfo(p){
     alert(entry.name+" saved!");
   }
 
+  var s6=useState(true),open=s6[0],setOpen=s6[1];
   return(<div style={{padding:"0 16px 12px"}}>
     <div style={{background:C.card,borderRadius:8,border:"1px solid "+C.border,boxShadow:C.shadow,marginBottom:10,overflow:"visible"}}>
-      <div style={{padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:"8px 8px 0 0"}}>
+      <button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
         <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>👤 Customer Info</span>
-        {p.custName&&<span style={{fontSize:13,fontWeight:600,color:"#93c5fd"}}>{p.custName}</span>}
-      </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {p.custName&&<span style={{fontSize:13,fontWeight:600,color:"#93c5fd"}}>{p.custName}</span>}
+          <span style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>{open?"▲":"▼"}</span>
+        </div>
+      </button>
 
-      {/* Two dropdowns side by side */}
+      {open&&<>{/* Two dropdowns side by side */}
       <div style={{padding:"10px 12px",display:"flex",gap:8,borderBottom:"1px solid "+C.border}}>
         <SavedDropdown label="Builders" icon="🏗️" color="#2563eb" bg="#eff6ff" items={builders} onSelect={load} onDelete={del}/>
         <SavedDropdown label="Individuals" icon="👤" color="#7c3aed" bg="#f5f3ff" items={individuals} onSelect={load} onDelete={del}/>
@@ -390,6 +394,7 @@ function CustomerInfo(p){
           </div>
         </div>
       </div>
+      </>}
     </div>
   </div>);
 }

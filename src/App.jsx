@@ -1236,16 +1236,28 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
   // Mat type mapping
   function matTypeLabel(m) {
     var id = m.locationId || "";
-    if (id === "flat_ceiling") return "FLAT";
-    if (id === "ext_slopes" || id === "attic_slopes") return "SLOPE";
-    if (id === "attic_area_house" || id === "attic_area_garage") return "ATTIC";
-    if (id === "attic_kneewall") return "KN WALL";
-    var grp = (m.group || "").toLowerCase();
-    if (grp.includes("wall")) {
-      if ((m.location || "").toLowerCase().includes("knee")) return "KN WALL";
-      return "EXT WALL";
-    }
-    return (m.location || m.group || "OTHER").toUpperCase().slice(0, 10);
+    var map = {
+      "band_joist":       "BJ",
+      "ext_kneewall":     "BOXED KW",
+      "ext_slopes":       "BOXED SLOPES",
+      "ext_walls_garage": "GARAGE EXTERIOR",
+      "ext_walls_house":  "HOUSE EXTERIOR",
+      "flat_ceiling":     "FLAT CEILING",
+      "gable_end":        "GABLE",
+      "garage_common":    "COMMON WALL",
+      "attic_area_garage":"GARAGE ATTIC",
+      "attic_area_house": "HOUSE ATTIC",
+      "attic_kneewall":   "ATTIC KW",
+      "attic_slopes":     "OPEN SLOPES",
+      "open_attic_walls": "OPEN ATTIC WALLS",
+      "porch":            "PORCH",
+      "porch_blocking":   "PORCH BLOCK",
+      "roofline":         "RL",
+      "roofline_garage":  "GARAGE RL",
+      "roofline_house":   "HOUSE RL",
+      "custom":           m.customLocation || m.location || "CUSTOM",
+    };
+    return map[id] || (m.location || m.locationId || "OTHER").toUpperCase();
   }
 
   // Build initial mat rows from measurements

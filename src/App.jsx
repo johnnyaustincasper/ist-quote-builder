@@ -1208,6 +1208,282 @@ function LoginScreen(p) {
   );
 }
 
+/* ══════════ WORK ORDER ══════════ */
+function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
+  var today = new Date().toISOString().slice(0,10);
+
+  // WO number
+  var initWoNum = (function() {
+    try { var n = parseInt(localStorage.getItem("ist-wo-counter") || "0"); return n > 0 ? n : 1; } catch(e) { return 1; }
+  })();
+
+  var [woNum, setWoNum] = React.useState(String(initWoNum));
+  var [dateReady, setDateReady] = React.useState(today);
+  var [dateFinished, setDateFinished] = React.useState("");
+  var [doorCode, setDoorCode] = React.useState("");
+  var [builder, setBuilder] = React.useState(custName || "");
+  var [address, setAddress] = React.useState(custAddr || "");
+  var [addition, setAddition] = React.useState("");
+  var [salesman, setSalesman] = React.useState(currentUser || "");
+  var [notes, setNotes] = React.useState("");
+
+  // Sync builder/address/salesman if props change
+  React.useEffect(function() { setBuilder(custName || ""); }, [custName]);
+  React.useEffect(function() { setAddress(custAddr || ""); }, [custAddr]);
+  React.useEffect(function() { setSalesman(currentUser || ""); }, [currentUser]);
+
+  // Mat type mapping
+  function matTypeLabel(m) {
+    var id = m.locationId || "";
+    if (id === "flat_ceiling") return "FLAT";
+    if (id === "ext_slopes" || id === "attic_slopes") return "SLOPE";
+    if (id === "attic_area_house" || id === "attic_area_garage") return "ATTIC";
+    if (id === "attic_kneewall") return "KN WALL";
+    var grp = (m.group || "").toLowerCase();
+    if (grp.includes("wall")) {
+      if ((m.location || "").toLowerCase().includes("knee")) return "KN WALL";
+      return "EXT WALL";
+    }
+    return (m.location || m.group || "OTHER").toUpperCase().slice(0, 10);
+  }
+
+  // Build initial mat rows from measurements
+  function buildMatRows(meas) {
+    return (meas || []).map(function(m, i) {
+      return {
+        id: "mr-" + i,
+        matType: matTypeLabel(m),
+        rValue: m.rValue || "",
+        width: m.width || "",
+        sqft: m.sqft ? String(Math.round(m.sqft)) : "",
+        matOut: "",
+        matIn: "",
+        count: "",
+      };
+    });
+  }
+
+  var [matRows, setMatRows] = React.useState(function() { return buildMatRows(measurements); });
+
+  React.useEffect(function() {
+    setMatRows(buildMatRows(measurements));
+  }, [measurements]);
+
+  // Employees
+  var emptyEmp = function() { return {name:"",sqft:"",labor:""}; };
+  var [employees, setEmployees] = React.useState([emptyEmp(),emptyEmp(),emptyEmp(),emptyEmp(),emptyEmp()]);
+
+  // R-value summary costs
+  var rCats = ["R-11","R-13","R-19","R-30","BW","E/S"];
+  var [rCosts, setRCosts] = React.useState({"R-11":"","R-13":"","R-19":"","R-30":"","BW":"","E/S":""});
+
+  function getRFootage(cat) {
+    var norm = cat.toLowerCase().replace("-","").replace("/","");
+    return matRows.reduce(function(sum, r) {
+      var rv = (r.rValue || "").toLowerCase().replace("-","");
+      if (cat === "BW") { if (rv === "bw" || rv === "rw") return sum + (parseFloat(r.sqft)||0); return sum; }
+      if (cat === "E/S") { if (rv === "es" || rv === "e/s") return sum + (parseFloat(r.sqft)||0); return sum; }
+      if (rv.startsWith(norm) || rv === norm) return sum + (parseFloat(r.sqft)||0);
+      return sum;
+    }, 0);
+  }
+
+  function totalLabor() {
+    return employees.reduce(function(s,e){ return s+(parseFloat(e.labor)||0); }, 0);
+  }
+
+  function updateMatRow(id, field, val) {
+    setMatRows(function(rows) { return rows.map(function(r){ return r.id===id ? Object.assign({},r,{[field]:val}) : r; }); });
+  }
+  function addMatRow() {
+    setMatRows(function(rows) { return rows.concat([{id:"mr-new-"+Date.now(),matType:"",rValue:"",width:"",sqft:"",matOut:"",matIn:"",count:""}]); });
+  }
+  function deleteMatRow(id) {
+    setMatRows(function(rows) { return rows.filter(function(r){ return r.id!==id; }); });
+  }
+  function updateEmp(i, field, val) {
+    setEmployees(function(emps) { return emps.map(function(e,idx){ return idx===i ? Object.assign({},e,{[field]:val}) : e; }); });
+  }
+
+  var iStyle = {fontFamily:"'Inter',sans-serif",fontSize:12,padding:"4px 6px",border:"1px solid "+C.inputBorder,borderRadius:4,background:C.input,color:C.text,width:"100%",boxSizing:"border-box"};
+  var thStyle = {padding:"6px 8px",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em",color:C.textSec,textAlign:"left",borderBottom:"2px solid "+C.border,whiteSpace:"nowrap"};
+  var tdStyle = {padding:"4px 6px",fontSize:12,verticalAlign:"middle"};
+
+  function handlePrint() {
+    var rSummaryRows = rCats.map(function(cat) {
+      var ft = getRFootage(cat);
+      return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+cat+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(ft?ft.toLocaleString():"")+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(rCosts[cat]?"$"+rCosts[cat]:"")+'</td></tr>';
+    }).join("");
+
+    var matRowsHtml = matRows.map(function(r) {
+      return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.matType+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.rValue+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.width+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matOut+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matIn+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.count+'</td></tr>';
+    }).join("");
+
+    var empRowsHtml = employees.map(function(e) {
+      return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+e.name+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+e.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(e.labor?"$"+e.labor:"")+'</td></tr>';
+    }).join("");
+
+    var html = '<!DOCTYPE html><html><head><title>Work Order #'+woNum+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111;}h1{font-size:20px;font-weight:900;margin:0;}table{border-collapse:collapse;width:100%;}@media print{body{margin:10px;}button{display:none;}}</style></head><body>'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">'
+      +'<div><h1>Insulation Services of Tulsa</h1><div style="font-size:12px;color:#555;">IST Work Order</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#555;">Work Order Number</div><div style="font-size:24px;font-weight:900;">#'+woNum+'</div></div>'
+      +'</div>'
+      +'<table style="margin-bottom:16px;border-collapse:collapse;"><tr>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;white-space:nowrap;">Date Ready:</td><td style="padding:4px 20px 4px 0;font-size:12px;">'+dateReady+'</td>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;white-space:nowrap;">Date Finished:</td><td style="padding:4px 0;font-size:12px;">'+dateFinished+'</td>'
+      +'</tr><tr>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Door Code:</td><td style="font-size:12px;">'+doorCode+'</td>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Builder:</td><td style="font-size:12px;">'+builder+'</td>'
+      +'</tr><tr>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Address:</td><td style="font-size:12px;">'+address+'</td>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Addition:</td><td style="font-size:12px;">'+addition+'</td>'
+      +'</tr><tr>'
+      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Salesman:</td><td style="font-size:12px;">'+salesman+'</td>'
+      +'</tr></table>'
+      +'<table style="margin-bottom:16px;"><thead><tr>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT TYPE</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">WIDTH</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT OUT</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT IN</th>'
+      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">COUNT</th>'
+      +'</tr></thead><tbody>'+matRowsHtml+'</tbody></table>'
+      +'<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Notes</div><div style="border:1px solid #ccc;padding:8px;font-size:12px;min-height:40px;">'+notes+'</div></div>'
+      +'<div style="display:flex;gap:24px;margin-bottom:16px;">'
+      +'<div style="flex:1;"><table><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">Employee</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">LABOR ($)</th></tr></thead><tbody>'
+      +empRowsHtml
+      +'<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;font-weight:700;">TOTAL</td><td style="padding:4px 8px;border:1px solid #ccc;"></td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;font-weight:700;text-align:right;">$'+totalLabor().toFixed(2)+'</td></tr>'
+      +'</tbody></table></div>'
+      +'<div><table style="width:220px;"><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">FOOTAGE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">COST</th></tr></thead><tbody>'+rSummaryRows+'</tbody></table></div>'
+      +'</div>'
+      +'<div style="text-align:center;font-size:11px;font-weight:700;border-top:1px solid #ccc;padding-top:12px;letter-spacing:0.05em;">Work Order Must Be Filled Out Completely</div>'
+      +'</body></html>';
+
+    var w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    w.print();
+  }
+
+  var secHead = function(label) {
+    return React.createElement("div", {style:{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.accent,marginBottom:8,marginTop:20,borderBottom:"1px solid "+C.border,paddingBottom:4}}, label);
+  };
+
+  var FI = function(props) {
+    return React.createElement("div", {style:{flex:1,minWidth:120}},
+      React.createElement("label", {style:{fontSize:11,fontWeight:600,color:C.textSec,display:"block",marginBottom:3}}, props.label),
+      React.createElement("input", {type:props.type||"text",value:props.value,onChange:function(e){props.onChange(e.target.value);},placeholder:props.placeholder||"",style:Object.assign({},iStyle,{width:"100%"})})
+    );
+  };
+
+  return React.createElement("div", {style:{maxWidth:900,margin:"0 auto",padding:"16px"}},
+    // Title + Print button
+    React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}},
+      React.createElement("div", {style:{fontSize:16,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",color:C.text}}, "Work Order"),
+      React.createElement("button", {onClick:handlePrint,style:{background:C.accent,color:"#fff",border:"none",borderRadius:6,padding:"8px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}, "🖨 Print / PDF")
+    ),
+
+    // Header fields
+    secHead("Job Info"),
+    React.createElement("div", {style:{display:"flex",flexWrap:"wrap",gap:10,marginBottom:8}},
+      React.createElement(FI, {label:"WO #", value:woNum, onChange:function(v){setWoNum(v);try{localStorage.setItem("ist-wo-counter",v);}catch(e){}}}),
+      React.createElement(FI, {label:"Date Ready", type:"date", value:dateReady, onChange:setDateReady}),
+      React.createElement(FI, {label:"Date Finished", type:"date", value:dateFinished, onChange:setDateFinished}),
+      React.createElement(FI, {label:"Door Code", value:doorCode, onChange:setDoorCode})
+    ),
+    React.createElement("div", {style:{display:"flex",flexWrap:"wrap",gap:10,marginBottom:8}},
+      React.createElement(FI, {label:"Builder", value:builder, onChange:setBuilder}),
+      React.createElement(FI, {label:"Address", value:address, onChange:setAddress}),
+      React.createElement(FI, {label:"Addition", value:addition, onChange:setAddition}),
+      React.createElement(FI, {label:"Salesman", value:salesman, onChange:setSalesman})
+    ),
+
+    // Materials table
+    secHead("Materials"),
+    React.createElement("div", {style:{overflowX:"auto"}},
+      React.createElement("table", {style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
+        React.createElement("thead", null,
+          React.createElement("tr", null,
+            ["MAT TYPE","R-VALUE","WIDTH","SQ FT","MAT OUT","MAT IN","COUNT",""].map(function(h,i) {
+              return React.createElement("th", {key:i,style:thStyle}, h);
+            })
+          )
+        ),
+        React.createElement("tbody", null,
+          matRows.map(function(r) {
+            return React.createElement("tr", {key:r.id, style:{borderBottom:"1px solid "+C.borderLight}},
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.matType,onChange:function(e){updateMatRow(r.id,"matType",e.target.value);},style:Object.assign({},iStyle,{width:90})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.rValue,onChange:function(e){updateMatRow(r.id,"rValue",e.target.value);},style:Object.assign({},iStyle,{width:70})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.width,onChange:function(e){updateMatRow(r.id,"width",e.target.value);},style:Object.assign({},iStyle,{width:60})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.sqft,onChange:function(e){updateMatRow(r.id,"sqft",e.target.value);},style:Object.assign({},iStyle,{width:70})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {type:"number",value:r.matOut,onChange:function(e){updateMatRow(r.id,"matOut",e.target.value);},style:Object.assign({},iStyle,{width:70})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {type:"number",value:r.matIn,onChange:function(e){updateMatRow(r.id,"matIn",e.target.value);},style:Object.assign({},iStyle,{width:70})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("input", {type:"number",value:r.count,onChange:function(e){updateMatRow(r.id,"count",e.target.value);},style:Object.assign({},iStyle,{width:60})})),
+              React.createElement("td", {style:tdStyle}, React.createElement("button", {onClick:function(){deleteMatRow(r.id);},style:{background:"none",border:"none",color:C.danger,fontSize:14,cursor:"pointer",fontWeight:700}}, "×"))
+            );
+          })
+        )
+      )
+    ),
+    React.createElement("button", {onClick:addMatRow,style:{marginTop:8,fontSize:11,fontWeight:700,background:"none",border:"1px dashed "+C.border,borderRadius:4,color:C.textSec,padding:"4px 14px",cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em"}}, "+ Add Row"),
+
+    // Notes
+    secHead("Notes"),
+    React.createElement("textarea", {value:notes,onChange:function(e){setNotes(e.target.value);},placeholder:"Job notes...",rows:3,style:{width:"100%",boxSizing:"border-box",padding:"8px",border:"1px solid "+C.inputBorder,borderRadius:6,fontSize:12,fontFamily:"'Inter',sans-serif",color:C.text,resize:"vertical"}}),
+
+    // Employees + R-Value summary side by side
+    secHead("Crew & Summary"),
+    React.createElement("div", {style:{display:"flex",gap:24,flexWrap:"wrap",alignItems:"flex-start"}},
+      // Employees
+      React.createElement("div", {style:{flex:2,minWidth:280}},
+        React.createElement("table", {style:{width:"100%",borderCollapse:"collapse"}},
+          React.createElement("thead", null,
+            React.createElement("tr", null,
+              ["Employee","SQ FT","Labor ($)"].map(function(h,i){return React.createElement("th",{key:i,style:thStyle},h);}),
+            )
+          ),
+          React.createElement("tbody", null,
+            employees.map(function(e,i){
+              return React.createElement("tr",{key:i,style:{borderBottom:"1px solid "+C.borderLight}},
+                React.createElement("td",{style:tdStyle},React.createElement("input",{value:e.name,onChange:function(ev){updateEmp(i,"name",ev.target.value);},placeholder:"Name",style:iStyle})),
+                React.createElement("td",{style:tdStyle},React.createElement("input",{type:"number",value:e.sqft,onChange:function(ev){updateEmp(i,"sqft",ev.target.value);},style:Object.assign({},iStyle,{width:70})})),
+                React.createElement("td",{style:tdStyle},React.createElement("input",{type:"number",value:e.labor,onChange:function(ev){updateEmp(i,"labor",ev.target.value);},style:Object.assign({},iStyle,{width:80})}))
+              );
+            }),
+            React.createElement("tr",{style:{borderTop:"2px solid "+C.border}},
+              React.createElement("td",{style:Object.assign({},tdStyle,{fontWeight:700})},"TOTAL LABOR"),
+              React.createElement("td",{style:tdStyle}),
+              React.createElement("td",{style:Object.assign({},tdStyle,{fontWeight:700,color:C.accent})},"$"+totalLabor().toFixed(2))
+            )
+          )
+        )
+      ),
+      // R-Value summary
+      React.createElement("div", {style:{flex:1,minWidth:200}},
+        React.createElement("table", {style:{width:"100%",borderCollapse:"collapse"}},
+          React.createElement("thead", null,
+            React.createElement("tr", null,
+              ["R-VALUE","FOOTAGE","COST"].map(function(h,i){return React.createElement("th",{key:i,style:thStyle},h);})
+            )
+          ),
+          React.createElement("tbody", null,
+            rCats.map(function(cat){
+              var ft = getRFootage(cat);
+              return React.createElement("tr",{key:cat,style:{borderBottom:"1px solid "+C.borderLight}},
+                React.createElement("td",{style:Object.assign({},tdStyle,{fontWeight:600})},cat),
+                React.createElement("td",{style:Object.assign({},tdStyle,{textAlign:"right"})},ft?ft.toLocaleString():""),
+                React.createElement("td",{style:tdStyle},React.createElement("input",{type:"number",value:rCosts[cat],onChange:function(e){setRCosts(function(prev){return Object.assign({},prev,{[cat]:e.target.value});});},style:Object.assign({},iStyle,{width:80})}))
+              );
+            })
+          )
+        )
+      )
+    ),
+    React.createElement("div",{style:{textAlign:"center",fontSize:11,fontWeight:700,letterSpacing:"0.05em",color:C.dim,marginTop:24,paddingTop:12,borderTop:"1px solid "+C.border}},"Work Order Must Be Filled Out Completely")
+  );
+}
+
 /* ══════════ MAIN APP ══════════ */
 
 export default function App() {
@@ -1320,6 +1596,7 @@ export default function App() {
             { id: "takeoff", label: "TAKE OFF", badge: meas.length || null },
             { id: "quote", label: "QUOTE", badge: qOpts.reduce(function(s,o){return s+o.items.length;},0) || null },
             { id: "jobs", label: "JOBS", badge: null },
+            { id: "workorder", label: "WORK ORDER", badge: null },
           ].map(function(t) {
             return (
               <button key={t.id} onClick={function() { setSec(t.id); }}
@@ -1335,6 +1612,7 @@ export default function App() {
       <div>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
+        {sec === "workorder" && (<WorkOrderSection measurements={meas} custName={cn} custAddr={ca} currentUser={currentUser} jobAddr={ja} />)}
         {sec === "jobs" && (
           <div>
             <SavedJobsPanel

@@ -646,6 +646,7 @@ function TakeOff(p){
         </div>
       </div>)}
       <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
+      <GreenBtn onClick={p.onSendToWorkOrder} mt={8}>{"Send to Work Order"}</GreenBtn>
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
     {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
@@ -1432,54 +1433,7 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
     secHead("Notes"),
     React.createElement("textarea", {value:notes,onChange:function(e){setNotes(e.target.value);},placeholder:"Job notes...",rows:3,style:{width:"100%",boxSizing:"border-box",padding:"8px",border:"1px solid "+C.inputBorder,borderRadius:6,fontSize:12,fontFamily:"'Inter',sans-serif",color:C.text,resize:"vertical"}}),
 
-    // Employees + R-Value summary side by side
-    secHead("Crew & Summary"),
-    React.createElement("div", {style:{display:"flex",gap:24,flexWrap:"wrap",alignItems:"flex-start"}},
-      // Employees
-      React.createElement("div", {style:{flex:2,minWidth:280}},
-        React.createElement("table", {style:{width:"100%",borderCollapse:"collapse"}},
-          React.createElement("thead", null,
-            React.createElement("tr", null,
-              ["Employee","SQ FT","Labor ($)"].map(function(h,i){return React.createElement("th",{key:i,style:thStyle},h);}),
-            )
-          ),
-          React.createElement("tbody", null,
-            employees.map(function(e,i){
-              return React.createElement("tr",{key:i,style:{borderBottom:"1px solid "+C.borderLight}},
-                React.createElement("td",{style:tdStyle},React.createElement("input",{value:e.name,onChange:function(ev){updateEmp(i,"name",ev.target.value);},placeholder:"Name",style:iStyle})),
-                React.createElement("td",{style:tdStyle},React.createElement("input",{type:"number",value:e.sqft,onChange:function(ev){updateEmp(i,"sqft",ev.target.value);},style:Object.assign({},iStyle,{width:70})})),
-                React.createElement("td",{style:tdStyle},React.createElement("input",{type:"number",value:e.labor,onChange:function(ev){updateEmp(i,"labor",ev.target.value);},style:Object.assign({},iStyle,{width:80})}))
-              );
-            }),
-            React.createElement("tr",{style:{borderTop:"2px solid "+C.border}},
-              React.createElement("td",{style:Object.assign({},tdStyle,{fontWeight:700})},"TOTAL LABOR"),
-              React.createElement("td",{style:tdStyle}),
-              React.createElement("td",{style:Object.assign({},tdStyle,{fontWeight:700,color:C.accent})},"$"+totalLabor().toFixed(2))
-            )
-          )
-        )
-      ),
-      // R-Value summary
-      React.createElement("div", {style:{flex:1,minWidth:200}},
-        React.createElement("table", {style:{width:"100%",borderCollapse:"collapse"}},
-          React.createElement("thead", null,
-            React.createElement("tr", null,
-              ["R-VALUE","FOOTAGE","COST"].map(function(h,i){return React.createElement("th",{key:i,style:thStyle},h);})
-            )
-          ),
-          React.createElement("tbody", null,
-            rCats.map(function(cat){
-              var ft = getRFootage(cat);
-              return React.createElement("tr",{key:cat,style:{borderBottom:"1px solid "+C.borderLight}},
-                React.createElement("td",{style:Object.assign({},tdStyle,{fontWeight:600})},cat),
-                React.createElement("td",{style:Object.assign({},tdStyle,{textAlign:"right"})},ft?ft.toLocaleString():""),
-                React.createElement("td",{style:tdStyle},React.createElement("input",{type:"number",value:rCosts[cat],onChange:function(e){setRCosts(function(prev){return Object.assign({},prev,{[cat]:e.target.value});});},style:Object.assign({},iStyle,{width:80})}))
-              );
-            })
-          )
-        )
-      )
-    ),
+
     React.createElement("div",{style:{textAlign:"center",fontSize:11,fontWeight:700,letterSpacing:"0.05em",color:C.dim,marginTop:24,paddingTop:12,borderTop:"1px solid "+C.border}},"Work Order Must Be Filled Out Completely")
   );
 }
@@ -1537,6 +1491,8 @@ export default function App() {
   if (!currentUser) {
     return <LoginScreen onLogin={function(name) { setCurrentUser(name); }} />;
   }
+
+  function sendToWorkOrder() { setSec("workorder"); }
 
   function sendToQuote() {
     if (meas.length === 0) return;
@@ -1610,7 +1566,7 @@ export default function App() {
       </div>
 
       <div>
-        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
+        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} onSendToWorkOrder={sendToWorkOrder} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
         {sec === "workorder" && (<WorkOrderSection measurements={meas} custName={cn} custAddr={ca} currentUser={currentUser} jobAddr={ja} />)}
         {sec === "jobs" && (

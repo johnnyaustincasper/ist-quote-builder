@@ -1268,8 +1268,8 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
       var isWall = wallIds.includes(m.locationId || "");
       var ht = "";
       if (isWall && m.wallHeightLabel) {
-        var match = m.wallHeightLabel.match(/(\d+)ft/);
-        ht = match ? match[1] : "";
+        var match = m.wallHeightLabel.match(/(\d+)['']/);
+        ht = match ? match[1] : m.wallHeightLabel.match(/(\d+)/)?.[1] || "";
       }
       return {
         id: "mr-" + i,

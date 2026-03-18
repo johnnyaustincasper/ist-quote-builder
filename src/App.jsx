@@ -1374,11 +1374,11 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
       +'</tr></thead><tbody>'+matRowsHtml+'</tbody></table>'
       +'<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Notes</div><div style="border:1px solid #ccc;padding:8px;font-size:12px;min-height:40px;">'+notes+'</div></div>'
       +'<div style="display:flex;gap:24px;margin-bottom:16px;">'
-      +'<div style="flex:1;"><table><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">Employee</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">LABOR ($)</th></tr></thead><tbody>'
+      +'<div style="flex:1;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">Employee</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">LABOR ($)</th></tr></thead><tbody>'
       +empRowsHtml
       +'<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;font-weight:700;">TOTAL</td><td style="padding:4px 8px;border:1px solid #ccc;"></td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;font-weight:700;text-align:right;">$'+totalLabor().toFixed(2)+'</td></tr>'
       +'</tbody></table></div>'
-      +'<div><table style="width:220px;"><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">FOOTAGE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">COST</th></tr></thead><tbody>'+rSummaryRows+'</tbody></table></div>'
+      +'<div style="flex:1;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">FOOTAGE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">COST</th></tr></thead><tbody>'+rSummaryRows+'</tbody></table></div>'
       +'</div>'
       +'<div style="text-align:center;font-size:11px;font-weight:700;border-top:1px solid #ccc;padding-top:12px;letter-spacing:0.05em;">Work Order Must Be Filled Out Completely</div>'
       +'</body></html>';

@@ -288,6 +288,39 @@ function MaterialTabs(p){return(<div style={{display:"flex",gap:0,borderRadius:6
 function getSavedCustomers(salesman){try{return JSON.parse(localStorage.getItem("ist-customers-"+salesman)||"[]");}catch(e){return[];}}
 function setSavedCustomers(salesman,list){localStorage.setItem("ist-customers-"+salesman,JSON.stringify(list));}
 
+function SavedDropdown({label, icon, color, bg, items, onSelect, onDelete}){
+  var s1=useState(false),open=s1[0],setOpen=s1[1];
+  var s2=useState(""),q=s2[0],setQ=s2[1];
+  var sorted=items.filter(function(c){return!q||c.name.toLowerCase().indexOf(q.toLowerCase())>=0;}).sort(function(a,b){return a.name.localeCompare(b.name);});
+  return(
+    <div style={{flex:1,position:"relative"}}>
+      {open&&<div onClick={function(){setOpen(false);setQ("");}} style={{position:"fixed",inset:0,zIndex:998}}/>}
+      <button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"9px 12px",borderRadius:6,border:"1px solid "+color,background:open?color:bg,color:open?"#fff":color,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",justifyContent:"space-between",alignItems:"center",gap:4}}>
+        <span>{icon} {label} ({items.length})</span><span style={{fontSize:11}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&(
+        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#fff",border:"1px solid "+color,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,0.18)",zIndex:9999,minWidth:200}}>
+          <input autoFocus value={q} onChange={function(e){setQ(e.target.value);}} placeholder={"Search "+label+"..."} style={{width:"100%",padding:"8px 12px",border:"none",borderBottom:"1px solid #e5e7eb",borderRadius:"8px 8px 0 0",fontSize:13,fontFamily:"'Inter',sans-serif",boxSizing:"border-box",outline:"none"}}/>
+          <div style={{maxHeight:220,overflowY:"auto"}}>
+            {sorted.length===0
+              ?<div style={{padding:"12px",fontSize:13,color:"#9ca3af"}}>No {label.toLowerCase()} saved</div>
+              :sorted.map(function(c){return(
+                <div key={c.name} onClick={function(){onSelect(c);setOpen(false);setQ("");}} style={{padding:"10px 12px",borderBottom:"1px solid #f3f4f6",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:"#111"}}>{c.name}</div>
+                    {c.address&&<div style={{fontSize:11,color:"#6b7280"}}>{c.address}</div>}
+                    {c.phone&&<div style={{fontSize:11,color:"#6b7280"}}>{c.phone}</div>}
+                  </div>
+                  <button onClick={function(e){e.stopPropagation();onDelete(c.name);}} style={{padding:"3px 7px",borderRadius:4,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0,marginLeft:8}}>✕</button>
+                </div>
+              );})}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CustomerInfo(p){
   var user=p.currentUser||"default";
   var s1=useState(false),showForm=s1[0],setShowForm=s1[1];
@@ -296,7 +329,21 @@ function CustomerInfo(p){
   var s4=useState(getSavedCustomers(user)),saved=s4[0],setSaved=s4[1];
   var s5=useState("Individual"),custType=s5[0],setCustType=s5[1];
 
-  function saveCustomer(){
+  var s4=useState(getSavedCustomers(user)),saved=s4[0],setSaved=s4[1];
+  var s5=useState("Individual"),custType=s5[0],setCustType=s5[1];
+
+  var builders=saved.filter(function(c){return(c.type||"Individual")==="Builder";});
+  var individuals=saved.filter(function(c){return(c.type||"Individual")==="Individual";});
+
+  function load(c){p.setCustName(c.name||"");p.setCustAddr(c.address||"");p.setCustPhone(c.phone||"");p.setCustEmail(c.email||"");p.setJobAddr(c.jobAddress||"");setCustType(c.type||"Individual");}
+
+  function del(name){
+    if(!confirm("Remove "+name+"?"))return;
+    var list=getSavedCustomers(user).filter(function(c){return c.name!==name;});
+    setSavedCustomers(user,list);setSaved(list);
+  }
+
+  function save(){
     if(!p.custName.trim()){alert("Enter a customer name first.");return;}
     var entry={name:p.custName.trim(),address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr,type:custType};
     var list=getSavedCustomers(user);
@@ -306,112 +353,44 @@ function CustomerInfo(p){
     alert(entry.name+" saved!");
   }
 
-  function loadCustomer(c){
-    p.setCustName(c.name||"");p.setCustAddr(c.address||"");p.setCustPhone(c.phone||"");p.setCustEmail(c.email||"");p.setJobAddr(c.jobAddress||"");
-    setCustType(c.type||"Individual");
-    setShowDrop(false);setSearch("");setShowForm(true);
-  }
-
-  function deleteCustomer(name,e){
-    e.stopPropagation();
-    if(!confirm("Remove "+name+" from saved?"))return;
-    var list=getSavedCustomers(user).filter(function(c){return c.name!==name;});
-    setSavedCustomers(user,list);setSaved(list);
-  }
-
-  function sortAlpha(arr){return arr.slice().sort(function(a,b){return a.name.localeCompare(b.name);});}
-
-  var q=search.toLowerCase();
-  var match=function(c){return!q||c.name.toLowerCase().indexOf(q)>=0||(c.address||"").toLowerCase().indexOf(q)>=0;};
-  var builders=sortAlpha(saved.filter(function(c){return(c.type||"Individual")==="Builder"&&match(c);}));
-  var individuals=sortAlpha(saved.filter(function(c){return(c.type||"Individual")==="Individual"&&match(c);}));
-
-  function CustomerRow(c){
-    return(
-      <div key={c.name} onClick={function(){loadCustomer(c);}} style={{padding:"10px 14px",borderBottom:"1px solid "+C.border,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div>
-          <div style={{fontSize:14,fontWeight:700,color:C.text}}>{c.name}</div>
-          {c.address&&<div style={{fontSize:12,color:C.dim}}>{c.address}</div>}
-          {c.phone&&<div style={{fontSize:12,color:C.dim}}>{c.phone}</div>}
-        </div>
-        <button onClick={function(e){deleteCustomer(c.name,e);}} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",flexShrink:0,marginLeft:10}}>✕</button>
-      </div>
-    );
-  }
-
-  var hasResults=builders.length>0||individuals.length>0;
-
   return(<div style={{padding:"0 16px 12px"}}>
-
-    {/* Click-outside overlay */}
-    {showDrop&&<div onClick={function(){setShowDrop(false);setSearch("");}} style={{position:"fixed",inset:0,zIndex:998}}/>}
-
-    {/* Customer selector box */}
-    <div style={{background:C.card,borderRadius:8,border:"1px solid "+C.border,boxShadow:C.shadow,marginBottom:10,overflow:"hidden"}}>
-      <div style={{padding:"10px 14px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#1e293b"}}>
-        <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>👤 Customer</span>
+    <div style={{background:C.card,borderRadius:8,border:"1px solid "+C.border,boxShadow:C.shadow,marginBottom:10,overflow:"visible"}}>
+      <div style={{padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:"8px 8px 0 0"}}>
+        <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>👤 Customer Info</span>
         {p.custName&&<span style={{fontSize:13,fontWeight:600,color:"#93c5fd"}}>{p.custName}</span>}
       </div>
 
-      <div style={{padding:"10px 12px",borderBottom:"1px solid "+C.border}}>
-        <div style={{position:"relative",zIndex:999}}>
-          <input
-            value={search}
-            onChange={function(e){setSearch(e.target.value);setShowDrop(true);}}
-            onFocus={function(){setShowDrop(true);}}
-            placeholder={saved.length>0?"Search saved customers…":"No saved customers yet — add one below"}
-            style={{width:"100%",padding:"9px 36px 9px 12px",borderRadius:6,border:"1px solid "+(showDrop?"#2563eb":C.inputBorder),background:C.input,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",boxSizing:"border-box",outline:"none"}}
-          />
-          <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",fontSize:16,color:C.dim,pointerEvents:"none"}}>▾</span>
-
-          {showDrop&&saved.length>0&&(
-            <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:C.card,border:"1px solid #2563eb",borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,0.18)",maxHeight:280,overflowY:"auto",zIndex:9999}}>
-              {!hasResults&&<div style={{padding:"12px 14px",fontSize:13,color:C.dim}}>No matches</div>}
-
-              {builders.length>0&&(<>
-                <div style={{padding:"6px 14px",fontSize:10,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:0.8,background:"#eff6ff",borderBottom:"1px solid "+C.border}}>🏗️ Builders</div>
-                {builders.map(CustomerRow)}
-              </>)}
-
-              {individuals.length>0&&(<>
-                <div style={{padding:"6px 14px",fontSize:10,fontWeight:800,color:"#7c3aed",textTransform:"uppercase",letterSpacing:0.8,background:"#f5f3ff",borderBottom:"1px solid "+C.border}}>👤 Individuals</div>
-                {individuals.map(CustomerRow)}
-              </>)}
-            </div>
-          )}
-        </div>
+      {/* Two dropdowns side by side */}
+      <div style={{padding:"10px 12px",display:"flex",gap:8,borderBottom:"1px solid "+C.border}}>
+        <SavedDropdown label="Builders" icon="🏗️" color="#2563eb" bg="#eff6ff" items={builders} onSelect={load} onDelete={del}/>
+        <SavedDropdown label="Individuals" icon="👤" color="#7c3aed" bg="#f5f3ff" items={individuals} onSelect={load} onDelete={del}/>
       </div>
 
-      <div style={{padding:"8px 12px",display:"flex",gap:8}}>
-        <button onClick={function(){setShowForm(!showForm);setShowDrop(false);}} style={{flex:1,padding:"8px",borderRadius:6,border:"1px solid "+C.border,background:showForm?C.accent:"transparent",color:showForm?"#fff":C.dim,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
-          {showForm?"▲ Hide":"✏️ "+(p.custName?"Edit":"New Customer")}
-        </button>
-        {p.custName&&<button onClick={saveCustomer} style={{flex:1,padding:"8px",borderRadius:6,border:"1px solid #16a34a",background:"#f0fdf4",color:"#16a34a",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>💾 Save</button>}
-        {p.custName&&<button onClick={function(){if(confirm("Clear?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");setShowForm(false);}}} style={{padding:"8px 12px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>✕</button>}
+      {/* Always-visible form */}
+      <div style={{padding:14}}>
+        <div style={{marginBottom:10}}><Input label="Customer Name" value={p.custName} onChange={p.setCustName} type="text" placeholder="John Doe"/></div>
+        <div style={{marginBottom:10}}>
+          <Input label="Address" value={p.custAddr} onChange={p.setCustAddr} type="text" placeholder="123 Main St, Tulsa OK"/>
+          <button onClick={function(){var addr=(p.custAddr||"").trim();if(!addr){alert("Enter an address first.");return;}window.open("https://assessor.tulsacounty.org/Property/Search?terms="+encodeURIComponent(addr),"_blank");}} style={{marginTop:6,padding:"6px 12px",borderRadius:6,border:"1px solid #2563eb",background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Look Up on Tulsa County Assessor</button>
+        </div>
+        <Row><Col><Input label="Phone" value={p.custPhone} onChange={p.setCustPhone} type="tel" placeholder="(918) 555-0000"/></Col><Col><Input label="Email" value={p.custEmail} onChange={p.setCustEmail} type="email" placeholder="john@email.com"/></Col></Row>
+        <div style={{marginTop:10}}><Input label="Job Site (if different)" value={p.jobAddr} onChange={p.setJobAddr} type="text" placeholder="456 Oak Ave"/></div>
+
+        {/* Save controls — optional */}
+        <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid "+C.border}}>
+          <label style={{fontSize:10,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6}}>Save to List (Optional)</label>
+          <div style={{display:"flex",gap:8}}>
+            {["Builder","Individual"].map(function(type){return(
+              <button key={type} onClick={function(){setCustType(type);}} style={{flex:1,padding:"7px",borderRadius:6,border:"1px solid "+(custType===type?(type==="Builder"?"#2563eb":"#7c3aed"):C.border),background:custType===type?(type==="Builder"?"#eff6ff":"#f5f3ff"):"transparent",color:custType===type?(type==="Builder"?"#2563eb":"#7c3aed"):C.dim,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+                {type==="Builder"?"🏗️ Builder":"👤 Individual"}
+              </button>
+            );})}
+            <button onClick={save} style={{flex:1,padding:"7px",borderRadius:6,border:"1px solid #16a34a",background:"#f0fdf4",color:"#16a34a",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>💾 Save</button>
+            <button onClick={function(){if(confirm("Clear?")){p.setCustName("");p.setCustAddr("");p.setCustPhone("");p.setCustEmail("");p.setJobAddr("");}}} style={{padding:"7px 12px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>✕</button>
+          </div>
+        </div>
       </div>
     </div>
-
-    {/* Editable fields */}
-    {showForm&&(<div style={{background:C.card,borderRadius:8,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow,marginBottom:4}}>
-      <div style={{marginBottom:10}}><Input label="Customer Name" value={p.custName} onChange={p.setCustName} type="text" placeholder="John Doe"/></div>
-      <div style={{marginBottom:10}}>
-        <Input label="Address" value={p.custAddr} onChange={p.setCustAddr} type="text" placeholder="123 Main St, Tulsa OK"/>
-        <button onClick={function(){var addr=(p.custAddr||"").trim();if(!addr){alert("Enter an address first.");return;}window.open("https://assessor.tulsacounty.org/Property/Search?terms="+encodeURIComponent(addr),"_blank");}} style={{marginTop:6,padding:"6px 12px",borderRadius:6,border:"1px solid #2563eb",background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Look Up on Tulsa County Assessor</button>
-      </div>
-      <Row><Col><Input label="Phone" value={p.custPhone} onChange={p.setCustPhone} type="tel" placeholder="(918) 555-0000"/></Col><Col><Input label="Email" value={p.custEmail} onChange={p.setCustEmail} type="email" placeholder="john@email.com"/></Col></Row>
-      <Input label="Job Site (if different)" value={p.jobAddr} onChange={p.setJobAddr} type="text" placeholder="456 Oak Ave"/>
-      <div style={{marginTop:12}}>
-        <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:6,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>Customer Type</label>
-        <div style={{display:"flex",gap:8}}>
-          {["Builder","Individual"].map(function(type){return(
-            <button key={type} onClick={function(){setCustType(type);}} style={{flex:1,padding:"8px",borderRadius:6,border:"1px solid "+(custType===type?"#2563eb":C.border),background:custType===type?"#eff6ff":"transparent",color:custType===type?"#2563eb":C.dim,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
-              {type==="Builder"?"🏗️ Builder":"👤 Individual"}
-            </button>
-          );})}
-        </div>
-      </div>
-    </div>)}
-
   </div>);
 }
 

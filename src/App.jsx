@@ -490,6 +490,16 @@ function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   if(!html){alert("Take off generation failed");return;}
   
+  var element=document.createElement("div");
+  element.innerHTML=html;
+  element.style.position="fixed";
+  element.style.left="0";
+  element.style.top="0";
+  element.style.width="8.5in";
+  element.style.backgroundColor="#fff";
+  element.style.padding="0";
+  document.body.appendChild(element);
+  
   var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   
   getHtml2pdf().then(function(html2pdf){
@@ -497,10 +507,13 @@ function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
       margin:0.3,
       filename:filename,
       image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff"},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).fromString(html).save();
+    }).from(element).save().finally(function(){
+      document.body.removeChild(element);
+    });
   }).catch(function(err){
+    document.body.removeChild(element);
     alert("PDF error: "+err.message);
   });
 }
@@ -570,6 +583,16 @@ function downloadQuotePdf(customer,opts,salesman){
   var html=buildQuoteHtml(customer,opts,salesman);
   if(!html){alert("Quote generation failed");return;}
   
+  var element=document.createElement("div");
+  element.innerHTML=html;
+  element.style.position="fixed";
+  element.style.left="0";
+  element.style.top="0";
+  element.style.width="8.5in";
+  element.style.backgroundColor="#fff";
+  element.style.padding="0";
+  document.body.appendChild(element);
+  
   var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   
   getHtml2pdf().then(function(html2pdf){
@@ -577,10 +600,13 @@ function downloadQuotePdf(customer,opts,salesman){
       margin:0.3,
       filename:filename,
       image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff"},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).fromString(html).save();
+    }).from(element).save().finally(function(){
+      document.body.removeChild(element);
+    });
   }).catch(function(err){
+    document.body.removeChild(element);
     alert("PDF error: "+err.message);
   });
 }

@@ -459,29 +459,30 @@ function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
 }
 
 function sharePdf(container,filename){
-  container.style.position="fixed";
-  container.style.left="-9999px";
+  container.style.position="absolute";
+  container.style.left="0";
   container.style.top="0";
-  container.style.zIndex="-9999";
-  container.style.width="816px";
-  container.style.visibility="visible";
-  container.style.opacity="1";
-  container.style.pointerEvents="none";
+  container.style.width="8.5in";
+  container.style.backgroundColor="#fff";
+  container.style.color="#000";
   
   return getHtml2pdf().then(function(html2pdf){
     return html2pdf().set({
       margin:0.3,
       filename:filename,
       image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,allowTaint:true,backgroundColor:"#ffffff",logging:false},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
     }).from(container).save();
   }).catch(function(err){
     alert("PDF generation failed: "+err.message);
+    console.error("PDF Error:",err);
   }).finally(function(){
-    if(document.body.contains(container)){
-      document.body.removeChild(container);
-    }
+    setTimeout(function(){
+      if(document.body.contains(container)){
+        document.body.removeChild(container);
+      }
+    },100);
   });
 }
 
@@ -563,9 +564,13 @@ function generatePDF(customer,opts,salesman){
 }
 
 function downloadQuotePdf(customer,opts,salesman){
+  if(!opts || opts.length===0){alert("No quote options. Please add items first.");return;}
+  var optsWithItems=opts.filter(function(o){return o.items && o.items.length>0;});
+  if(optsWithItems.length===0){alert("No items in quote options. Please add items first.");return;}
+  
   var container=document.createElement("div");
   var html=buildQuoteHtml(customer,opts,salesman);
-  if(!html){alert("Failed to generate quote HTML");return;}
+  if(!html || html.length<100){alert("Failed to generate quote HTML or quote is empty");return;}
   container.innerHTML=html;
   container.style.backgroundColor="#fff";
   container.style.color="#000";
@@ -575,7 +580,7 @@ function downloadQuotePdf(customer,opts,salesman){
   // Ensure DOM is rendered before html2pdf processes
   setTimeout(function(){
     sharePdf(container,filename);
-  }, 300);
+  }, 500);
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

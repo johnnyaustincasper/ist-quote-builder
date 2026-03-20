@@ -459,20 +459,24 @@ function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
 }
 
 function sharePdf(container,filename){
-  container.style.position="absolute";
-  container.style.left="-9999px";
+  container.style.position="fixed";
+  container.style.left="0";
   container.style.top="0";
-  container.style.width="8.5in";
+  container.style.zIndex="-9999";
+  container.style.width="100%";
   container.style.visibility="visible";
+  container.style.opacity="0";
+  container.style.pointerEvents="none";
+  
   return getHtml2pdf().then(function(html2pdf){
     return html2pdf().set({
-      margin:0.3,filename:filename,
+      margin:0.3,
+      filename:filename,
       image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,allowTaint:true,backgroundColor:"#ffffff"},
+      html2canvas:{scale:2,useCORS:true,allowTaint:true,backgroundColor:"#ffffff",logging:false},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
     }).from(container).save();
   }).catch(function(err){
-    document.body.contains(container)&&document.body.removeChild(container);
     alert("PDF generation failed: "+err.message);
   }).finally(function(){
     if(document.body.contains(container)){

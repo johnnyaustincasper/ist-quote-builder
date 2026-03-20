@@ -580,48 +580,30 @@ function generatePDF(customer,opts,salesman){
 }
 
 function downloadQuotePdf(customer,opts,salesman){
-  var html=buildQuoteHtml(customer,opts,salesman);
-  alert("HTML length: "+(html?html.length:0));
-  if(!html || html.length<100){alert("Quote HTML is empty or too short");return;}
-  
   var element=document.createElement("div");
-  element.innerHTML=html;
-  if(!element.innerHTML){alert("Element innerHTML failed");return;}
-  
-  element.style.position="fixed";
-  element.style.left="0";
+  element.innerHTML=buildQuoteHtml(customer,opts,salesman);
+  element.style.position="absolute";
   element.style.top="0";
-  element.style.width="8.5in";
-  element.style.backgroundColor="#fff";
-  element.style.padding="0";
-  element.style.visibility="visible";
-  element.style.opacity="1";
+  element.style.left="0";
   document.body.appendChild(element);
-  
-  alert("Element added, innerHTML chars: "+element.innerHTML.length);
   
   var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   
-  setTimeout(function(){
-    getHtml2pdf().then(function(html2pdf){
-      alert("html2pdf loaded");
-      html2pdf().set({
-        margin:0.3,
-        filename:filename,
-        image:{type:"jpeg",quality:0.98},
-        html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff"},
-        jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-      }).from(element).save().finally(function(){
-        alert("PDF saved");
-        document.body.removeChild(element);
-      });
-    }).catch(function(err){
-      alert("PDF error: "+err.message);
-      if(document.body.contains(element)){
-        document.body.removeChild(element);
-      }
-    });
-  }, 500);
+  getHtml2pdf().then(function(html2pdf){
+    html2pdf().set({
+      margin:0.3,
+      filename:filename,
+      image:{type:"jpeg",quality:0.98},
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
+    }).from(element).save();
+    setTimeout(function(){
+      document.body.removeChild(element);
+    },1000);
+  }).catch(function(err){
+    alert("Error: "+err);
+    if(document.body.contains(element)) document.body.removeChild(element);
+  });
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

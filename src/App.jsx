@@ -564,23 +564,25 @@ function generatePDF(customer,opts,salesman){
 }
 
 function downloadQuotePdf(customer,opts,salesman){
-  if(!opts || opts.length===0){alert("No quote options. Please add items first.");return;}
-  var optsWithItems=opts.filter(function(o){return o.items && o.items.length>0;});
-  if(optsWithItems.length===0){alert("No items in quote options. Please add items first.");return;}
+  console.log("downloadQuotePdf called with:",customer,opts,salesman);
   
   var container=document.createElement("div");
   var html=buildQuoteHtml(customer,opts,salesman);
-  if(!html || html.length<100){alert("Failed to generate quote HTML or quote is empty");return;}
+  console.log("Generated HTML length:",html?html.length:0);
+  
   container.innerHTML=html;
   container.style.backgroundColor="#fff";
   container.style.color="#000";
   container.style.fontFamily="Arial,sans-serif";
   document.body.appendChild(container);
+  
+  console.log("Container HTML:",container.innerHTML.substring(0,200));
+  
   var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  // Ensure DOM is rendered before html2pdf processes
+  
   setTimeout(function(){
     sharePdf(container,filename);
-  }, 500);
+  }, 300);
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

@@ -497,7 +497,10 @@ function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   document.body.appendChild(container);
   var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  sharePdf(container,filename);
+  // Ensure DOM is rendered before html2pdf processes
+  setTimeout(function(){
+    sharePdf(container,filename);
+  }, 100);
 }
 
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
@@ -566,7 +569,10 @@ function downloadQuotePdf(customer,opts,salesman){
   container.innerHTML=buildQuoteHtml(customer,opts,salesman);
   document.body.appendChild(container);
   var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  sharePdf(container,filename);
+  // Ensure DOM is rendered before html2pdf processes
+  setTimeout(function(){
+    sharePdf(container,filename);
+  }, 100);
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

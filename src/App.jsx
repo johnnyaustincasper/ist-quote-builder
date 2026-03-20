@@ -460,12 +460,12 @@ function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
 
 function sharePdf(container,filename){
   container.style.position="fixed";
-  container.style.left="0";
+  container.style.left="-9999px";
   container.style.top="0";
   container.style.zIndex="-9999";
-  container.style.width="100%";
+  container.style.width="816px";
   container.style.visibility="visible";
-  container.style.opacity="0";
+  container.style.opacity="1";
   container.style.pointerEvents="none";
   
   return getHtml2pdf().then(function(html2pdf){

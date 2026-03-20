@@ -487,19 +487,22 @@ function sharePdf(container,filename){
 }
 
 function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
-  var container=document.createElement("div");
   var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
-  if(!html){alert("Failed to generate take off HTML");return;}
-  container.innerHTML=html;
-  container.style.backgroundColor="#fff";
-  container.style.color="#000";
-  container.style.fontFamily="Arial,sans-serif";
-  document.body.appendChild(container);
+  if(!html){alert("Take off generation failed");return;}
+  
   var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  // Ensure DOM is rendered before html2pdf processes
-  setTimeout(function(){
-    sharePdf(container,filename);
-  }, 300);
+  
+  getHtml2pdf().then(function(html2pdf){
+    html2pdf().set({
+      margin:0.3,
+      filename:filename,
+      image:{type:"jpeg",quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
+    }).fromString(html).save();
+  }).catch(function(err){
+    alert("PDF error: "+err.message);
+  });
 }
 
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
@@ -576,7 +579,7 @@ function downloadQuotePdf(customer,opts,salesman){
       image:{type:"jpeg",quality:0.98},
       html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).html(html).save();
+    }).fromString(html).save();
   }).catch(function(err){
     alert("PDF error: "+err.message);
   });

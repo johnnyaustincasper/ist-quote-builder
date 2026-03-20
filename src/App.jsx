@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
-const getHtml2pdf = () => import("html2pdf.js").then(m => m.default);
 
 var COMPANY = {
   name: "Insulation Services of Tulsa",
@@ -458,66 +457,6 @@ function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function sharePdf(container,filename){
-  container.style.position="absolute";
-  container.style.left="0";
-  container.style.top="0";
-  container.style.width="8.5in";
-  container.style.backgroundColor="#fff";
-  container.style.color="#000";
-  
-  return getHtml2pdf().then(function(html2pdf){
-    return html2pdf().set({
-      margin:0.3,
-      filename:filename,
-      image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
-      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).from(container).save();
-  }).catch(function(err){
-    alert("PDF generation failed: "+err.message);
-    console.error("PDF Error:",err);
-  }).finally(function(){
-    setTimeout(function(){
-      if(document.body.contains(container)){
-        document.body.removeChild(container);
-      }
-    },100);
-  });
-}
-
-function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
-  var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
-  if(!html){alert("Take off generation failed");return;}
-  
-  var element=document.createElement("div");
-  element.innerHTML=html;
-  element.style.position="fixed";
-  element.style.left="0";
-  element.style.top="0";
-  element.style.width="8.5in";
-  element.style.backgroundColor="#fff";
-  element.style.padding="0";
-  document.body.appendChild(element);
-  
-  var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  
-  getHtml2pdf().then(function(html2pdf){
-    html2pdf().set({
-      margin:0.3,
-      filename:filename,
-      image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff"},
-      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).from(element).save().finally(function(){
-      document.body.removeChild(element);
-    });
-  }).catch(function(err){
-    document.body.removeChild(element);
-    alert("PDF error: "+err.message);
-  });
-}
-
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
 function _buildQuoteHtml(customer,opts,salesman){
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});var qn="IST-"+Date.now().toString(36).toUpperCase();
@@ -579,33 +518,6 @@ function generatePDF(customer,opts,salesman){
   if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
 }
 
-function downloadQuotePdf(customer,opts,salesman){
-  var element=document.createElement("div");
-  element.innerHTML=buildQuoteHtml(customer,opts,salesman);
-  element.style.position="absolute";
-  element.style.top="0";
-  element.style.left="0";
-  document.body.appendChild(element);
-  
-  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  
-  getHtml2pdf().then(function(html2pdf){
-    html2pdf().set({
-      margin:0.3,
-      filename:filename,
-      image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true},
-      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).from(element).save();
-    setTimeout(function(){
-      document.body.removeChild(element);
-    },1000);
-  }).catch(function(err){
-    alert("Error: "+err);
-    if(document.body.contains(element)) document.body.removeChild(element);
-  });
-}
-
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden;margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>'+
     buildQuoteHtml(customer,opts,salesman)+
@@ -651,7 +563,6 @@ function TakeOff(p){
       <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
       <div style={{padding:"12px 16px 0"}}>
         <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
-        <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};downloadTakeOffPdf(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}} mt={8}>{"Download Take Off PDF"}</GreenBtn>
       </div>
     </div>
     <div className="ist-col-results">
@@ -916,7 +827,6 @@ function QuoteBuilderSection(p){
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){downloadQuotePdf({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Download Quote PDF"}</GreenBtn>
     </div>)}
 
     {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}

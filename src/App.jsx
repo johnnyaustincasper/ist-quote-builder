@@ -462,45 +462,39 @@ function sharePdf(container,filename){
   container.style.position="absolute";
   container.style.left="-9999px";
   container.style.top="0";
+  container.style.width="8.5in";
+  container.style.visibility="visible";
   return getHtml2pdf().then(function(html2pdf){
     return html2pdf().set({
       margin:0.3,filename:filename,
       image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true},
+      html2canvas:{scale:2,useCORS:true,allowTaint:true,backgroundColor:"#ffffff"},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).from(container).toPdf().output("blob").then(function(blob){
-      document.body.removeChild(container);
-      var url=URL.createObjectURL(blob);
-      // Try Web Share API (mobile)
-      if(navigator.share && navigator.canShare){
-        var file=new File([blob],filename,{type:"application/pdf"});
-        if(navigator.canShare({files:[file]})){
-          return navigator.share({files:[file],title:filename}).catch(function(){
-            // Share dismissed or failed — fall back to download
-            var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-            setTimeout(function(){URL.revokeObjectURL(url);},5000);
-          });
-        }
-      }
-      // Direct download
-      var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-      setTimeout(function(){URL.revokeObjectURL(url);},5000);
-    });
+    }).from(container).save();
   }).catch(function(err){
     document.body.contains(container)&&document.body.removeChild(container);
     alert("PDF generation failed: "+err.message);
+  }).finally(function(){
+    if(document.body.contains(container)){
+      document.body.removeChild(container);
+    }
   });
 }
 
 function downloadTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts){
   var container=document.createElement("div");
-  container.innerHTML=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
+  var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
+  if(!html){alert("Failed to generate take off HTML");return;}
+  container.innerHTML=html;
+  container.style.backgroundColor="#fff";
+  container.style.color="#000";
+  container.style.fontFamily="Arial,sans-serif";
   document.body.appendChild(container);
   var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   // Ensure DOM is rendered before html2pdf processes
   setTimeout(function(){
     sharePdf(container,filename);
-  }, 100);
+  }, 300);
 }
 
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}
@@ -566,13 +560,18 @@ function generatePDF(customer,opts,salesman){
 
 function downloadQuotePdf(customer,opts,salesman){
   var container=document.createElement("div");
-  container.innerHTML=buildQuoteHtml(customer,opts,salesman);
+  var html=buildQuoteHtml(customer,opts,salesman);
+  if(!html){alert("Failed to generate quote HTML");return;}
+  container.innerHTML=html;
+  container.style.backgroundColor="#fff";
+  container.style.color="#000";
+  container.style.fontFamily="Arial,sans-serif";
   document.body.appendChild(container);
   var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
   // Ensure DOM is rendered before html2pdf processes
   setTimeout(function(){
     sharePdf(container,filename);
-  }, 100);
+  }, 300);
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

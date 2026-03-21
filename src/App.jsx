@@ -1698,42 +1698,146 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+e.name+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+e.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(e.labor?"$"+e.labor:"")+'</td></tr>';
     }).join("");
 
-    var html = '<!DOCTYPE html><html><head><title>Work Order #'+woNum+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111;}h1{font-size:20px;font-weight:900;margin:0;}table{border-collapse:collapse;width:100%;}#bottom-section{margin-top:24px;}@media print{body{margin:10px;padding-bottom:200px;}button{display:none;}#bottom-section{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:10px 24px;border-top:2px solid #111;}}</style></head><body>'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">'
-      +'<div><h1>Insulation Services of Tulsa</h1><div style="font-size:12px;color:#555;">IST Work Order</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#555;">Work Order Number</div><div style="font-size:24px;font-weight:900;">#'+woNum+'</div></div>'
+    var TH = 'padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#dbeafe;text-align:left;background:#0f1e46;border:none;';
+    var TD = 'padding:5px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;color:#0f172a;vertical-align:middle;';
+    var TD2 = 'padding:5px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;color:#0f172a;text-align:right;vertical-align:middle;';
+    var matRowsHtmlThemed = matRows.map(function(r,i){
+      var bg = i%2===0?'#f8fafc':'#fff';
+      return '<tr style="background:'+bg+'"><td style="'+TD+'">'+r.matType+'</td><td style="'+TD+'">'+r.rValue+'</td><td style="'+TD+';color:'+(r.wallHeight?'#2563eb':'#94a3b8')+';">'+(r.wallHeight||r.width||'—')+'</td><td style="'+TD2+'">'+r.sqft+'</td><td style="'+TD2+'">'+r.matOut+'</td><td style="'+TD2+'">'+r.matIn+'</td><td style="'+TD2+'">'+r.count+'</td></tr>';
+    }).join('');
+    var empRowsHtmlThemed = employees.map(function(e,i){
+      var bg = i%2===0?'#f8fafc':'#fff';
+      return '<tr style="background:'+bg+'"><td style="'+TD+'">'+e.name+'</td><td style="'+TD2+'">'+e.sqft+'</td><td style="'+TD2+'">'+(e.labor?'$'+e.labor:'')+'</td></tr>';
+    }).join('');
+    var rSummaryRowsThemed = rCats.map(function(cat){
+      var ft = getRFootage(cat);
+      return '<tr><td style="'+TD+'">'+cat+'</td><td style="'+TD2+'">'+(ft?ft.toLocaleString():'')+'</td><td style="'+TD2+'">'+(rCosts[cat]?'$'+rCosts[cat]:'')+'</td></tr>';
+    }).join('');
+
+    var html = '<!DOCTYPE html><html><head><title>Work Order #'+woNum+'</title>'
+      +'<style>'
+      +'*{box-sizing:border-box;margin:0;padding:0;}'
+      +'body{font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif;background:#fff;color:#0f172a;}'
+      +'table{border-collapse:collapse;width:100%;}'
+      +'@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}button{display:none !important;}}'
+      +'</style></head><body>'
+
+      // ── HEADER BAND ──
+      +'<div style="background:#0f1e46;padding:18px 28px 14px;position:relative;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+      +'<div>'
+      +'<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:0.04em;text-transform:uppercase;">Insulation Services of Tulsa</div>'
+      +'<div style="font-size:9px;color:#b4c8f0;margin-top:3px;letter-spacing:0.06em;">Serving Northeastern Oklahoma  •  1 (918) 232-9055</div>'
       +'</div>'
-      +'<table style="margin-bottom:16px;border-collapse:collapse;"><tr>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;white-space:nowrap;">Date Ready:</td><td style="padding:4px 20px 4px 0;font-size:12px;">'+dateReady+'</td>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;white-space:nowrap;">Date Finished:</td><td style="padding:4px 0;font-size:12px;">'+dateFinished+'</td>'
+      +'<div style="text-align:right;">'
+      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#dbeafe;">Work Order</div>'
+      +'<div style="font-size:26px;font-weight:900;color:#fff;line-height:1.1;">#'+woNum+'</div>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+      // Blue accent stripe
+      +'<div style="height:4px;background:#2563eb;"></div>'
+
+      // ── JOB INFO CARDS ──
+      +'<div style="display:flex;gap:12px;padding:16px 28px 0;">'
+
+      // Card: Job Details
+      +'<div style="flex:2;background:#f8fafc;border-radius:6px;padding:12px 16px;border-left:4px solid #2563eb;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:8px;">Job Details</div>'
+      +'<table style="width:100%;border:none;"><tr>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;white-space:nowrap;padding:2px 10px 2px 0;">Date Ready</td>'
+      +'<td style="font-size:12px;color:#0f172a;padding:2px 16px 2px 0;">'+dateReady+'</td>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;white-space:nowrap;padding:2px 10px 2px 0;">Date Finished</td>'
+      +'<td style="font-size:12px;color:#0f172a;padding:2px 0;">'+dateFinished+'</td>'
       +'</tr><tr>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Door Code:</td><td style="font-size:12px;">'+doorCode+'</td>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Builder:</td><td style="font-size:12px;">'+builder+'</td>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Builder</td>'
+      +'<td style="font-size:12px;color:#0f172a;padding:2px 16px 2px 0;">'+builder+'</td>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Addition</td>'
+      +'<td style="font-size:12px;color:#0f172a;padding:2px 0;">'+addition+'</td>'
       +'</tr><tr>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Address:</td><td style="font-size:12px;">'+address+'</td>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Addition:</td><td style="font-size:12px;">'+addition+'</td>'
-      +'</tr><tr>'
-      +'<td style="padding:4px 12px 4px 0;font-size:12px;font-weight:700;">Salesman:</td><td style="font-size:12px;">'+salesman+'</td>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Address</td>'
+      +'<td style="font-size:12px;color:#0f172a;padding:2px 16px 2px 0;" colspan="3">'+address+'</td>'
       +'</tr></table>'
-      +'<table style="margin-bottom:16px;"><thead><tr>'
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT TYPE</th>'
-      
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th>'
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">HEIGHT</th>'
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th>'
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT OUT</th>'
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">MAT IN</th>'
-      +'<th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">COUNT</th>'
-      +'</tr></thead><tbody>'+matRowsHtml+'</tbody></table>'
-      +'<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Notes</div><div style="border:1px solid #ccc;padding:8px;font-size:12px;min-height:40px;">'+notes+'</div></div>'
-      +'<div id="bottom-section"><div style="display:flex;gap:24px;margin-bottom:16px;align-items:stretch;">'
-      +'<div style="flex:1;display:flex;flex-direction:column;"><table style="width:100%;border-collapse:collapse;height:100%;"><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">Employee</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">SQ FT</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">LABOR ($)</th></tr></thead><tbody>'
-      +empRowsHtml
-      +'<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;font-weight:700;">TOTAL</td><td style="padding:4px 8px;border:1px solid #ccc;"></td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;font-weight:700;text-align:right;">$'+totalLabor().toFixed(2)+'</td></tr>'
-      +'</tbody></table></div>'
-      +'<div style="flex:1;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">R-VALUE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">FOOTAGE</th><th style="padding:6px 8px;border:1px solid #ccc;font-size:11px;background:#f0f0f0;">COST</th></tr></thead><tbody>'+rSummaryRows+'</tbody></table></div>'
       +'</div>'
-      +'</div><div style="text-align:center;font-size:11px;font-weight:700;padding-top:8px;letter-spacing:0.05em;">Work Order Must Be Filled Out Completely</div></div>'
+
+      // Card: Assignment
+      +'<div style="flex:1;background:#f8fafc;border-radius:6px;padding:12px 16px;border-left:4px solid #2563eb;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:8px;">Assignment</div>'
+      +'<table style="width:100%;border:none;"><tr>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Salesman</td>'
+      +'<td style="font-size:12px;color:#0f172a;">'+salesman+'</td>'
+      +'</tr><tr>'
+      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Door Code</td>'
+      +'<td style="font-size:12px;color:#0f172a;">'+doorCode+'</td>'
+      +'</tr></table>'
+      +'</div>'
+      +'</div>'
+
+      // ── MATERIALS TABLE ──
+      +'<div style="padding:16px 28px 0;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:6px;">Materials</div>'
+      +'<table style="border-radius:6px;overflow:hidden;border:1px solid #e2e8f0;">'
+      +'<thead><tr>'
+      +'<th style="'+TH+'">Mat Type</th>'
+      +'<th style="'+TH+'">R-Value</th>'
+      +'<th style="'+TH+'">Height</th>'
+      +'<th style="'+TH+';text-align:right;">Sq Ft</th>'
+      +'<th style="'+TH+';text-align:right;">Mat Out</th>'
+      +'<th style="'+TH+';text-align:right;">Mat In</th>'
+      +'<th style="'+TH+';text-align:right;">Count</th>'
+      +'</tr></thead>'
+      +'<tbody>'+matRowsHtmlThemed+'</tbody>'
+      +'</table>'
+      +'</div>'
+
+      // ── NOTES ──
+      +'<div style="padding:12px 28px 0;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:6px;">Notes</div>'
+      +'<div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;font-size:12px;min-height:44px;color:#0f172a;background:#f8fafc;">'+notes+'</div>'
+      +'</div>'
+
+      // ── EMPLOYEES + R-VALUE SUMMARY ──
+      +'<div style="display:flex;gap:16px;padding:12px 28px 0;">'
+
+      // Employees
+      +'<div style="flex:1;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:6px;">Employees</div>'
+      +'<table style="border-radius:6px;overflow:hidden;border:1px solid #e2e8f0;">'
+      +'<thead><tr>'
+      +'<th style="'+TH+'">Employee</th>'
+      +'<th style="'+TH+';text-align:right;">Sq Ft</th>'
+      +'<th style="'+TH+';text-align:right;">Labor ($)</th>'
+      +'</tr></thead>'
+      +'<tbody>'+empRowsHtmlThemed
+      +'<tr style="background:#0f1e46;">'
+      +'<td style="padding:6px 10px;font-size:12px;font-weight:700;color:#fff;">TOTAL</td>'
+      +'<td style="padding:6px 10px;"></td>'
+      +'<td style="padding:6px 10px;font-size:13px;font-weight:900;color:#fff;text-align:right;">$'+totalLabor().toFixed(2)+'</td>'
+      +'</tr>'
+      +'</tbody></table>'
+      +'</div>'
+
+      // R-Value Summary
+      +'<div style="flex:1;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:6px;">R-Value Summary</div>'
+      +'<table style="border-radius:6px;overflow:hidden;border:1px solid #e2e8f0;">'
+      +'<thead><tr>'
+      +'<th style="'+TH+'">R-Value</th>'
+      +'<th style="'+TH+';text-align:right;">Footage</th>'
+      +'<th style="'+TH+';text-align:right;">Cost</th>'
+      +'</tr></thead>'
+      +'<tbody>'+rSummaryRowsThemed+'</tbody>'
+      +'</table>'
+      +'</div>'
+      +'</div>'
+
+      // ── FOOTER ──
+      +'<div style="margin-top:16px;background:#0f1e46;padding:10px 28px;display:flex;flex-direction:column;align-items:center;">'
+      +'<div style="height:3px;width:100%;background:#2563eb;margin-bottom:8px;border-radius:2px;"></div>'
+      +'<div style="font-size:9px;color:#b4c8f0;letter-spacing:0.06em;text-align:center;">Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient — one home at a time.</div>'
+      +'<div style="font-size:8px;color:#6482b0;margin-top:3px;letter-spacing:0.05em;">Licensed &amp; Insured  •  Work Order Must Be Filled Out Completely</div>'
+      +'</div>'
+
       +'</body></html>';
 
     var w = window.open("","_blank");

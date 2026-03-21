@@ -300,8 +300,13 @@ function MeasurementForm(p){
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"② Material"}</div>
         <select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select>
       </div>)}
+      <div style={{marginBottom:4}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
+      </div>
+      {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"||lid==="attic_kneewall"} onSqftChange={function(s,h,cw,ds){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);setDimStr(ds||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}}/>)}
+      {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {!hp&&(<div style={{marginBottom:12}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"② Material"}{!matNote.trim()&&(<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>)}</div>
+        <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"③ Material"}{!matNote.trim()&&(<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>)}</div>
         {(function(){
           var BTNS=[
             {id:"R11",label:"R11",value:"R11 Fiberglass Batts",sub:null},
@@ -335,11 +340,6 @@ function MeasurementForm(p){
         })()}
         {matNote.trim()&&(<div style={{marginTop:8,fontSize:12,color:C.accent,fontWeight:600}}>{"✓ "+matNote}</div>)}
       </div>)}
-      <div style={{marginBottom:4}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"③")+" Measurements"}</div>
-      </div>
-      {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"||lid==="attic_kneewall"} onSqftChange={function(s,h,cw,ds){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);setDimStr(ds||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}}/>)}
-      {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {hp&&(<div style={{marginBottom:14}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"④":"③")+" Price"}</div>
         <Input label="Price per Sq Ft" value={price} onChange={setPrice} placeholder="$0.00" step="0.01"/>

@@ -307,6 +307,9 @@ function MeasurementForm(p){
   var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Measure","Material","Add"];
   var stepCurrent = !lid ? 0 : (fin<=0) ? 1 : (!hp&&!matNote.trim()) ? 2 : 3;
   React.useEffect(function(){
+    setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setMk(function(k){return k+1;});setMatNote("");setTmpMat("");
+  },[lid]);
+  React.useEffect(function(){
     if(document.getElementById("ist-pulse-style"))return;
     var s=document.createElement("style");s.id="ist-pulse-style";
     s.textContent="@keyframes ist-pulse{0%{box-shadow:0 0 0 0 rgba(37,99,235,0.9),0 0 0 0 rgba(37,99,235,0.5)}60%{box-shadow:0 0 0 6px rgba(37,99,235,0.3),0 0 0 12px rgba(37,99,235,0)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0),0 0 0 0 rgba(37,99,235,0)}}.ist-pulse{animation:ist-pulse 1.3s ease-in-out infinite !important;border-radius:8px;outline:2px solid rgba(37,99,235,0.6);outline-offset:1px;}.ist-pulse-selected{animation:ist-pulse 1.3s ease-in-out infinite !important;}";

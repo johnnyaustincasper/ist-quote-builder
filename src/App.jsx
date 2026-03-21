@@ -452,20 +452,213 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
     '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
+function sharePdfBlob(blob,filename){
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],filename,{type:"application/pdf"})]})){
+    navigator.share({files:[new File([blob],filename,{type:"application/pdf"})],title:filename}).catch(function(err){
+      if(err.name!=="AbortError")alert("Share failed: "+err.message);
+    });
+  }else{
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+}
+
 function shareQuote(customer,opts,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{margin:0}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
-  var blob=new Blob([html],{type:"text/html"});
-  var url=URL.createObjectURL(blob);
-  var win=window.open(url,"_blank");
-  if(win){win.onload=function(){setTimeout(function(){win.print();},400);};}
+  import("jspdf").then(function(mod){
+    var jsPDF=mod.jsPDF||mod.default;
+    var doc=new jsPDF({unit:"pt",format:"letter"});
+    var W=612,M=40,x=M,y=50,RW=W-M*2;
+    var si=SALESMAN_INFO[salesman];
+    var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+    var qn="IST-"+Date.now().toString(36).toUpperCase();
+    var optsWithItems=opts.filter(function(o){return o.items&&o.items.length>0;});
+
+    // Header
+    doc.setFillColor(17,17,17);doc.rect(M,y-14,RW,36,"F");
+    doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont("helvetica","bold");
+    doc.text("Insulation Services of Tulsa",x+8,y+8);
+    doc.setFontSize(9);doc.setFont("helvetica","normal");
+    doc.text("QUOTE   "+qn+"   "+today,W-M-8,y+8,{align:"right"});
+    y+=50;
+
+    // Customer + Sales Rep
+    doc.setTextColor(100,100,100);doc.setFontSize(8);doc.setFont("helvetica","bold");
+    doc.text("PREPARED FOR",x,y);
+    if(si)doc.text("SALES REP",W-M-8,y,{align:"right"});
+    y+=12;
+    doc.setTextColor(17,17,17);doc.setFontSize(11);doc.setFont("helvetica","bold");
+    doc.text(customer.name||"—",x,y);
+    if(si)doc.text(si.fullName,W-M-8,y,{align:"right"});
+    y+=14;
+    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
+    if(customer.address){doc.text(customer.address,x,y);y+=12;}
+    if(customer.phone){doc.text(customer.phone,x,y);}
+    if(si){doc.text(si.phone,W-M-8,y,{align:"right"});}
+    y+=12;
+    if(customer.email){doc.text(customer.email,x,y);}
+    if(si){doc.text(si.email,W-M-8,y,{align:"right"});}
+    y+=20;
+
+    // Job site
+    doc.setFontSize(9);doc.setTextColor(100,100,100);
+    doc.text("Job Site: "+(customer.jobAddress||customer.address||"—"),x,y);
+    y+=20;
+
+    // Options
+    optsWithItems.forEach(function(opt,oi){
+      var sortedItems=opt.items.slice().sort(function(a,b){
+        var aR=parseInt((a.material||"").match(/R(\d+)/i)||[0,0])||0;
+        var bR=parseInt((b.material||"").match(/R(\d+)/i)||[0,0])||0;
+        return aR-bR;
+      });
+      if(optsWithItems.length>1){
+        doc.setFontSize(12);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
+        doc.text(opt.name,x,y);y+=6;
+        doc.setDrawColor(17,17,17);doc.setLineWidth(1);doc.line(x,y,x+RW,y);y+=12;
+      }
+      // Table header
+      doc.setFillColor(17,17,17);doc.rect(x,y-10,RW,16,"F");
+      doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont("helvetica","bold");
+      doc.text("#",x+4,y+2);doc.text("Description",x+22,y+2);
+      y+=18;
+      // Rows
+      sortedItems.forEach(function(item,i){
+        if(y>720){doc.addPage();y=50;}
+        var bg=i%2===0?[250,250,250]:[255,255,255];
+        doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(x,y-10,RW,14,"F");
+        doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
+        doc.text(String(i+1),x+4,y);
+        var desc=doc.splitTextToSize(item.description||"",RW-30);
+        doc.text(desc,x+22,y);
+        y+=Math.max(14,desc.length*11);
+      });
+      if(opt.energySeal){
+        var esi=sortedItems.length;
+        var bg2=esi%2===0?[250,250,250]:[255,255,255];
+        doc.setFillColor(bg2[0],bg2[1],bg2[2]);doc.rect(x,y-10,RW,14,"F");
+        doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
+        doc.text(String(esi+1),x+4,y);
+        doc.text("Energy seal and plates per city code.",x+22,y);
+        y+=14;
+      }
+      // Total
+      var lineTotal=opt.items.reduce(function(s,i){return s+(i.total||0);},0);
+      var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
+      var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
+      var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
+      var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
+      var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
+      var sub=lineTotal+el+tc+es+du;
+      var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
+      var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
+      y+=6;
+      if(opt.pso||opt.psoKw){
+        doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
+        doc.text("Price",W-M-100,y,{align:"left"});
+        doc.text("$"+Math.ceil(sub).toLocaleString(),W-M-8,y,{align:"right"});y+=12;
+        if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit Attic",W-M-100,y,{align:"left"});doc.text("-$600",W-M-8,y,{align:"right"});y+=12;}
+        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit KW",W-M-100,y,{align:"left"});doc.text("-$525",W-M-8,y,{align:"right"});y+=12;}
+      }
+      doc.setFontSize(13);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
+      doc.text(totalLabel,W-M-100,y,{align:"left"});
+      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-8,y,{align:"right"});
+      y+=24;
+    });
+
+    // Footer
+    doc.setDrawColor(200,200,200);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);y+=12;
+    doc.setFontSize(8);doc.setTextColor(150,150,150);doc.setFont("helvetica","normal");
+    doc.text("Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient—one home at a time.",W/2,y,{align:"center"});
+
+    var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+    sharePdfBlob(doc.output("blob"),filename);
+  }).catch(function(err){alert("PDF error: "+err.message);});
 }
 
 function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{margin:0}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
-  var blob=new Blob([html],{type:"text/html"});
-  var url=URL.createObjectURL(blob);
-  var win=window.open(url,"_blank");
-  if(win){win.onload=function(){setTimeout(function(){win.print();},400);};}
+  import("jspdf").then(function(mod){
+    var jsPDF=mod.jsPDF||mod.default;
+    var doc=new jsPDF({unit:"pt",format:"letter"});
+    var W=612,M=40,x=M,y=50,RW=W-M*2;
+    var si=SALESMAN_INFO[salesman];
+    var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+
+    // Header
+    doc.setFillColor(17,17,17);doc.rect(M,y-14,RW,36,"F");
+    doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont("helvetica","bold");
+    doc.text("Insulation Services of Tulsa",x+8,y+8);
+    doc.setFontSize(9);doc.setFont("helvetica","normal");
+    doc.text("TAKE OFF   "+today,W-M-8,y+8,{align:"right"});
+    y+=50;
+
+    // Customer
+    doc.setTextColor(100,100,100);doc.setFontSize(8);doc.setFont("helvetica","bold");
+    doc.text("CUSTOMER",x,y);
+    if(si)doc.text("SALES REP",W-M-8,y,{align:"right"});
+    y+=12;
+    doc.setTextColor(17,17,17);doc.setFontSize(11);doc.setFont("helvetica","bold");
+    doc.text(customer.name||"—",x,y);
+    if(si)doc.text(si.fullName,W-M-8,y,{align:"right"});
+    y+=14;
+    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
+    if(customer.address){doc.text(customer.address,x,y);}
+    if(si){doc.text(si.phone,W-M-8,y,{align:"right"});}
+    y+=12;
+    if(customer.phone){doc.text(customer.phone,x,y);}
+    if(si){doc.text(si.email,W-M-8,y,{align:"right"});}
+    y+=20;
+    doc.setFontSize(9);doc.setTextColor(100,100,100);
+    doc.text("Job Site: "+(customer.jobAddress||customer.address||"—"),x,y);
+    y+=20;
+
+    // Notes
+    if(jobNotes&&jobNotes.trim()){
+      doc.setFontSize(9);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
+      doc.text("Notes:",x,y);y+=12;
+      doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
+      var noteLines=doc.splitTextToSize(jobNotes,RW);
+      doc.text(noteLines,x,y);y+=noteLines.length*12+10;
+    }
+
+    // Measurements table
+    var hasMeasurements=measurements&&measurements.some(function(r){return parseFloat(r.sqft)>0;});
+    if(hasMeasurements){
+      doc.setFillColor(17,17,17);doc.rect(x,y-10,RW,16,"F");
+      doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont("helvetica","bold");
+      var col1=x+4,col2=x+170,col3=x+290,col4=x+370,col5=x+440;
+      doc.text("Location",col1,y+2);doc.text("Material",col2,y+2);doc.text("Size",col3,y+2);doc.text("Sq Ft",col4,y+2);doc.text("Price/Sq Ft",col5,y+2);
+      y+=18;
+      var total=0;
+      measurements.forEach(function(r,i){
+        var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
+        if(y>720){doc.addPage();y=50;}
+        var bg=i%2===0?[250,250,250]:[255,255,255];
+        doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(x,y-10,RW,14,"F");
+        doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
+        doc.text(r.location||"",col1,y,{maxWidth:160});
+        doc.text(r.material||"",col2,y,{maxWidth:110});
+        var sizeStr=(r.width&&r.height)?r.width+"×"+r.height:(r.width||r.height||"");
+        doc.text(sizeStr,col3,y,{maxWidth:70});
+        doc.text(sqft.toLocaleString(),col4,y);
+        if(r.pricePerUnit)doc.text("$"+parseFloat(r.pricePerUnit).toFixed(2),col5,y);
+        total+=sqft;y+=14;
+      });
+      y+=6;
+      doc.setFontSize(12);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
+      doc.text("Total",W-M-100,y,{align:"left"});
+      doc.text(total.toLocaleString()+" sq ft",W-M-8,y,{align:"right"});
+      y+=24;
+    }
+
+    // Footer
+    doc.setDrawColor(200,200,200);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);y+=12;
+    doc.setFontSize(8);doc.setTextColor(150,150,150);doc.setFont("helvetica","normal");
+    doc.text("Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient—one home at a time.",W/2,y,{align:"center"});
+
+    var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+    sharePdfBlob(doc.output("blob"),filename);
+  }).catch(function(err){alert("PDF error: "+err.message);});
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){

@@ -152,11 +152,10 @@ function _numpadOpen(setShow){
   if(_numpadActiveSet&&_numpadActiveSet!==setShow){_numpadActiveSet(false);}
   _numpadActiveSet=setShow;
   setShow(true);
-  document.body.style.paddingBottom="280px";
 }
 function _numpadClose(setShow){
   _numpadBlurTimer=setTimeout(function(){
-    if(_numpadActiveSet===setShow){_numpadActiveSet=null;document.body.style.paddingBottom="";}
+    if(_numpadActiveSet===setShow){_numpadActiveSet=null;}
     setShow(false);
   },120);
 }
@@ -183,7 +182,7 @@ function Input(p){
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8,maxWidth:400,margin:"0 auto 8px"}}>
         {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"12px 0",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:v==="⌫"?"rgba(239,68,68,0.08)":"rgba(37,99,235,0.06)",color:v==="⌫"?"#dc2626":C.text,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"background 0.1s"}}>{v}</button>);})}
       </div>
-      <button onMouseDown={function(e){e.preventDefault();clearTimeout(_numpadBlurTimer);_numpadActiveSet=null;document.body.style.paddingBottom="";setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"12px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
+      <button onMouseDown={function(e){e.preventDefault();clearTimeout(_numpadBlurTimer);_numpadActiveSet=null;setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"12px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
     </div>)}
   </div>);}
 

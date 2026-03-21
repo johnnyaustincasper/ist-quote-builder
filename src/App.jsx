@@ -801,9 +801,9 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
       var FG_FOOTER="Both meet the same ASTM C665 industry standards — no difference in protection regardless of which brand is installed.";
 
       // ── FOAM BOX ──
-      var FM_TITLE="Enverge® EasySeal .5";
-      var FM_SUB="Open Cell Spray Foam";
-      var FM_BULLETS=["R-Value: 3.8 per inch","Density: 0.5 lb/ft³","Class 1 (Class A) fire rated — Flame Spread <25, Smoke Developed <450","Air barrier at 3.5\" per ASTM E-2178","Low VOC — CA Section 01350 compliant","Fungi resistant (ASTM C-1338)","Service temp range: -40°F to 180°F (220°F intermittent)","UL Certified · ENERGY STAR® qualified","Manufactured by Holcim — Spring, TX / Waukesha, WI"];
+      var FM_TITLE="Enverge® Spray Foam Systems";
+      var FM_SUB="by Holcim — Spring, TX / Waukesha, WI";
+      var FM_BULLETS=["OPEN CELL — EasySeal .5:  R-3.8/in · 0.5 lb/ft³ · air barrier at 3.5\" · UL Certified · ENERGY STAR® qualified","CLOSED CELL — NexSeal:  R-7.2/in (R-28 @ 4\") · 2.1 lb/ft³ · adds structural rigidity · built-in Class II vapor retarder at 1.6\"","Both: Class 1 (Class A) fire rated — Flame Spread <25, Smoke Developed <450","Both: Low VOC — CA Section 01350 compliant · Fungi resistant (ASTM C-1338)","Both: Service temp range: -40°F to 180°F (220°F intermittent)","Closed cell water absorption <0.3% by volume — moisture resistant"];
 
       function drawProductBox(bx,by,bw,title,sub,intro,bullets,footer){
         var lh=10;var fs=7;

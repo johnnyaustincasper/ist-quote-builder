@@ -799,6 +799,7 @@ function TakeOff(p){
         return m.location===item.location && m.locationId===item.locationId &&
           !!m.isRemoval===!!item.isRemoval &&
           (m.wallHeightLabel||null)===(item.wallHeightLabel||null) &&
+          (m.cavityWidth||null)===(item.cavityWidth||null) &&
           (m.matNote||null)===(item.matNote||null);
       });
       if(existing){

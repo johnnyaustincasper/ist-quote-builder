@@ -624,7 +624,7 @@ function sharePdfBlob(blob,filename){
   }
 }
 
-function buildQuotePdf(customer,opts,salesman,outputMode){
+function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
   // outputMode: "blob" -> returns Promise<Blob>, "save" -> downloads directly
   return import("jspdf").then(function(mod){
     var jsPDF=mod.jsPDF||mod.default;
@@ -787,7 +787,81 @@ function buildQuotePdf(customer,opts,salesman,outputMode){
 
     y+=8;
 
-    y+=8;
+    // ── PRODUCT INFO PAGE ──
+    if(showProductInfo){
+      doc.addPage();
+      var py=0;
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,py,W,56,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,52,W,4,"F");
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(16);doc.setFont("helvetica","bold");
+      doc.text("INSULATION SERVICES OF TULSA",M,22);
+      doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+      doc.text("Product Information",M,38);
+      py=72;
+
+      var colW=(RW-16)/2;
+      var leftX=M,rightX=M+colW+16;
+
+      // ── FIBERGLASS BOX ──
+      var FG_TITLE="Fiberglass Batt Insulation";
+      var FG_SUB="Johns Manville & CertainTeed";
+      var FG_INTRO="IST uses a mix of both brands based on availability. They are virtually identical in performance and quality:";
+      var FG_BULLETS=["Formaldehyde-free with built-in kraft paper vapor retarder","Available in R-11 through R-49 for walls, floors, and attics","Class A fire rated — won't rot, mildew, or deteriorate","GREENGUARD Gold Certified for indoor air quality","Reduces sound transmission between rooms","Pre-cut batts for standard 16\" and 24\" framing"];
+      var FG_FOOTER="Both meet the same ASTM C665 industry standards — no difference in protection regardless of which brand is installed.";
+
+      // ── FOAM BOX ──
+      var FM_TITLE="Enverge® EasySeal .5";
+      var FM_SUB="Open Cell Spray Foam";
+      var FM_BULLETS=["R-Value: 3.8 per inch","Density: 0.5 lb/ft³","Class 1 (Class A) fire rated — Flame Spread <25, Smoke Developed <450","Air barrier at 3.5\" per ASTM E-2178","Low VOC — CA Section 01350 compliant","Fungi resistant (ASTM C-1338)","Service temp range: -40°F to 180°F (220°F intermittent)","UL Certified · ENERGY STAR® qualified","Manufactured by Holcim — Spring, TX / Waukesha, WI"];
+
+      function drawProductBox(bx,by,bw,title,sub,intro,bullets,footer){
+        doc.setFont("helvetica","normal");doc.setFontSize(8.5);
+        // Measure height needed
+        var lh=13;
+        var introLines=intro?doc.splitTextToSize(intro,bw-20).length:0;
+        var bulletLines=bullets.reduce(function(n,b){return n+doc.splitTextToSize(b,bw-30).length;},0);
+        var footerLines=footer?doc.splitTextToSize(footer,bw-20).length:0;
+        var bh=20+14+8+(introLines*lh)+8+(bulletLines*lh+bullets.length*3)+8+(footerLines*lh)+16;
+
+        // Box bg
+        doc.setFillColor(248,250,255);doc.roundedRect(bx,by,bw,bh,6,6,"F");
+        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(bx,by,4,bh,"F");
+        doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.roundedRect(bx,by,bw,bh,6,6,"S");
+
+        var ty=by+14;
+        // Title
+        doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);
+        doc.text(title,bx+12,ty);ty+=14;
+        // Subtitle
+        doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);
+        doc.text(sub,bx+12,ty);ty+=10;
+        // Divider
+        doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.5);doc.line(bx+12,ty,bx+bw-12,ty);ty+=8;
+        // Intro
+        if(intro){
+          doc.setFont("helvetica","italic");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          var il=doc.splitTextToSize(intro,bw-20);doc.text(il,bx+12,ty);ty+=il.length*lh+8;
+        }
+        // Bullets
+        doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+        bullets.forEach(function(b){
+          var bl=doc.splitTextToSize(b,bw-30);
+          doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(bx+18,ty-2.5,2,"F");
+          doc.text(bl,bx+26,ty);ty+=bl.length*lh+3;
+        });
+        ty+=5;
+        // Footer
+        if(footer){
+          doc.setDrawColor(210,220,240);doc.setLineWidth(0.4);doc.line(bx+12,ty,bx+bw-12,ty);ty+=8;
+          doc.setFont("helvetica","italic");doc.setFontSize(7.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          var fl=doc.splitTextToSize(footer,bw-20);doc.text(fl,bx+12,ty);
+        }
+        return by+bh;
+      }
+
+      drawProductBox(leftX,py,colW,FG_TITLE,FG_SUB,FG_INTRO,FG_BULLETS,FG_FOOTER);
+      drawProductBox(rightX,py,colW,FM_TITLE,FM_SUB,"",FM_BULLETS,"");
+    }
 
     // ── FOOTER ──
     doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
@@ -804,8 +878,8 @@ function buildQuotePdf(customer,opts,salesman,outputMode){
   });
 }
 
-function shareQuote(customer,opts,salesman){
-  buildQuotePdf(customer,opts,salesman,"blob").then(function(blob){
+function shareQuote(customer,opts,salesman,showProductInfo){
+  buildQuotePdf(customer,opts,salesman,"blob",showProductInfo).then(function(blob){
     if(blob){
       var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
       sharePdfBlob(blob,filename);
@@ -971,14 +1045,14 @@ function _buildQuoteHtml(customer,opts,salesman){
     '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
-function generatePDF(customer,opts,salesman){
-  buildQuotePdf(customer,opts,salesman,"save").catch(function(err){alert("PDF error: "+err.message);});
+function generatePDF(customer,opts,salesman,showProductInfo){
+  buildQuotePdf(customer,opts,salesman,"save",showProductInfo).catch(function(err){alert("PDF error: "+err.message);});
 }
 
-function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){
+function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts,showProductInfo){
   // Build both PDFs then merge pages into one jsPDF doc
   Promise.all([
-    buildQuotePdf(customer,opts,salesman,"blob"),
+    buildQuotePdf(customer,opts,salesman,"blob",showProductInfo),
     buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,"blob")
   ]).then(function(blobs){
     // Open quote PDF first, then takeoff as separate share — or just share both
@@ -1365,9 +1439,14 @@ function QuoteBuilderSection(p){
 
     {/* PRINT/SHARE */}
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{marginBottom:16}}>
-      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Share Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
+      <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:10,background:"rgba(37,99,235,0.06)",borderRadius:8,border:"1px solid rgba(37,99,235,0.15)",cursor:"pointer"}}>
+        <input type="checkbox" checked={p.showProductInfo||false} onChange={function(e){p.setShowProductInfo(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+        <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:"'Inter',sans-serif"}}>{"Product Information"}</span>
+        <span style={{fontSize:11,color:C.dim}}>{"(adds spec sheet to quote PDF)"}</span>
+      </label>
+      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser,p.showProductInfo||false);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser,p.showProductInfo||false);}}>{"Share Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts,p.showProductInfo||false);}}>{"Print Quote and Take Off"}</GreenBtn>
     </div>)}
 
     {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
@@ -2141,6 +2220,7 @@ export default function App() {
   var s2 = useState([]), meas = s2[0], setMeas = s2[1];
   var s3 = useState([newOption("Option 1")]), qOpts = s3[0], setQOpts = s3[1];
   var s4 = useState([]), ii = s4[0], setIi = s4[1];
+  var spi = useState(false), showProductInfo = spi[0], setShowProductInfo = spi[1];
   var s5 = useState(""), cn = s5[0], setCn = s5[1];
   var s6 = useState(""), ca = s6[0], setCa = s6[1];
   var s7 = useState(""), cph = s7[0], setCph = s7[1];
@@ -2276,7 +2356,7 @@ export default function App() {
 
       <div>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} onSendToWorkOrder={sendToWorkOrder} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
-        {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
+        {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} showProductInfo={showProductInfo} setShowProductInfo={setShowProductInfo} {...cp2} />)}
         {sec === "workorder" && (<WorkOrderSection measurements={meas} quoteOpts={qOpts} custName={cn} custAddr={ca} currentUser={currentUser} jobAddr={ja} />)}
         {sec === "jobs" && (
           <div>

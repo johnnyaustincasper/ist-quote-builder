@@ -38,7 +38,7 @@ var LOCATIONS = [
 
 var FIBERGLASS_MATERIALS = [
   "Blown Fiberglass", "R11 Fiberglass Batts", "R13 Fiberglass Batts", "R15 Fiberglass Batts",
-  "R19 Fiberglass Batts", "R30 Fiberglass Batts", "R38 Fiberglass Batts",
+  "R19 Fiberglass Batts", "R22 Blown Fiberglass", "R26 Blown Fiberglass", "R30 Fiberglass Batts", "R38 Fiberglass Batts",
   "Blown Cellulose", "Blown Rockwool", "Rockwool", '6" Rockwool', "Lambswool",
 ];
 
@@ -1069,6 +1069,20 @@ function QuoteBuilderSection(p){
           </div>
           {pricingId===item.id&&(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
             <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:6}}>{"Adding to: "+opt.name}</div>
+            {(["flat_ceiling","attic_area_house","attic_area_garage","attic_slopes","open_attic_walls"].includes(item.locationId))&&(
+              <div style={{marginBottom:8}}>
+                <div style={{fontSize:11,color:C.textSec,fontWeight:600,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Quick Select R-Value"}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {[["R13","R13 Fiberglass Batts"],["R15","R15 Fiberglass Batts"],["R19","R19 Fiberglass Batts"],["R22","R22 Blown Fiberglass"],["R26","R26 Blown Fiberglass"],["R38","R38 Fiberglass Batts"]].map(function(rv){
+                    var active=pricingMat===rv[1];
+                    return(<button key={rv[0]} onClick={function(){setPricingMat(rv[1]);}}
+                      style={{padding:"6px 12px",borderRadius:20,border:"2px solid "+(active?C.accent:C.border),background:active?C.accent:"transparent",color:active?"#fff":C.text,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+                      {rv[0]}
+                    </button>);
+                  })}
+                </div>
+              </div>
+            )}
             <select style={matSs} value={pricingMat} onChange={function(e){setPricingMat(e.target.value);}}>
               <option value="">{"— Select Material —"}</option>
               <optgroup label="Fiberglass">{FIBERGLASS_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>

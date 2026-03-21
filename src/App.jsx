@@ -1745,9 +1745,6 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       var aAttic=atticIds.includes(a.locationId||"");
       var bAttic=atticIds.includes(b.locationId||"");
       if(aAttic!==bAttic) return aAttic?1:-1;
-      var aFoam=/foam|open cell|closed cell/i.test(a.rValue||"");
-      var bFoam=/foam|open cell|closed cell/i.test(b.rValue||"");
-      if(aFoam!==bFoam) return aFoam?-1:1;
       var aR=parseInt((a.rValue||"").match(/(\d+)/)||[0,0])||0;
       var bR=parseInt((b.rValue||"").match(/(\d+)/)||[0,0])||0;
       return aR-bR;

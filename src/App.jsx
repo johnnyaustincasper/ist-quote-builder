@@ -1807,7 +1807,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'<th style="'+TH+';text-align:right;">Sq Ft</th>'
       +'<th style="'+TH+';text-align:right;">Labor ($)</th>'
       +'</tr></thead>'
-      +'<tbody>'+empRowsHtmlThemed+(function(){var extra='';var count=employees.filter(function(e){return e.name||e.sqft||e.labor;}).length;var filled=Math.max(employees.length,count);var need=Math.max(0,10-filled);for(var i=0;i<need;i++){extra+='<tr style="background:'+(i%2===0?'#f8fafc':'#fff')+'"><td style="'+TD+'">&nbsp;</td><td style="'+TD2+'"></td><td style="'+TD2+'"></td></tr>';}return extra;}())
+      +'<tbody>'+empRowsHtmlThemed
       +'<tr style="background:#0f1e46;">'
       +'<td style="padding:6px 10px;font-size:12px;font-weight:700;color:#fff;">TOTAL</td>'
       +'<td style="padding:6px 10px;"></td>'

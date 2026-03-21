@@ -1695,6 +1695,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       var rValue = (m.matNote && m.matNote.trim()) ? m.matNote.trim() : (rMap[m.locationId] || m.rValue || "");
       return {
         id: "mr-" + i,
+        locationId: m.locationId || "",
         matType: matTypeLabel(m),
         wallHeight: ht,
         rValue: rValue,
@@ -1738,6 +1739,21 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     }, 0);
   }
 
+  var atticIds=["attic_area_garage","attic_area_house","attic_kneewall","attic_slopes","open_attic_walls"];
+  function sortedMatRows(rows){
+    return rows.slice().sort(function(a,b){
+      var aAttic=atticIds.includes(a.locationId||"");
+      var bAttic=atticIds.includes(b.locationId||"");
+      if(aAttic!==bAttic) return aAttic?1:-1;
+      var aFoam=/foam|open cell|closed cell/i.test(a.rValue||"");
+      var bFoam=/foam|open cell|closed cell/i.test(b.rValue||"");
+      if(aFoam!==bFoam) return aFoam?-1:1;
+      var aR=parseInt((a.rValue||"").match(/(\d+)/)||[0,0])||0;
+      var bR=parseInt((b.rValue||"").match(/(\d+)/)||[0,0])||0;
+      return aR-bR;
+    });
+  }
+
   function totalLabor() {
     return employees.reduce(function(s,e){ return s+(parseFloat(e.labor)||0); }, 0);
   }
@@ -1765,7 +1781,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+cat+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(ft?ft.toLocaleString():"")+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(rCosts[cat]?"$"+rCosts[cat]:"")+'</td></tr>';
     }).join("");
 
-    var matRowsHtml = matRows.map(function(r) {
+    var matRowsHtml = sortedMatRows(matRows).map(function(r) {
       return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.matType+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+r.rValue+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;color:'+(r.wallHeight?"#2563eb":"#999")+';">'+(r.wallHeight||r.width||"—")+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matOut+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.matIn+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+r.count+'</td></tr>';
     }).join("");
 
@@ -1776,7 +1792,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     var TH = 'padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#dbeafe;text-align:left;background:#0f1e46;border:none;';
     var TD = 'padding:5px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;color:#0f172a;vertical-align:middle;';
     var TD2 = 'padding:5px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;color:#0f172a;text-align:right;vertical-align:middle;';
-    var matRowsHtmlThemed = matRows.map(function(r,i){
+    var matRowsHtmlThemed = sortedMatRows(matRows).map(function(r,i){
       var bg = i%2===0?'#f8fafc':'#fff';
       return '<tr style="background:'+bg+'"><td style="'+TD+'">'+r.matType+'</td><td style="'+TD+'">'+r.rValue+'</td><td style="'+TD+';color:'+(r.wallHeight?'#2563eb':'#94a3b8')+';">'+(r.wallHeight||r.width||'—')+'</td><td style="'+TD2+'">'+r.sqft+'</td><td style="'+TD2+'">'+r.matOut+'</td><td style="'+TD2+'">'+r.matIn+'</td><td style="'+TD2+'">'+r.count+'</td></tr>';
     }).join('');
@@ -1967,7 +1983,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
           )
         ),
         React.createElement("tbody", null,
-          matRows.map(function(r) {
+          sortedMatRows(matRows).map(function(r) {
             return React.createElement("tr", {key:r.id, style:{borderBottom:"1px solid "+C.borderLight}},
               React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.matType,onChange:function(e){updateMatRow(r.id,"matType",e.target.value);},style:Object.assign({},iStyle,{width:110})})),
               React.createElement("td", {style:tdStyle}, React.createElement("input", {value:r.rValue,onChange:function(e){updateMatRow(r.id,"rValue",e.target.value);},style:Object.assign({},iStyle,{width:70})})),

@@ -278,8 +278,8 @@ function MeasurementForm(p){
   var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"};
   var tabLabel=p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
   // Step tracking
-  var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Material","Measure","Add"];
-  var stepCurrent = !lid ? 0 : (!hp&&!matNote.trim()) ? 1 : (fin<=0) ? (hp?2:2) : (hp?(parseFloat(price)||0)>0?3:3:3);
+  var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Measure","Material","Add"];
+  var stepCurrent = !lid ? 0 : (fin<=0) ? 1 : (!hp&&!matNote.trim()) ? 2 : 3;
   function handleAdd(){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;if(!hp&&!matNote.trim()){alert("Please select a material first.");return;}
     var useMat=hp?mat:"(material TBD)";

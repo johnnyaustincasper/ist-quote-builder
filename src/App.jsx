@@ -145,6 +145,21 @@ async function loadPasscode(user) {
 /* ──────── UI COMPONENTS ──────── */
 
 var glassInput={width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.7)",border:"1px solid rgba(0,0,0,0.1)",borderRadius:8,color:"#0f172a",fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",transition:"border-color 0.15s, box-shadow 0.15s"};
+var _numpadBlurTimer=null;
+var _numpadActiveSet=null;
+function _numpadOpen(setShow){
+  clearTimeout(_numpadBlurTimer);
+  if(_numpadActiveSet&&_numpadActiveSet!==setShow){_numpadActiveSet(false);}
+  _numpadActiveSet=setShow;
+  setShow(true);
+  document.body.style.paddingBottom="280px";
+}
+function _numpadClose(setShow){
+  _numpadBlurTimer=setTimeout(function(){
+    if(_numpadActiveSet===setShow){_numpadActiveSet=null;document.body.style.paddingBottom="";}
+    setShow(false);
+  },120);
+}
 function Input(p){
   var isNum=!p.type||p.type==="number";
   var sp=React.useState(false),showPad=sp[0],setShowPad=sp[1];
@@ -158,8 +173,8 @@ function Input(p){
   return(<div style={{position:"relative"}}>
     <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label>
     <input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{caretColor:isNum?"transparent":"auto"})}
-      onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";if(isNum)setShowPad(true);}}
-      onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";if(isNum)setShowPad(false);}}
+      onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";if(isNum)_numpadOpen(setShowPad);}}
+      onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";if(isNum)_numpadClose(setShowPad);}}
       readOnly={isNum} inputMode={isNum?"none":undefined}
       type={isNum?"text":p.type} value={p.value}
       onChange={isNum?function(){}:function(e){p.onChange(e.target.value);}}
@@ -168,7 +183,7 @@ function Input(p){
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8,maxWidth:400,margin:"0 auto 8px"}}>
         {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"12px 0",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:v==="⌫"?"rgba(239,68,68,0.08)":"rgba(37,99,235,0.06)",color:v==="⌫"?"#dc2626":C.text,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"background 0.1s"}}>{v}</button>);})}
       </div>
-      <button onMouseDown={function(e){e.preventDefault();setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"12px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
+      <button onMouseDown={function(e){e.preventDefault();clearTimeout(_numpadBlurTimer);_numpadActiveSet=null;document.body.style.paddingBottom="";setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"12px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
     </div>)}
   </div>);}
 

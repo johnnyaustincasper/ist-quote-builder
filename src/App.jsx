@@ -1741,7 +1741,13 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     // "R11 Fiberglass Batts" → "11"
     var simple = mat.match(/^R(\d+)\s+Fiberglass/i);
     if (simple) return simple[1];
-    // "Open Cell Foam" → "Open Cell"
+    // '4" Open Cell Foam' → '4" OC'
+    var oc = mat.match(/^([\d.]+)"\s*Open Cell/i);
+    if (oc) return oc[1]+'" OC';
+    // '3" Closed Cell Foam' → '3" CC'
+    var cc = mat.match(/^([\d.]+)"\s*Closed Cell/i);
+    if (cc) return cc[1]+'" CC';
+    // bare "Open Cell Foam" / "Closed Cell Foam"
     if (/open cell/i.test(mat)) return "Open Cell";
     if (/closed cell/i.test(mat)) return "Closed Cell";
     // "Blown Fiberglass R30" → "BF R30"
@@ -1807,7 +1813,9 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     var seen = {}, order = [];
     (measurements || []).forEach(function(m) {
       var mat = (m.matNote || "").trim();
-      if (mat && !seen[mat]) { seen[mat] = true; order.push(mat); }
+      if (!mat) return;
+      var label = shortRValue(mat) || mat;
+      if (!seen[label]) { seen[label] = true; order.push(label); }
     });
     if (order.length === 0) return ["R-11","R-13","R-19","R-30","BW","E/S"];
     return order.slice().sort(function(a,b){
@@ -1822,7 +1830,8 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
   // Sum sqft per matNote from measurements
   function getRFootage(cat) {
     return (measurements || []).reduce(function(sum, m) {
-      if ((m.matNote || "").trim() === cat) return sum + (parseFloat(m.sqft) || 0);
+      var label = shortRValue((m.matNote||"").trim()) || (m.matNote||"").trim();
+      if (label === cat) return sum + (parseFloat(m.sqft) || 0);
       return sum;
     }, 0);
   }

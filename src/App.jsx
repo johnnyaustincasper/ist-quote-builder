@@ -1829,9 +1829,9 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       return '<tr><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;">'+e.name+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+e.sqft+'</td><td style="padding:4px 8px;border:1px solid #ccc;font-size:12px;text-align:right;">'+(e.labor?"$"+e.labor:"")+'</td></tr>';
     }).join("");
 
-    var TH = 'padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#dbeafe;text-align:left;background:#0f1e46;border:none;';
-    var TD = 'padding:5px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;color:#0f172a;vertical-align:middle;';
-    var TD2 = 'padding:5px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;color:#0f172a;text-align:right;vertical-align:middle;';
+    var TH = 'padding:4px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#dbeafe;text-align:left;background:#0f1e46;border:none;';
+    var TD = 'padding:3px 8px;font-size:11px;border-bottom:1px solid #e2e8f0;color:#0f172a;vertical-align:middle;';
+    var TD2 = 'padding:3px 8px;font-size:11px;border-bottom:1px solid #e2e8f0;color:#0f172a;text-align:right;vertical-align:middle;';
     var matRowsHtmlThemed = sortedMatRows(matRows).map(function(r,i){
       var bg = i%2===0?'#f8fafc':'#fff';
       return '<tr style="background:'+bg+'"><td style="'+TD+'">'+r.matType+'</td><td style="'+TD+'">'+r.rValue+'</td><td style="'+TD+';color:'+(r.wallHeight?'#2563eb':'#94a3b8')+';">'+(r.wallHeight||r.width||'—')+'</td><td style="'+TD2+'">'+r.sqft+'</td><td style="'+TD2+'">'+r.matOut+'</td><td style="'+TD2+'">'+r.matIn+'</td><td style="'+TD2+'">'+r.count+'</td></tr>';
@@ -1854,7 +1854,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'</style></head><body>'
 
       // ── HEADER BAND ──
-      +'<div style="background:#0f1e46;padding:18px 28px 14px;position:relative;">'
+      +'<div style="background:#0f1e46;padding:10px 20px 8px;position:relative;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;">'
       +'<div>'
       +'<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:0.04em;text-transform:uppercase;">Insulation Services of Tulsa</div>'
@@ -1870,43 +1870,43 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'<div style="height:4px;background:#2563eb;"></div>'
 
       // ── JOB INFO CARDS ──
-      +'<div style="display:flex;gap:12px;padding:16px 28px 0;">'
+      +'<div style="display:flex;gap:8px;padding:6px 20px 0;">'
 
       // Card: Job Details
-      +'<div style="flex:2;background:#f8fafc;border-radius:6px;padding:12px 16px;border-left:4px solid #2563eb;">'
-      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:8px;">Job Details</div>'
+      +'<div style="flex:2;background:#f8fafc;border-radius:6px;padding:6px 12px;border-left:4px solid #2563eb;">'
+      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:4px;">Job Details</div>'
       +'<table style="width:100%;border:none;"><tr>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;white-space:nowrap;padding:2px 10px 2px 0;">Date Ready</td>'
-      +'<td style="font-size:12px;color:#0f172a;padding:2px 16px 2px 0;">'+dateReady+'</td>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;white-space:nowrap;padding:2px 10px 2px 0;">Date Finished</td>'
-      +'<td style="font-size:12px;color:#0f172a;padding:2px 0;">'+dateFinished+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;padding:1px 8px 1px 0;">Date Ready</td>'
+      +'<td style="font-size:11px;color:#0f172a;padding:1px 12px 1px 0;">'+dateReady+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;padding:1px 8px 1px 0;">Date Finished</td>'
+      +'<td style="font-size:11px;color:#0f172a;padding:1px 0;">'+dateFinished+'</td>'
       +'</tr><tr>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Builder</td>'
-      +'<td style="font-size:12px;color:#0f172a;padding:2px 16px 2px 0;">'+builder+'</td>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Addition</td>'
-      +'<td style="font-size:12px;color:#0f172a;padding:2px 0;">'+addition+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;padding:1px 8px 1px 0;">Builder</td>'
+      +'<td style="font-size:11px;color:#0f172a;padding:1px 12px 1px 0;">'+builder+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;padding:1px 8px 1px 0;">Addition</td>'
+      +'<td style="font-size:11px;color:#0f172a;padding:1px 0;">'+addition+'</td>'
       +'</tr><tr>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Address</td>'
-      +'<td style="font-size:12px;color:#0f172a;padding:2px 16px 2px 0;" colspan="3">'+address+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;padding:1px 8px 1px 0;">Address</td>'
+      +'<td style="font-size:11px;color:#0f172a;padding:1px 0;" colspan="3">'+address+'</td>'
       +'</tr></table>'
       +'</div>'
 
       // Card: Assignment
-      +'<div style="flex:1;background:#f8fafc;border-radius:6px;padding:12px 16px;border-left:4px solid #2563eb;">'
-      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:8px;">Assignment</div>'
+      +'<div style="flex:1;background:#f8fafc;border-radius:6px;padding:6px 12px;border-left:4px solid #2563eb;">'
+      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:4px;">Assignment</div>'
       +'<table style="width:100%;border:none;"><tr>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Salesman</td>'
-      +'<td style="font-size:12px;color:#0f172a;">'+salesman+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;padding:1px 8px 1px 0;">Salesman</td>'
+      +'<td style="font-size:11px;color:#0f172a;">'+salesman+'</td>'
       +'</tr><tr>'
-      +'<td style="font-size:11px;font-weight:700;color:#64748b;padding:2px 10px 2px 0;">Door Code</td>'
-      +'<td style="font-size:12px;color:#0f172a;">'+doorCode+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#64748b;padding:1px 8px 1px 0;">Door Code</td>'
+      +'<td style="font-size:11px;color:#0f172a;">'+doorCode+'</td>'
       +'</tr></table>'
       +'</div>'
       +'</div>'
 
       // ── MATERIALS TABLE ──
-      +'<div style="padding:16px 28px 0;">'
-      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:6px;">Materials</div>'
+      +'<div style="padding:6px 20px 0;">'
+      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:4px;">Materials</div>'
       +'<table style="border-radius:6px;overflow:hidden;border:1px solid #e2e8f0;">'
       +'<thead><tr>'
       +'<th style="'+TH+'">Mat Type</th>'
@@ -1922,7 +1922,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'</div>'
 
       // ── EMPLOYEES + R-VALUE SUMMARY ──
-      +'<div style="display:flex;gap:16px;padding:12px 28px 0;">'
+      +'<div style="display:flex;gap:10px;padding:6px 20px 0;">'
 
       // Employees
       +'<div style="flex:1;">'

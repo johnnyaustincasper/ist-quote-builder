@@ -866,7 +866,11 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
       });
 
       groups2.forEach(function(g,gi){
-        var ROW_H=20;var DIM_H=14;
+        var DIM_H=14;
+        // Measure how many lines the location text needs
+        doc.setFont("helvetica","bold");doc.setFontSize(9.5);
+        var locLines=doc.splitTextToSize(g.location,164).length;
+        var ROW_H=Math.max(20,locLines*12+8);
         var groupH=ROW_H+g.entries.length*DIM_H+4;
         if(y+groupH>720){doc.addPage();y=40;}
         doc.setFillColor(gi%2===0?242:250,gi%2===0?246:252,gi%2===0?255:255);
@@ -874,13 +878,13 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,3,groupH,"F");
         // Header row
         doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","bold");doc.setFontSize(9.5);
-        doc.text(g.location,c1+4,y+14,{maxWidth:164});
-        doc.text(g.material,c2,y+14,{maxWidth:154});
-        doc.text(g.totalSqft.toLocaleString(),c3,y+14);
+        doc.text(g.location,c1+4,y+13,{maxWidth:164,lineHeightFactor:1.4});
+        doc.text(g.material,c2,y+13,{maxWidth:154});
+        doc.text(g.totalSqft.toLocaleString(),c3,y+13);
         var ppu=parseFloat(g.pricePerUnit)||0;
-        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+14);
+        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+13);
         y+=ROW_H;
-        // Individual dim entries indented under location
+        // Individual dim entries
         g.entries.forEach(function(r){
           doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
           var dimLabel=r.dimStr||(r.wallHeightLabel)||"";

@@ -267,6 +267,7 @@ function MeasurementForm(p){
   var s7=useState(0),mk=s7[0],setMk=s7[1];
   var s8=useState(false),isRemoval=s8[0],setIsRemoval=s8[1];
   var s9=useState(""),matNote=s9[0],setMatNote=s9[1];
+  var s10=useState(""),tmpMat=s10[0],setTmpMat=s10[1];
   var loc=LOCATIONS.find(function(x){return x.id===lid;});
   var locLabel=loc?(loc.id==="custom"?cl:loc.label):"";
   var locGroup=loc?(loc.id==="custom"?"Other":loc.group):"Other";
@@ -277,15 +278,14 @@ function MeasurementForm(p){
   var ss={width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"};
   var tabLabel=p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
   // Step tracking
-  var stepsDone = lid ? ((!hp||mat) ? (fin>0 ? ((!hp||(parseFloat(price)||0)>0) ? 4 : 3) : 2) : 1) : 0;
-  var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Measure","Add"];
-  var stepCurrent = lid ? ((!hp||mat) ? (fin>0 ? (hp ? 3 : 2) : (hp?2:1)) : 1) : 0;
+  var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Material","Measure","Add"];
+  var stepCurrent = !lid ? 0 : (!hp&&!matNote.trim()) ? 1 : (fin<=0) ? (hp?2:2) : (hp?(parseFloat(price)||0)>0?3:3:3);
   function handleAdd(){
-    var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
+    var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;if(!hp&&!matNote.trim())return;
     var useMat=hp?mat:"(material TBD)";
     var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
     p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null,dimStr:dimStr||null});
-    setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");
+    setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");setTmpMat("");
   }
   return(<div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)"}}>
     <StepBar steps={stepLabels} current={stepCurrent}/>
@@ -301,13 +301,44 @@ function MeasurementForm(p){
         <select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select>
       </div>)}
       <div style={{marginBottom:4}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
+        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"③")+" Measurements"}</div>
       </div>
       {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"||lid==="attic_kneewall"} onSqftChange={function(s,h,cw,ds){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);setDimStr(ds||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {!hp&&(<div style={{marginBottom:12}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{"Material (optional)"}</div>
-        <input type="text" value={matNote} onChange={function(e){setMatNote(e.target.value);}} placeholder="e.g. R13 Batts, Blown Fiberglass…" style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box"}}/>
+        <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Material"}{!matNote.trim()&&(<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>)}</div>
+        {(function(){
+          var BTNS=[
+            {id:"R11",label:"R11",value:"R11 Fiberglass Batts",sub:null},
+            {id:"R13",label:"R13",value:null,sub:[{id:"x15",label:"x15",value:"R13 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R13 x24 Fiberglass Batts"}]},
+            {id:"R19",label:"R19",value:null,sub:[{id:"x15",label:"x15",value:"R19 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R19 x24 Fiberglass Batts"}]},
+            {id:"R30",label:"R30",value:null,sub:[{id:"x15",label:"x15",value:"R30 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R30 x24 Fiberglass Batts"}]},
+            {id:"opencell",label:"Open Cell",value:"Open Cell Foam",sub:null},
+            {id:"closedcell",label:"Closed Cell",value:"Closed Cell Foam",sub:null},
+            {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
+            {id:"blowncel",label:"Blown Cellulose",value:"Blown Cellulose",sub:null},
+          ];
+          var btnStyle=function(active){return{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"};};
+          var activeBtn=BTNS.find(function(b){return b.id===tmpMat;});
+          return React.createElement("div",null,
+            React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}},
+              BTNS.map(function(b){
+                var active=tmpMat===b.id;
+                return React.createElement("button",{key:b.id,onClick:function(){
+                  setTmpMat(b.id);
+                  if(b.value){setMatNote(b.value);}else{setMatNote("");}
+                },style:btnStyle(active)},b.label);
+              })
+            ),
+            activeBtn&&activeBtn.sub&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:4,paddingLeft:8,borderLeft:"3px solid "+C.accent}},
+              activeBtn.sub.map(function(s){
+                var subActive=matNote===s.value;
+                return React.createElement("button",{key:s.id,onClick:function(){setMatNote(s.value);},style:btnStyle(subActive)},s.label);
+              })
+            )
+          );
+        })()}
+        {matNote.trim()&&(<div style={{marginTop:8,fontSize:12,color:C.accent,fontWeight:600}}>{"✓ "+matNote}</div>)}
       </div>)}
       {hp&&(<div style={{marginBottom:14}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"④":"③")+" Price"}</div>

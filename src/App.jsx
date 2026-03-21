@@ -839,11 +839,6 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
         return by+bh;
       }
 
-      // Estimate height needed
-      doc.setFont("helvetica","normal");doc.setFontSize(8.5);
-      var estBullets=Math.max(FG_BULLETS.length,FM_BULLETS.length);
-      var estH=20+14+8+3*13+8+estBullets*16+30;
-      if(py+estH>720){doc.addPage();py=40;}
       // Section label
       doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
       doc.text("PRODUCT INFORMATION",leftX,py+10);

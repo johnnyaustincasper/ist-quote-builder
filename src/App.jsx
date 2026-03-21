@@ -283,7 +283,7 @@ function MeasurementForm(p){
   React.useEffect(function(){
     if(document.getElementById("ist-pulse-style"))return;
     var s=document.createElement("style");s.id="ist-pulse-style";
-    s.textContent="@keyframes ist-pulse{0%{box-shadow:0 0 0 0 rgba(147,197,253,0.85)}60%{box-shadow:0 0 0 7px rgba(147,197,253,0)}100%{box-shadow:0 0 0 0 rgba(147,197,253,0)}}.ist-pulse{animation:ist-pulse 1.5s ease-in-out infinite !important;border-radius:8px;}.ist-pulse-selected{animation:ist-pulse 1.5s ease-in-out infinite !important;}";
+    s.textContent="@keyframes ist-pulse{0%{box-shadow:0 0 0 0 rgba(37,99,235,0.9),0 0 0 0 rgba(37,99,235,0.5)}60%{box-shadow:0 0 0 6px rgba(37,99,235,0.3),0 0 0 12px rgba(37,99,235,0)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0),0 0 0 0 rgba(37,99,235,0)}}.ist-pulse{animation:ist-pulse 1.3s ease-in-out infinite !important;border-radius:8px;outline:2px solid rgba(37,99,235,0.6);outline-offset:1px;}.ist-pulse-selected{animation:ist-pulse 1.3s ease-in-out infinite !important;}";
     document.head.appendChild(s);
   },[]);
   function handleAdd(){

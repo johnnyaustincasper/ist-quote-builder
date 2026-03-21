@@ -1106,7 +1106,6 @@ function QuoteBuilderSection(p){
   function removeOption(idx){if(opts.length<=1)return;setOpts(function(prev){return prev.filter(function(_,i){return i!==idx;});});if(activeIdx>=opts.length-1)setActiveIdx(Math.max(0,opts.length-2));}
 
   var qs1=useState(false),locOpen=qs1[0],setLocOpen=qs1[1];
-  var qs2=useState(false),matOpen=qs2[0],setMatOpen=qs2[1];
   var accordionBtn=function(label,open,setOpen,badge){return(<button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
     <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>{label}</span>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1118,22 +1117,24 @@ function QuoteBuilderSection(p){
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
 
-    {/* ROW 1: Location + Material & Measure as collapsible accordions */}
-    <div style={{padding:"0 16px 12px",display:"flex",flexDirection:"column",gap:8}}>
-      {/* ① Location */}
+    {/* ROW 1: Single collapsible — Location + Material & Measure side by side */}
+    <div style={{padding:"0 16px 12px"}}>
       <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07)",overflow:"hidden"}}>
-        {accordionBtn("① Location",locOpen,setLocOpen,lid&&lid!=="custom"?LOCATIONS.find(function(l){return l.id===lid;})?LOCATIONS.find(function(l){return l.id===lid;}).label:cl:lid==="custom"?cl:null)}
-        {locOpen&&(<div style={{padding:"12px 14px"}}>
-          <LocationGrid value={lid} onChange={function(v){setLid(v);}}/>
-          {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
-        </div>)}
-      </div>
-
-      {/* ② Material & Measure */}
-      <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07)",overflow:"hidden"}}>
-        {accordionBtn("② Material & Measure",matOpen,setMatOpen,null)}
-        {matOpen&&(<div style={{padding:"12px 14px"}}>
-          <MeasurementForm key={"qb-"+activeIdx} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={matTab} onAdd={addItem} hasPrice={true} hideLocation/>
+        {accordionBtn("📐 Add Item",locOpen,setLocOpen,lid&&LOCATIONS.find(function(l){return l.id===lid;})?(LOCATIONS.find(function(l){return l.id===lid;}).label):(lid==="custom"?cl:null))}
+        {locOpen&&(<div className="ist-2col" style={{marginBottom:0}}>
+          <div className="ist-col-form">
+            <div style={{padding:"12px 14px"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"① Location"}</div>
+              <LocationGrid value={lid} onChange={function(v){setLid(v);}}/>
+              {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
+            </div>
+          </div>
+          <div className="ist-col-results">
+            <div style={{padding:"12px 14px"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"② Material & Measure"}</div>
+              <MeasurementForm key={"qb-"+activeIdx} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={matTab} onAdd={function(item){addItem(item);setLocOpen(false);}} hasPrice={true} hideLocation/>
+            </div>
+          </div>
         </div>)}
       </div>
     </div>

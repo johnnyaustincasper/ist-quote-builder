@@ -60,7 +60,32 @@ var WALL_HEIGHTS = [
 
 var GROUP_ORDER = ["Walls","Attic / Ceiling","Porch / Blocking","Roofline","Other"];
 
-var C = {bg:"#f8f9fb",card:"#ffffff",accent:"#1a56db",accentHover:"#1648b8",accentBg:"#eef2ff",white:"#111827",text:"#111827",textSec:"#4b5563",dim:"#9ca3af",border:"#e2e5ea",borderLight:"#eef0f3",input:"#ffffff",inputBorder:"#e2e5ea",danger:"#dc2626",dangerBg:"#fef2f2",green:"#1a56db",blue:"#1a56db",shadow:"0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",shadowMd:"0 4px 12px rgba(0,0,0,0.08)"};
+var C = {
+  bg:"linear-gradient(135deg, #0a0f1e 0%, #0d1635 40%, #0f2050 100%)",
+  bgSolid:"#0a0f1e",
+  card:"rgba(255,255,255,0.07)",
+  cardHover:"rgba(255,255,255,0.11)",
+  glass:"rgba(255,255,255,0.08)",
+  glassBorder:"rgba(255,255,255,0.15)",
+  glassStrong:"rgba(255,255,255,0.12)",
+  accent:"#3b82f6",
+  accentHover:"#2563eb",
+  accentBg:"rgba(59,130,246,0.15)",
+  accentGlow:"0 0 20px rgba(59,130,246,0.4)",
+  text:"#f0f4ff",
+  textSec:"#94a3b8",
+  dim:"#4a5568",
+  border:"rgba(255,255,255,0.1)",
+  borderLight:"rgba(255,255,255,0.06)",
+  input:"rgba(255,255,255,0.06)",
+  inputBorder:"rgba(255,255,255,0.15)",
+  danger:"#f87171",
+  dangerBg:"rgba(248,113,113,0.12)",
+  green:"#34d399",
+  blue:"#3b82f6",
+  shadow:"0 4px 24px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.05) inset",
+  shadowMd:"0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08) inset",
+};
 
 /* ──────── STORAGE HELPERS (Supabase) ──────── */
 
@@ -119,17 +144,18 @@ async function loadPasscode(user) {
 
 /* ──────── UI COMPONENTS ──────── */
 
-function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
+var glassInput={width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,color:C.text,fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",transition:"border-color 0.15s, box-shadow 0.15s"};
+function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={Object.assign({},glassInput)} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(59,130,246,0.2)";}} onBlur={function(e){e.target.style.borderColor="rgba(255,255,255,0.15)";e.target.style.boxShadow="none";}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
 
-function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v}>{l}</option>);})}</select></div>);}
+function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={Object.assign({},glassInput,{WebkitAppearance:"none"})} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(59,130,246,0.2)";}} onBlur={function(e){e.target.style.borderColor="rgba(255,255,255,0.15)";e.target.style.boxShadow="none";}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v} style={{background:"#0d1635",color:"#f0f4ff"}}>{l}</option>);})}</select></div>);}
 
 function Row(p){return <div style={{display:"flex",gap:10,marginBottom:10}}>{p.children}</div>;}
 function Col(p){return <div style={{flex:1}}>{p.children}</div>;}
 function StepLabel(p){return(<label style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.children}</label>);}
 
-function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:C.borderLight,padding:3,borderRadius:6,marginBottom:12}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:4,fontSize:12,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?C.accent:"transparent",color:p.mode===o.id?"#fff":C.dim}}>{o.label}</button>);})}</div>);}
+function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:"rgba(255,255,255,0.05)",padding:3,borderRadius:8,marginBottom:12,border:"1px solid rgba(255,255,255,0.08)"}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",border:p.mode===o.id?"1px solid rgba(59,130,246,0.5)":"1px solid transparent",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?"rgba(59,130,246,0.3)":"transparent",color:p.mode===o.id?"#e0eaff":C.textSec,backdropFilter:p.mode===o.id?"blur(8px)":"none",transition:"all 0.15s"}}>{o.label}</button>);})}</div>);}
 
-function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:6,border:"none",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:C.accent,color:"#fff",marginTop:p.mt||0,boxShadow:C.shadow,transition:"background 0.15s"}} onMouseOver={function(e){e.target.style.background=C.accentHover;}} onMouseOut={function(e){e.target.style.background=C.accent;}}>{p.children}</button>);}
+function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:8,border:"1px solid rgba(59,130,246,0.5)",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:"rgba(59,130,246,0.25)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",color:"#e0eaff",marginTop:p.mt||0,boxShadow:"0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",transition:"all 0.15s"}} onMouseOver={function(e){e.currentTarget.style.background="rgba(59,130,246,0.4)";e.currentTarget.style.boxShadow="0 4px 24px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.15)";}} onMouseOut={function(e){e.currentTarget.style.background="rgba(59,130,246,0.25)";e.currentTarget.style.boxShadow="0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.1)";}}>{p.children}</button>);}
 
 /* ──────── MEASUREMENTS ──────── */
 
@@ -181,7 +207,7 @@ function LocationGrid(p){
           {locs.map(function(loc){
             var active=p.value===loc.id;
             return(<button key={loc.id} onClick={function(){p.onChange(loc.id);}}
-              style={{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid "+C.border,background:active?C.accentBg:C.card,color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",lineHeight:1.2}}>
+              style={{padding:"8px 13px",borderRadius:8,border:active?"2px solid rgba(59,130,246,0.7)":"1px solid rgba(255,255,255,0.1)",background:active?"rgba(59,130,246,0.25)":"rgba(255,255,255,0.04)",color:active?"#93c5fd":C.textSec,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",lineHeight:1.2,backdropFilter:"blur(8px)"}}>
               {loc.short}
             </button>);
           })}
@@ -189,7 +215,7 @@ function LocationGrid(p){
       </div>);
     })}
     <button onClick={function(){p.onChange("custom");}}
-      style={{padding:"8px 13px",borderRadius:8,border:p.value==="custom"?"2px solid "+C.accent:"1px dashed "+C.dim,background:p.value==="custom"?C.accentBg:"transparent",color:p.value==="custom"?C.accent:C.dim,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+      style={{padding:"8px 13px",borderRadius:8,border:p.value==="custom"?"2px solid rgba(59,130,246,0.7)":"1px dashed rgba(255,255,255,0.2)",background:p.value==="custom"?"rgba(59,130,246,0.2)":"transparent",color:p.value==="custom"?"#93c5fd":"rgba(255,255,255,0.3)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
       + Custom
     </button>
   </div>);
@@ -254,7 +280,7 @@ function MeasurementForm(p){
     p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null});
     setSqft(0);setWallHeightLabel(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");
   }
-  return(<div style={{background:C.card,borderRadius:8,padding:18,border:"1px solid "+C.border,boxShadow:C.shadow}}>
+  return(<div style={{background:"rgba(255,255,255,0.06)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)"}}>
     <StepBar steps={stepLabels} current={stepCurrent}/>
     {/* STEP 1: Location grid */}
     {!p.hideLocation&&(<div style={{marginBottom:16}}>
@@ -310,7 +336,7 @@ function SavedDropdown({label, icon, color, bg, items, onSelect, onDelete}){
         <span>{icon} {label} ({items.length})</span><span style={{fontSize:11}}>{open?"▲":"▼"}</span>
       </button>
       {open&&(
-        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#fff",border:"1px solid "+color,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,0.18)",zIndex:9999,minWidth:200}}>
+        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"rgba(13,22,53,0.95)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,boxShadow:"0 16px 48px rgba(0,0,0,0.6)",zIndex:9999,minWidth:200}}>
           <input autoFocus value={q} onChange={function(e){setQ(e.target.value);}} placeholder={"Search "+label+"..."} style={{width:"100%",padding:"8px 12px",border:"none",borderBottom:"1px solid #e5e7eb",borderRadius:"8px 8px 0 0",fontSize:13,fontFamily:"'Inter',sans-serif",boxSizing:"border-box",outline:"none"}}/>
           <div style={{maxHeight:220,overflowY:"auto"}}>
             {sorted.length===0
@@ -366,7 +392,7 @@ function CustomerInfo(p){
 
   var s6=useState(false),open=s6[0],setOpen=s6[1];
   return(<div style={{padding:"0 16px 12px"}}>
-    <div style={{background:C.card,borderRadius:8,border:"1px solid "+C.border,boxShadow:C.shadow,marginBottom:10,overflow:"visible"}}>
+    <div style={{background:"rgba(255,255,255,0.06)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)",marginBottom:10,overflow:"visible"}}>
       <button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
         <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>👤 Customer Info</span>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -866,7 +892,7 @@ function TakeOff(p){
           {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
             return(<div key={gn} style={{marginBottom:16}}>
               <div style={{fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.border}}>{gn}<span style={{color:C.accent,marginLeft:8}}>{gt.toLocaleString()+" sq ft"}</span></div>
-              <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden",boxShadow:C.shadow}}>
+              <div style={{background:"rgba(255,255,255,0.06)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,0.4)"}}>
                 {groups[gn].map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<groups[gn].length-1?"1px solid "+C.borderLight:"none"}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div>
@@ -1794,9 +1820,11 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 32 }}>
+    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 32, minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        html, body { background: #0a0f1e; margin: 0; }
+        .ist-app { background: linear-gradient(135deg, #0a0f1e 0%, #0d1635 40%, #0f2050 100%); min-height: 100vh; }
         .ist-2col { display: flex; flex-direction: column; }
         .ist-col-form { min-width: 0; }
         .ist-col-results { min-width: 0; }
@@ -1807,32 +1835,36 @@ export default function App() {
         }
         @media (min-width: 1024px) { .ist-col-form { flex: 0 0 440px; } }
         .ist-clear-btn-inner { max-width: 1140px; margin: 0 auto; }
+        input::placeholder, textarea::placeholder { color: rgba(148,163,184,0.5) !important; }
+        input, textarea, select { color-scheme: dark; }
+        * { box-sizing: border-box; }
       `}</style>
 
       {/* HEADER */}
-      <div style={{ background: C.card, padding: "22px 20px 16px", borderBottom: "1px solid " + C.border, textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: C.shadow }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <div style={{ fontSize: 10, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentUser}</div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button onClick={function(){if(window.confirm("Clear everything? This will erase customer info, all measurements, and the entire quote.")){setMeas([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "none", border: "1px solid "+C.danger, borderRadius: 5, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "4px 8px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
-            <button onClick={handleLogout} style={{ background: "none", border: "none", color: C.dim, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase" }}>{"Switch User"}</button>
+      <div style={{ background: "rgba(10,15,30,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "18px 20px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 4px 32px rgba(0,0,0,0.5)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>👤 {currentUser}</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={function(){if(window.confirm("Clear everything?")){setMeas([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
+            <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: C.textSec, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase", padding: "5px 10px" }}>{"Switch User"}</button>
           </div>
         </div>
-        <h1 style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "0.04em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
-        <div style={{ fontSize: 10, color: C.dim, marginTop: 3, letterSpacing: "0.12em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
+        <h1 style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "0.05em", margin: 0, textTransform: "uppercase", textShadow: "0 0 30px rgba(59,130,246,0.5)" }}>{"Insulation Services of Tulsa"}</h1>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3, letterSpacing: "0.14em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
 
-        <div className="ist-nav-tabs" style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: "1px solid " + C.border, marginTop: 14 }}>
+        <div className="ist-nav-tabs" style={{ display: "flex", gap: 0, overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 14 }}>
           {[
             { id: "takeoff", label: "TAKE OFF", badge: meas.length || null },
             { id: "quote", label: "QUOTE", badge: qOpts.reduce(function(s,o){return s+o.items.length;},0) || null },
-            { id: "jobs", label: "JOBS", badge: null },
             { id: "workorder", label: "WORK ORDER", badge: null },
+            { id: "jobs", label: "JOBS", badge: null },
           ].map(function(t) {
+            var active = sec === t.id;
             return (
               <button key={t.id} onClick={function() { setSec(t.id); }}
-                style={{ flex: 1, padding: "10px 6px", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: sec === t.id ? C.accent : C.card, color: sec === t.id ? "#fff" : C.dim, transition: "all 0.15s ease" }}>
+                style={{ flex: 1, padding: "10px 6px", border: "none", borderRight: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: active ? "rgba(59,130,246,0.3)" : "transparent", color: active ? "#e0eaff" : "rgba(255,255,255,0.4)", backdropFilter: active ? "blur(12px)" : "none", WebkitBackdropFilter: active ? "blur(12px)" : "none", transition: "all 0.15s ease", boxShadow: active ? "inset 0 -2px 0 #3b82f6" : "none" }}>
                 {t.label}
-                {t.badge ? (<span style={{ display: "inline-block", marginLeft: 5, background: sec === t.id ? "rgba(255,255,255,0.25)" : C.borderLight, color: sec === t.id ? "#fff" : C.textSec, fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, minWidth: 18, textAlign: "center" }}>{t.badge}</span>) : null}
+                {t.badge ? (<span style={{ display: "inline-block", marginLeft: 5, background: active ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)", color: active ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, minWidth: 18, textAlign: "center" }}>{t.badge}</span>) : null}
               </button>
             );
           })}

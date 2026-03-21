@@ -656,22 +656,15 @@ function buildQuotePdf(customer,opts,salesman,outputMode){
       // Total box
       if(y>700){doc.addPage();y=40;}
       doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
-      doc.roundedRect(W-M-180,y,180,36,4,4,"F");
-      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(9);doc.setFont("helvetica","normal");
-      doc.text(optsWithItems.length>1?opt.name+" Total":"TOTAL INVESTMENT",W-M-90,y+12,{align:"center"});
-      doc.setFontSize(16);doc.setFont("helvetica","bold");
-      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-90,y+27,{align:"center"});
+      doc.roundedRect(W-M-160,y,160,34,4,4,"F");
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(18);doc.setFont("helvetica","bold");
+      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-80,y+22,{align:"center"});
       y+=50;
     });
 
     y+=8;
 
-    // ── SIGNATURE LINE ──
-    doc.setDrawColor(180,180,200);doc.setLineWidth(0.5);
-    doc.line(x,y,x+200,y);doc.line(W-M-200,y,W-M,y);
-    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(8);doc.setFont("helvetica","normal");
-    doc.text("Customer Signature",x,y+12);doc.text("Date",W-M-200,y+12);
-    y+=28;
+    y+=8;
 
     // ── FOOTER ──
     doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);

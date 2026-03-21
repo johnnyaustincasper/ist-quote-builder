@@ -1803,9 +1803,8 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       return '<tr style="background:'+bg+'"><td style="'+TD+'">'+e.name+'</td><td style="'+TD2+'">'+e.sqft+'</td><td style="'+TD2+'">'+(e.labor?'$'+e.labor:'')+'</td></tr>';
     }).join('');
     var rSummaryRowsThemed = rCats.map(function(cat,i){
-      var ft = getRFootage(cat);
       var bg = i%2===0?'#f8fafc':'#fff';
-      return '<tr style="background:'+bg+'"><td style="'+TD+'">'+cat+'</td><td style="'+TD2+'">'+(ft?ft.toLocaleString():'')+'</td><td style="'+TD2+'">'+(rCosts[cat]?'$'+rCosts[cat]:'')+'</td></tr>';
+      return '<tr style="background:'+bg+'"><td style="'+TD+'">'+cat+'</td><td style="'+TD2+'"></td><td style="'+TD2+'"></td></tr>';
     }).join('');
 
     var html = '<!DOCTYPE html><html><head><title>Work Order #'+woNum+'</title>'

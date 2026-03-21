@@ -218,8 +218,13 @@ function MeasurementForm(p){
   var mats=p.tab==="opencell"?OPEN_CELL_MATERIALS:p.tab==="closedcell"?CLOSED_CELL_MATERIALS:FIBERGLASS_MATERIALS;
   var isFoam=p.tab==="opencell"||p.tab==="closedcell";
   var hp=p.hasPrice;
-  var s1=useState(""),lid=s1[0],setLid=s1[1];
-  var s2=useState(""),cl=s2[0],setCl=s2[1];
+  // Allow external lid/cl state (for split layout)
+  var s1=useState(""),_lid=s1[0],_setLid=s1[1];
+  var s2=useState(""),_cl=s2[0],_setCl=s2[1];
+  var lid=p.lid!==undefined?p.lid:_lid;
+  var setLid=p.setLid||_setLid;
+  var cl=p.cl!==undefined?p.cl:_cl;
+  var setCl=p.setCl||_setCl;
   var s3=useState(mats[0]||""),mat=s3[0],setMat=s3[1];
   var s4=useState(0),sqft=s4[0],setSqft=s4[1];
   var s4b=useState(null),wallHeightLabel=s4b[0],setWallHeightLabel=s4b[1];
@@ -252,11 +257,11 @@ function MeasurementForm(p){
   return(<div style={{background:C.card,borderRadius:8,padding:18,border:"1px solid "+C.border,boxShadow:C.shadow}}>
     <StepBar steps={stepLabels} current={stepCurrent}/>
     {/* STEP 1: Location grid */}
-    <div style={{marginBottom:16}}>
+    {!p.hideLocation&&(<div style={{marginBottom:16}}>
       <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"① Location"}</div>
       <LocationGrid value={lid} onChange={function(v){setLid(v);setSqft(0);setMk(function(k){return k+1;});}}/>
       {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
-    </div>
+    </div>)}
     {loc&&(<div>
       {hp&&(<div style={{marginBottom:14}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"② Material"}</div>
@@ -816,62 +821,82 @@ function TakeOff(p){
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
-    {/* Step 1 + Step 2 side by side */}
-    <div className="ist-2col">
+    {/* Row 1: Location (left) | Measurement inputs (right) */}
+    {React.createElement(function(){
+      var ls=useState(""),lid=ls[0],setLid=ls[1];
+      var cs=useState(""),cl=cs[0],setCl=cs[1];
+      var loc=LOCATIONS.find(function(x){return x.id===lid;});
+      return(<div className="ist-2col" style={{marginBottom:0}}>
+        <div className="ist-col-form">
+          <div style={{padding:"0 16px 12px"}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"① Location"}</div>
+            <LocationGrid value={lid} onChange={function(v){setLid(v);}}/>
+            {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
+          </div>
+        </div>
+        <div className="ist-col-results">
+          <div style={{padding:"0 16px 12px"}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"② Measure & Add"}</div>
+            <MeasurementForm key={"to-takeoff-"+lid} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={"fiberglass"} onAdd={addM} hasPrice={false} hideLocation/>
+          </div>
+        </div>
+      </div>);
+    })}
+
+    {/* Row 2: Job Notes (left) | Takeoff list (right) */}
+    <div className="ist-2col" style={{alignItems:"flex-start"}}>
+
+      {/* Left: Job Notes + Print/Share */}
       <div className="ist-col-form">
         <div style={{padding:"0 16px 12px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"Step 1 — Job Notes"}</div>
+          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"Job Notes"}</div>
           <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage..."/>
         </div>
-        <div style={{padding:"12px 16px 0"}}>
+        <div style={{padding:"0 16px"}}>
           <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
           <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};shareTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Share Take Off"}</GreenBtn>
         </div>
       </div>
+
+      {/* Right: Takeoff list */}
       <div className="ist-col-results">
         <div style={{padding:"0 16px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"Step 2 — Add Measurement"}</div>
-          <MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/>
+        {p.measurements.length>0&&(<div>
+          <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
+          {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
+            return(<div key={gn} style={{marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.border}}>{gn}<span style={{color:C.accent,marginLeft:8}}>{gt.toLocaleString()+" sq ft"}</span></div>
+              <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden",boxShadow:C.shadow}}>
+                {groups[gn].map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<groups[gn].length-1?"1px solid "+C.borderLight:"none"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div>
+                    {item.wallHeightLabel&&(<div style={{fontSize:12,color:C.accent,marginTop:2,fontWeight:500}}>{"↳ "+item.wallHeightLabel}</div>)}
+                    {item.cavityWidth&&(<div style={{fontSize:12,color:C.textSec,marginTop:2,fontWeight:500}}>{"↳ "+item.cavityWidth+" cavity"}</div>)}
+                    {item.matNote&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{"📋 "+item.matNote}</div>)}
+                    {item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
+                </div>);})}
+              </div>
+            </div>);
+          })}
+          {removalItems.length>0&&(<div style={{marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.danger,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.danger}}>{"Removal"}<span style={{color:C.danger,marginLeft:8}}>{removalTotal.toLocaleString()+" sq ft"}</span></div>
+            <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.danger,overflow:"hidden",boxShadow:C.shadow}}>
+              {removalItems.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<removalItems.length-1?"1px solid "+C.borderLight:"none"}}>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div></div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
+              </div>);})}
+            </div>
+          </div>)}
+          <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
+          <GreenBtn onClick={p.onSendToWorkOrder} mt={8}>{"Send to Work Order"}</GreenBtn>
+          <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
+        </div>)}
+        {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
         </div>
       </div>
-    </div>
-
-    {/* Measurements full width at bottom */}
-    <div style={{padding:"16px 16px 0"}}>
-    {p.measurements.length>0&&(<div>
-      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
-      {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
-        return(<div key={gn} style={{marginBottom:16}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.border}}>{gn}<span style={{color:C.accent,marginLeft:8}}>{gt.toLocaleString()+" sq ft"}</span></div>
-          <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden",boxShadow:C.shadow}}>
-            {groups[gn].map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<groups[gn].length-1?"1px solid "+C.borderLight:"none"}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div>
-                {item.wallHeightLabel&&(<div style={{fontSize:12,color:C.accent,marginTop:2,fontWeight:500}}>{"↳ "+item.wallHeightLabel}</div>)}
-                {item.cavityWidth&&(<div style={{fontSize:12,color:C.textSec,marginTop:2,fontWeight:500}}>{"↳ "+item.cavityWidth+" cavity"}</div>)}
-                {item.matNote&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{"📋 "+item.matNote}</div>)}
-                {item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
-            </div>);})}
-          </div>
-        </div>);
-      })}
-      {removalItems.length>0&&(<div style={{marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.danger,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.danger}}>{"Removal"}<span style={{color:C.danger,marginLeft:8}}>{removalTotal.toLocaleString()+" sq ft"}</span></div>
-        <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.danger,overflow:"hidden",boxShadow:C.shadow}}>
-          {removalItems.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<removalItems.length-1?"1px solid "+C.borderLight:"none"}}>
-            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div></div>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
-          </div>);})}
-        </div>
-      </div>)}
-      <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
-      <GreenBtn onClick={p.onSendToWorkOrder} mt={8}>{"Send to Work Order"}</GreenBtn>
-      <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
-    </div>)}
-    {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
-    </div>
+    </div>{/* end row 2 */}
   </div>);
 }
 

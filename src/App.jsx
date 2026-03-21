@@ -377,8 +377,8 @@ function MeasurementForm(p){
             {id:"R13",label:"R13",value:null,sub:[{id:"x15",label:"x15",value:"R13 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R13 x24 Fiberglass Batts"}]},
             {id:"R19",label:"R19",value:null,sub:[{id:"x15",label:"x15",value:"R19 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R19 x24 Fiberglass Batts"}]},
             {id:"R30",label:"R30",value:null,sub:[{id:"x15",label:"x15",value:"R30 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R30 x24 Fiberglass Batts"}]},
-            {id:"opencell",label:"Open Cell",value:"Open Cell Foam",sub:null},
-            {id:"closedcell",label:"Closed Cell",value:"Closed Cell Foam",sub:null},
+            {id:"opencell",label:"Open Cell",value:null,sub:["1\"","2\"","3\"","4\"","5\"","6\"","7\"","8\"","9\"","10\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
+            {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","1.5\"","2\"","2.5\"","3\"","3.5\"","4\"","4.5\"","5\"","5.5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
             {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
             {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
           ];

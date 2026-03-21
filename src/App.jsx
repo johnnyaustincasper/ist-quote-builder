@@ -736,6 +736,36 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
       });
     }
 
+    // ── INTERNAL ADDERS ──
+    if(quoteOpts&&quoteOpts.length>0){
+      var hasAdders=quoteOpts.some(function(opt){return opt.items&&opt.items.some(function(i){return i.sqft&&i.pricePerUnit;});});
+      if(hasAdders){
+        y+=10;
+        if(y>640){doc.addPage();y=40;}
+        doc.setFillColor(254,243,199);doc.rect(x,y,RW,20,"F");
+        doc.setFillColor(217,119,6);doc.rect(x,y,4,20,"F");
+        doc.setDrawColor(251,191,36);doc.setLineWidth(0.5);doc.rect(x,y,RW,20,"S");
+        doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(120,53,15);
+        doc.text("INTERNAL — DO NOT SHARE WITH CUSTOMER",x+12,y+13);
+        y+=20;
+        var allItems=[];
+        quoteOpts.forEach(function(opt){(opt.items||[]).forEach(function(item){if(item.sqft&&item.pricePerUnit)allItems.push(item);});});
+        allItems.forEach(function(item,i){
+          if(y>710){doc.addPage();y=40;}
+          doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
+          doc.rect(x,y,RW,16,"F");
+          doc.setFillColor(217,119,6);doc.circle(x+5,y+8,2,"F");
+          doc.setTextColor(15,23,42);doc.setFont("helvetica","normal");doc.setFontSize(9);
+          doc.text(item.location||"",c1,y+11,{maxWidth:184});
+          doc.text(item.material||"",c2,y+11,{maxWidth:184});
+          doc.text((parseFloat(item.sqft)||0).toLocaleString(),c3,y+11);
+          doc.text("$"+(parseFloat(item.pricePerUnit)||0).toFixed(2),c4,y+11);
+          doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
+          y+=16;
+        });
+      }
+    }
+
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
     if(outputMode==="save"){doc.save(filename);return null;}
     return doc.output("blob");

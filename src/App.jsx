@@ -1718,16 +1718,22 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
   var [employees, setEmployees] = React.useState([emptyEmp(),emptyEmp(),emptyEmp(),emptyEmp(),emptyEmp()]);
 
   // R-value summary costs
-  var rCats = ["R-11","R-13","R-19","R-30","BW","E/S"];
-  var [rCosts, setRCosts] = React.useState({"R-11":"","R-13":"","R-19":"","R-30":"","BW":"","E/S":""});
+  // Derive R-value categories from matNote on measurements
+  var rCats = (function() {
+    var seen = {}, order = [];
+    (measurements || []).forEach(function(m) {
+      var mat = (m.matNote || "").trim();
+      if (mat && !seen[mat]) { seen[mat] = true; order.push(mat); }
+    });
+    return order.length > 0 ? order : ["R-11","R-13","R-19","R-30","BW","E/S"];
+  })();
 
+  var [rCosts, setRCosts] = React.useState({});
+
+  // Sum sqft per matNote from measurements
   function getRFootage(cat) {
-    var norm = cat.toLowerCase().replace("-","").replace("/","");
-    return matRows.reduce(function(sum, r) {
-      var rv = (r.rValue || "").toLowerCase().replace("-","");
-      if (cat === "BW") { if (rv === "bw" || rv === "rw") return sum + (parseFloat(r.sqft)||0); return sum; }
-      if (cat === "E/S") { if (rv === "es" || rv === "e/s") return sum + (parseFloat(r.sqft)||0); return sum; }
-      if (rv.startsWith(norm) || rv === norm) return sum + (parseFloat(r.sqft)||0);
+    return (measurements || []).reduce(function(sum, m) {
+      if ((m.matNote || "").trim() === cat) return sum + (parseFloat(m.sqft) || 0);
       return sum;
     }, 0);
   }
@@ -1778,8 +1784,10 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       var bg = i%2===0?'#f8fafc':'#fff';
       return '<tr style="background:'+bg+'"><td style="'+TD+'">'+e.name+'</td><td style="'+TD2+'">'+e.sqft+'</td><td style="'+TD2+'">'+(e.labor?'$'+e.labor:'')+'</td></tr>';
     }).join('');
-    var rSummaryRowsThemed = rCats.map(function(cat){
-      return '<tr><td style="'+TD+'">'+cat+'</td><td style="'+TD2+'"></td><td style="'+TD2+'">'+(rCosts[cat]?'$'+rCosts[cat]:'')+'</td></tr>';
+    var rSummaryRowsThemed = rCats.map(function(cat,i){
+      var ft = getRFootage(cat);
+      var bg = i%2===0?'#f8fafc':'#fff';
+      return '<tr style="background:'+bg+'"><td style="'+TD+'">'+cat+'</td><td style="'+TD2+'">'+(ft?ft.toLocaleString():'')+'</td><td style="'+TD2+'">'+(rCosts[cat]?'$'+rCosts[cat]:'')+'</td></tr>';
     }).join('');
 
     var html = '<!DOCTYPE html><html><head><title>Work Order #'+woNum+'</title>'

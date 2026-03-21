@@ -715,10 +715,9 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     if(hasMeasurements){
       doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,RW,18,"F");
       doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
-      var c1=x+10,c2=x+170,c3=x+340,c4=x+410,c5=x+468;
-      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("SQ FT",c3,y+12);doc.text("$/SQ FT",c4,y+12);doc.text("TOTAL",c5,y+12);
+      var c1=x+10,c2=x+200,c3=x+390,c4=x+460;
+      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("SQ FT",c3,y+12);doc.text("$/SQ FT",c4,y+12);
       y+=18;
-      var grandSqft=0;
       measurements.forEach(function(r,i){
         var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
         if(y>710){doc.addPage();y=40;}
@@ -727,73 +726,14 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(x+5,y+8,2,"F");
         doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
         var locStr=(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":"");
-        doc.text(locStr,c1,y+11,{maxWidth:154});
-        doc.text(r.material||"",c2,y+11,{maxWidth:164});
+        doc.text(locStr,c1,y+11,{maxWidth:184});
+        doc.text(r.material||"",c2,y+11,{maxWidth:184});
         doc.text(sqft.toLocaleString(),c3,y+11);
         var ppu=parseFloat(r.pricePerUnit)||0;
-        if(ppu){doc.text("$"+ppu.toFixed(2),c4,y+11);}
-        if(ppu){doc.text("$"+Math.ceil(sqft*ppu).toLocaleString(),c5,y+11);}
+        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+11);
         doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
-        grandSqft+=sqft;y+=16;
+        y+=16;
       });
-      y+=10;
-    }
-
-    // ── INTERNAL ADDERS ──
-    if(quoteOpts&&quoteOpts.length>0){
-      var hasAdders=quoteOpts.some(function(opt){return opt.items&&opt.items.length>0;});
-      if(hasAdders){
-        if(y>640){doc.addPage();y=40;}
-        doc.setFillColor(254,243,199);doc.rect(x,y,RW,20,"F");
-        doc.setFillColor(217,119,6);doc.rect(x,y,4,20,"F");
-        doc.setDrawColor(251,191,36);doc.setLineWidth(0.5);doc.rect(x,y,RW,20,"S");
-        doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(120,53,15);
-        doc.text("INTERNAL — DO NOT SHARE WITH CUSTOMER",x+12,y+13);
-        y+=26;
-        quoteOpts.forEach(function(opt){
-          if(!opt.items||!opt.items.length)return;
-          var validOpts=quoteOpts.filter(function(o){return o.items&&o.items.length;});
-          if(validOpts.length>1){
-            doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,RW,16,"F");
-            doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
-            doc.text(opt.name.toUpperCase(),x+10,y+11);y+=20;
-          }
-          opt.items.forEach(function(item,i){
-            if(!item.sqft||!item.pricePerUnit)return;
-            if(y>710){doc.addPage();y=40;}
-            doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
-            doc.rect(x,y,RW,16,"F");
-            doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(x+5,y+8,2,"F");
-            doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
-            doc.text(item.location||"",x+12,y+11,{maxWidth:200});
-            var lineTotal="$"+Math.ceil(item.sqft*item.pricePerUnit).toLocaleString();
-            doc.text(item.sqft.toLocaleString()+" sf @ $"+parseFloat(item.pricePerUnit).toFixed(2)+"/sf = "+lineTotal,W-M,y+11,{align:"right"});
-            doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
-            y+=16;
-          });
-          y+=8;
-          var sub=opt.items.reduce(function(s,i){return s+(i.total||0);},0);
-          doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-          doc.text("Subtotal",x,y);doc.text("$"+Math.ceil(sub).toLocaleString(),W-M,y,{align:"right"});y+=13;
-          if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit — Attic",x,y);doc.text("-$600",W-M,y,{align:"right"});y+=13;}
-          if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit — Kneewall",x,y);doc.text("-$525",W-M,y,{align:"right"});y+=13;}
-          if(opt.extraLabor&&opt.extraLaborAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Extra Labor",x,y);doc.text("+$"+parseFloat(opt.extraLaborAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
-          if(opt.tripCharge&&opt.tripChargeAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Trip Charge",x,y);doc.text("+$"+parseFloat(opt.tripChargeAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
-          if(opt.energySeal&&opt.energySealAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Energy Seal",x,y);doc.text("+$"+parseFloat(opt.energySealAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
-          if(opt.dumpster&&opt.dumpsterAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Dumpster",x,y);doc.text("+$"+parseFloat(opt.dumpsterAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
-          var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
-          var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
-          var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
-          var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
-          var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
-          var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit+el+tc+es+du);
-          doc.setDrawColor(220,220,230);doc.setLineWidth(0.5);doc.line(x,y,W-M,y);y+=6;
-          doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.roundedRect(W-M-160,y,160,30,4,4,"F");
-          doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(14);doc.setFont("helvetica","bold");
-          doc.text("$"+Math.ceil(finalTotal).toLocaleString(),W-M-80,y+20,{align:"center"});
-          y+=40;
-        });
-      }
     }
 
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";

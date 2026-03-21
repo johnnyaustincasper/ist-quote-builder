@@ -819,7 +819,7 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
         doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);
         doc.text(title,bx+9,ty);ty+=10;
         doc.setFont("helvetica","bold");doc.setFontSize(fs);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);
-        doc.text(sub,bx+9,ty);ty+=7;
+        doc.text(sub,bx+9,ty);ty+=4;
         doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.3);doc.line(bx+9,ty,bx+bw-9,ty);ty+=5;
         if(intro){
           doc.setFont("helvetica","italic");doc.setFontSize(fs);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);

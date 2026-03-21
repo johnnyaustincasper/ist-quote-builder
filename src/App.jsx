@@ -1726,7 +1726,12 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       var mat = (m.matNote || "").trim();
       if (mat && !seen[mat]) { seen[mat] = true; order.push(mat); }
     });
-    return order.length > 0 ? order : ["R-11","R-13","R-19","R-30","BW","E/S"];
+    if (order.length === 0) return ["R-11","R-13","R-19","R-30","BW","E/S"];
+    return order.slice().sort(function(a,b){
+      var aR=parseInt((a).match(/(\d+)/)||[0,0])||0;
+      var bR=parseInt((b).match(/(\d+)/)||[0,0])||0;
+      return aR-bR;
+    });
   })();
 
   var [rCosts, setRCosts] = React.useState({});

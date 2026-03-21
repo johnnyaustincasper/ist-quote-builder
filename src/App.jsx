@@ -501,8 +501,9 @@ function sharePdfBlob(blob,filename){
   }
 }
 
-function shareQuote(customer,opts,salesman){
-  import("jspdf").then(function(mod){
+function buildQuotePdf(customer,opts,salesman,outputMode){
+  // outputMode: "blob" -> returns Promise<Blob>, "save" -> downloads directly
+  return import("jspdf").then(function(mod){
     var jsPDF=mod.jsPDF||mod.default;
     var doc=new jsPDF({unit:"pt",format:"letter"});
     var W=612,M=36,x=M,RW=W-M*2;
@@ -614,17 +615,17 @@ function shareQuote(customer,opts,salesman){
       if(opt.energySeal)allItems.push({description:"Energy seal and plates per city code."});
       allItems.forEach(function(item,i){
         if(y>710){doc.addPage();y=40;}
-        var rowH=18;
-        var desc=doc.splitTextToSize(item.description||"",RW-28);
-        rowH=Math.max(18,desc.length*12+8);
+        doc.setFont("helvetica","normal");doc.setFontSize(9.5);
+        var desc=doc.splitTextToSize(item.description||"",RW-26);
+        var rowH=Math.max(20,desc.length*13+10);
         // Alternating bg
         doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
         doc.rect(x,y,RW,rowH,"F");
-        // Left accent dot
+        // Left accent dot centered vertically
         doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
-        doc.circle(x+7,y+rowH/2,2,"F");
-        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9.5);
-        doc.text(desc,x+16,y+rowH/2+3.5);
+        doc.circle(x+7,y+rowH/2,2.5,"F");
+        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+        doc.text(desc,x+16,y+13,{lineHeightFactor:1.4});
         // Bottom border
         doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+rowH,x+RW,y+rowH);
         y+=rowH;
@@ -693,7 +694,17 @@ function shareQuote(customer,opts,salesman){
     doc.text("Licensed & Insured  •  Proudly serving Tulsa and Northeastern Oklahoma",W/2,782,{align:"center"});
 
     var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-    sharePdfBlob(doc.output("blob"),filename);
+    if(outputMode==="save"){doc.save(filename);return null;}
+    return doc.output("blob");
+  });
+}
+
+function shareQuote(customer,opts,salesman){
+  buildQuotePdf(customer,opts,salesman,"blob").then(function(blob){
+    if(blob){
+      var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+      sharePdfBlob(blob,filename);
+    }
   }).catch(function(err){alert("PDF error: "+err.message);});
 }
 
@@ -888,9 +899,7 @@ function _buildQuoteHtml(customer,opts,salesman){
 }
 
 function generatePDF(customer,opts,salesman){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden;margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
-  var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
-  if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
+  buildQuotePdf(customer,opts,salesman,"save").catch(function(err){alert("PDF error: "+err.message);});
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){

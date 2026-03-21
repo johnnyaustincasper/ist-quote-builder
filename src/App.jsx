@@ -2003,29 +2003,6 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     ),
     React.createElement("button", {onClick:addMatRow,style:{marginTop:8,fontSize:11,fontWeight:700,background:"none",border:"1px dashed "+C.border,borderRadius:4,color:C.textSec,padding:"4px 14px",cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em"}}, "+ Add Row"),
 
-    // Notes
-    secHead("R-Value Summary"),
-    React.createElement("div",{style:{overflowX:"auto",marginBottom:8}},
-      React.createElement("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
-        React.createElement("thead",null,
-          React.createElement("tr",null,
-            ["Material","Sq Ft","Cost ($)"].map(function(h,i){return React.createElement("th",{key:i,style:thStyle},h);})
-          )
-        ),
-        React.createElement("tbody",null,
-          rCats.map(function(cat,i){
-            var ft=getRFootage(cat);
-            return React.createElement("tr",{key:cat,style:{borderBottom:"1px solid "+C.borderLight,background:i%2===0?C.card:"transparent"}},
-              React.createElement("td",{style:tdStyle},cat),
-              React.createElement("td",{style:Object.assign({},tdStyle,{textAlign:"right",fontWeight:600,color:C.accent})},ft?ft.toLocaleString():"—"),
-              React.createElement("td",{style:tdStyle},
-                React.createElement("input",{type:"number",value:rCosts[cat]||"",onChange:function(e){var v=e.target.value;setRCosts(function(prev){return Object.assign({},prev,{[cat]:v});});},placeholder:"0.00",style:Object.assign({},iStyle,{width:90})})
-              )
-            );
-          })
-        )
-      )
-    ),
     secHead("Notes"),
     React.createElement("textarea", {value:notes,onChange:function(e){setNotes(e.target.value);},placeholder:"Job notes...",rows:3,style:{width:"100%",boxSizing:"border-box",padding:"8px",border:"1px solid "+C.inputBorder,borderRadius:6,fontSize:12,fontFamily:"'Inter',sans-serif",color:C.text,resize:"vertical"}}),
 

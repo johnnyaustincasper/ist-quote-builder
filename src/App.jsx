@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { supabase } from "./supabase";
 
 
@@ -178,12 +179,15 @@ function Input(p){
       type={isNum?"text":p.type} value={p.value}
       onChange={isNum?function(){}:function(e){p.onChange(e.target.value);}}
       placeholder={p.placeholder} step={p.step}/>
-    {isNum&&showPad&&(<div onMouseDown={function(e){e.preventDefault();}} style={{position:"fixed",zIndex:9999,bottom:0,left:0,right:0,background:"rgba(255,255,255,0.98)",backdropFilter:"blur(20px)",boxShadow:"0 -4px 24px rgba(0,0,0,0.15)",borderTop:"1px solid rgba(37,99,235,0.2)",padding:"10px 16px 20px"}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8,maxWidth:400,margin:"0 auto 8px"}}>
-        {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"12px 0",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:v==="⌫"?"rgba(239,68,68,0.08)":"rgba(37,99,235,0.06)",color:v==="⌫"?"#dc2626":C.text,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"background 0.1s"}}>{v}</button>);})}
-      </div>
-      <button onMouseDown={function(e){e.preventDefault();clearTimeout(_numpadBlurTimer);_numpadActiveSet=null;setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"12px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
-    </div>)}
+    {isNum&&showPad&&ReactDOM.createPortal(
+      (<div onMouseDown={function(e){e.preventDefault();}} style={{position:"fixed",zIndex:9999,bottom:0,left:0,right:0,background:"#f1f5f9",boxShadow:"0 -2px 16px rgba(0,0,0,0.18)",borderTop:"2px solid #2563eb",padding:"10px 16px 24px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8,maxWidth:400,margin:"0 auto 8px"}}>
+          {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"14px 0",borderRadius:10,border:"1px solid #cbd5e1",background:v==="⌫"?"#fee2e2":"#fff",color:v==="⌫"?"#dc2626":"#0f172a",fontSize:18,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",boxShadow:"0 1px 3px rgba(0,0,0,0.1)"}}>{v}</button>);})}
+        </div>
+        <button onMouseDown={function(e){e.preventDefault();clearTimeout(_numpadBlurTimer);_numpadActiveSet=null;setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"13px",borderRadius:10,border:"none",background:"#2563eb",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
+      </div>),
+      document.body
+    )}
   </div>);}
 
 

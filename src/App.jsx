@@ -164,11 +164,11 @@ function Input(p){
       type={isNum?"text":p.type} value={p.value}
       onChange={isNum?function(){}:function(e){p.onChange(e.target.value);}}
       placeholder={p.placeholder} step={p.step}/>
-    {isNum&&showPad&&(<div onMouseDown={function(e){e.preventDefault();}} style={{position:"absolute",zIndex:999,top:"100%",left:0,marginTop:4,background:"rgba(255,255,255,0.97)",backdropFilter:"blur(16px)",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",border:"1px solid rgba(37,99,235,0.2)",padding:8,width:200}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:6}}>
+    {isNum&&showPad&&(<div onMouseDown={function(e){e.preventDefault();}} style={{position:"fixed",zIndex:9999,bottom:0,left:0,right:0,background:"rgba(255,255,255,0.98)",backdropFilter:"blur(20px)",boxShadow:"0 -4px 24px rgba(0,0,0,0.15)",borderTop:"1px solid rgba(37,99,235,0.2)",padding:"10px 16px 20px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8,maxWidth:400,margin:"0 auto 8px"}}>
         {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"12px 0",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:v==="⌫"?"rgba(239,68,68,0.08)":"rgba(37,99,235,0.06)",color:v==="⌫"?"#dc2626":C.text,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"background 0.1s"}}>{v}</button>);})}
       </div>
-      <button onMouseDown={function(e){e.preventDefault();setShowPad(false);}} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
+      <button onMouseDown={function(e){e.preventDefault();setShowPad(false);}} style={{display:"block",maxWidth:400,width:"100%",margin:"0 auto",padding:"12px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
     </div>)}
   </div>);}
 
@@ -1217,7 +1217,7 @@ function QuoteBuilderSection(p){
           })()}
         </div>);})}
       </div>
-      <button onClick={function(){if(confirm("Clear all imported items?"))p.setImportedItems(function(prev){return prev.filter(function(i){return i.priced;});});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
+
     </div>)}
 
     {/* ADD MANUALLY */}

@@ -852,30 +852,44 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         if(g){g.entries.push(r);g.totalSqft+=sqft;}
         else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:matLabel,pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
       });
+      // Sort: foam first (no R-number), then by R-value, attics last
+      var atticLocIds=["attic_area_garage","attic_area_house"];
+      function takeoffR(g){var m=String(g.material||"");var n=m.match(/(\d+)/);return n?parseInt(n[1],10):0;}
+      function isFoamG(g){return /foam|open cell|closed cell/i.test(g.material||"");}
+      function isAtticG(g){return atticLocIds.some(function(id){return (g.entries[0]&&g.entries[0].locationId===id);});}
+      groups2.sort(function(a,b){
+        var aAttic=isAtticG(a),bAttic=isAtticG(b);
+        if(aAttic!==bAttic) return aAttic?1:-1;
+        var aFoam=isFoamG(a),bFoam=isFoamG(b);
+        if(aFoam!==bFoam) return aFoam?-1:1;
+        return takeoffR(a)-takeoffR(b);
+      });
+
       groups2.forEach(function(g,gi){
-        if(y>700){doc.addPage();y=40;}
-        var groupH=18+g.entries.length*13;
+        var ROW_H=20;var DIM_H=14;
+        var groupH=ROW_H+g.entries.length*DIM_H+4;
+        if(y+groupH>720){doc.addPage();y=40;}
         doc.setFillColor(gi%2===0?242:250,gi%2===0?246:252,gi%2===0?255:255);
         doc.rect(x,y,RW,groupH,"F");
         doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,3,groupH,"F");
         // Header row
         doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","bold");doc.setFontSize(9.5);
-        doc.text(g.location,c1+4,y+13,{maxWidth:164});
-        doc.text(g.material,c2,y+13,{maxWidth:154});
-        doc.text(g.totalSqft.toLocaleString(),c3,y+13);
+        doc.text(g.location,c1+4,y+14,{maxWidth:164});
+        doc.text(g.material,c2,y+14,{maxWidth:154});
+        doc.text(g.totalSqft.toLocaleString(),c3,y+14);
         var ppu=parseFloat(g.pricePerUnit)||0;
-        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+13);
-        y+=18;
+        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+14);
+        y+=ROW_H;
         // Individual dim entries indented under location
         g.entries.forEach(function(r){
           doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
           var dimLabel=r.dimStr||(r.wallHeightLabel)||"";
           var sqftLabel=(parseFloat(r.sqft)||0).toLocaleString()+" sf";
-          doc.text(dimLabel?dimLabel+" = "+sqftLabel:sqftLabel,c1+12,y+9);
-          y+=13;
+          doc.text(dimLabel?dimLabel+" = "+sqftLabel:sqftLabel,c1+12,y+10);
+          y+=DIM_H;
         });
-        doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);
-        y+=2;
+        doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.line(x,y+2,x+RW,y+2);
+        y+=6;
       });
     }
 

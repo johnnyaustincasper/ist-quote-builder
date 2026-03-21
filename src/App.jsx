@@ -664,18 +664,7 @@ function buildQuotePdf(customer,opts,salesman,outputMode){
       y+=50;
     });
 
-    // ── TERMS ──
-    if(y>680){doc.addPage();y=40;}
-    y+=4;
-    doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);
-    doc.roundedRect(x,y,RW,44,4,4,"F");
-    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,4,44,"F");
-    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");
-    doc.text("TERMS & CONDITIONS",x+12,y+11);
-    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
-    doc.text("All work performed to manufacturer specifications and local building codes. Quote valid for 30 days. 50% deposit required to schedule.",x+12,y+23,{maxWidth:RW-20});
-    doc.text("Remaining balance due upon completion. All materials are guaranteed against defect.",x+12,y+34,{maxWidth:RW-20});
-    y+=56;
+    y+=8;
 
     // ── SIGNATURE LINE ──
     doc.setDrawColor(180,180,200);doc.setLineWidth(0.5);

@@ -787,20 +787,11 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
 
     y+=8;
 
-    // ── PRODUCT INFO PAGE ──
+    // ── PRODUCT INFO (bottom of last page) ──
     if(showProductInfo){
-      doc.addPage();
-      var py=0;
-      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,py,W,56,"F");
-      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,52,W,4,"F");
-      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(16);doc.setFont("helvetica","bold");
-      doc.text("INSULATION SERVICES OF TULSA",M,22);
-      doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
-      doc.text("Product Information",M,38);
-      py=72;
-
       var colW=(RW-16)/2;
       var leftX=M,rightX=M+colW+16;
+      var py=y;
 
       // ── FIBERGLASS BOX ──
       var FG_TITLE="Fiberglass Batt Insulation";
@@ -859,6 +850,16 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
         return by+bh;
       }
 
+      // Estimate height needed
+      doc.setFont("helvetica","normal");doc.setFontSize(8.5);
+      var estBullets=Math.max(FG_BULLETS.length,FM_BULLETS.length);
+      var estH=20+14+8+3*13+8+estBullets*16+30;
+      if(py+estH>720){doc.addPage();py=40;}
+      // Section label
+      doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+      doc.text("PRODUCT INFORMATION",leftX,py+10);
+      doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.5);doc.line(leftX,py+13,x+RW,py+13);
+      py+=20;
       drawProductBox(leftX,py,colW,FG_TITLE,FG_SUB,FG_INTRO,FG_BULLETS,FG_FOOTER);
       drawProductBox(rightX,py,colW,FM_TITLE,FM_SUB,"",FM_BULLETS,"");
     }

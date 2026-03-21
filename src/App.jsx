@@ -690,139 +690,195 @@ function shareQuote(customer,opts,salesman){
   }).catch(function(err){alert("PDF error: "+err.message);});
 }
 
-function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
-  import("jspdf").then(function(mod){
+function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outputMode){
+  return import("jspdf").then(function(mod){
     var jsPDF=mod.jsPDF||mod.default;
     var doc=new jsPDF({unit:"pt",format:"letter"});
-    var W=612,M=40,x=M,y=50,RW=W-M*2;
+    var W=612,M=36,x=M,RW=W-M*2;
     var si=SALESMAN_INFO[salesman];
     var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+    var NAVY=[15,30,70],BLUE=[37,99,235],LIGHTBLUE=[219,234,254],GRAY=[100,116,139],LIGHTGRAY=[248,250,252],WHITE=[255,255,255],BLACK=[15,23,42];
 
-    // Header
-    doc.setFillColor(17,17,17);doc.rect(M,y-14,RW,36,"F");
-    doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont("helvetica","bold");
-    doc.text("Insulation Services of Tulsa",x+8,y+8);
-    doc.setFontSize(9);doc.setFont("helvetica","normal");
-    doc.text("TAKE OFF   "+today,W-M-8,y+8,{align:"right"});
-    y+=50;
+    // ── HEADER ──
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,72,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,68,W,4,"F");
+    doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(20);doc.setFont("helvetica","bold");
+    doc.text("INSULATION SERVICES OF TULSA",M,30);
+    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+    doc.text("Serving Northeastern Oklahoma  •  1 (918) 232-9055",M,46);
+    doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(11);doc.setFont("helvetica","bold");
+    doc.text("TAKE OFF",W-M,24,{align:"right"});
+    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+    doc.text(today,W-M,36,{align:"right"});
 
-    // Customer
-    doc.setTextColor(100,100,100);doc.setFontSize(8);doc.setFont("helvetica","bold");
-    doc.text("CUSTOMER",x,y);
-    if(si)doc.text("SALES REP",W-M-8,y,{align:"right"});
-    y+=12;
-    doc.setTextColor(17,17,17);doc.setFontSize(11);doc.setFont("helvetica","bold");
-    doc.text(customer.name||"—",x,y);
-    if(si)doc.text(si.fullName,W-M-8,y,{align:"right"});
-    y+=14;
-    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
-    if(customer.address){doc.text(customer.address,x,y);}
-    if(si){doc.text(si.phone,W-M-8,y,{align:"right"});}
-    y+=12;
-    if(customer.phone){doc.text(customer.phone,x,y);}
-    if(si){doc.text(si.email,W-M-8,y,{align:"right"});}
-    y+=20;
-    doc.setFontSize(9);doc.setTextColor(100,100,100);
-    doc.text("Job Site: "+(customer.jobAddress||customer.address||"—"),x,y);
-    y+=20;
+    var y=90;
 
-    // Notes
+    // ── INFO CARDS ──
+    var cardH=76,col=RW/3+4;
+    // Card 1: Customer
+    doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);doc.roundedRect(x,y,col-8,cardH,4,4,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,4,cardH,"F");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");doc.text("CUSTOMER",x+12,y+13);
+    doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text(customer.name||"—",x+12,y+27,{maxWidth:col-24});
+    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    var cy=y+40;
+    if(customer.address){var al=doc.splitTextToSize(customer.address,col-24);doc.text(al,x+12,cy);cy+=al.length*11;}
+    if(customer.phone){doc.text(customer.phone,x+12,cy);}
+
+    // Card 2: Job Site
+    var c2x=x+col;
+    doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);doc.roundedRect(c2x,y,col-8,cardH,4,4,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(c2x,y,4,cardH,"F");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");doc.text("JOB SITE",c2x+12,y+13);
+    doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFontSize(10);doc.setFont("helvetica","bold");
+    var jsal=doc.splitTextToSize(customer.jobAddress||customer.address||"—",col-24);doc.text(jsal,c2x+12,y+27);
+
+    // Card 3: Sales Rep
+    var c3x=x+col*2;
+    if(si){
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.roundedRect(c3x,y,col-8,cardH,4,4,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(c3x,y,4,cardH,"F");
+      doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");doc.text("SALES REP",c3x+12,y+13);
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text(si.fullName,c3x+12,y+27);
+      doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+      doc.text(si.phone,c3x+12,y+40);doc.text(si.email,c3x+12,y+53);
+    }
+    y+=cardH+16;
+
+    // ── JOB NOTES ──
     if(jobNotes&&jobNotes.trim()){
-      doc.setFontSize(9);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-      doc.text("Notes:",x,y);y+=12;
-      doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
-      var noteLines=doc.splitTextToSize(jobNotes,RW);
-      doc.text(noteLines,x,y);y+=noteLines.length*12+10;
+      doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);
+      var noteLines=doc.splitTextToSize(jobNotes,RW-20);
+      var noteH=noteLines.length*13+18;
+      doc.roundedRect(x,y,RW,noteH,4,4,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,4,noteH,"F");
+      doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");doc.text("JOB NOTES",x+12,y+11);
+      doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+      doc.text(noteLines,x+12,y+22,{lineHeightFactor:1.4});
+      y+=noteH+14;
     }
 
-    // Measurements table
+    // ── MEASUREMENTS TABLE ──
     var hasMeasurements=measurements&&measurements.some(function(r){return parseFloat(r.sqft)>0;});
     if(hasMeasurements){
-      doc.setFillColor(17,17,17);doc.rect(x,y-10,RW,16,"F");
-      doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont("helvetica","bold");
-      var col1=x+4,col2=x+170,col3=x+290,col4=x+370,col5=x+440;
-      doc.text("Location",col1,y+2);doc.text("Material",col2,y+2);doc.text("Size",col3,y+2);doc.text("Sq Ft",col4,y+2);doc.text("Price/Sq Ft",col5,y+2);
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,RW,18,"F");
+      doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
+      var c1=x+10,c2=x+178,c3=x+308,c4=x+388,c5=x+456;
+      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("SIZE",c3,y+12);doc.text("SQ FT",c4,y+12);doc.text("$/SQ FT",c5,y+12);
       y+=18;
-      var total=0;
+      var grandTotal=0;
       measurements.forEach(function(r,i){
         var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
-        if(y>720){doc.addPage();y=50;}
-        var bg=i%2===0?[250,250,250]:[255,255,255];
-        doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(x,y-10,RW,14,"F");
-        doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
+        if(y>710){doc.addPage();y=40;}
+        doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
+        doc.rect(x,y,RW,16,"F");
+        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(x+5,y+8,2,"F");
+        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
         var locStr=(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":"");
-        doc.text(locStr,col1,y,{maxWidth:160});
-        doc.text(r.material||"",col2,y,{maxWidth:110});
+        doc.text(locStr,c1,y+11,{maxWidth:162});
+        doc.text(r.material||"",c2,y+11,{maxWidth:124});
         var sizeStr=(r.width&&r.height)?r.width+"×"+r.height:(r.width||r.height||"");
-        doc.text(sizeStr,col3,y,{maxWidth:70});
-        doc.text(sqft.toLocaleString(),col4,y);
-        if(r.pricePerUnit)doc.text("$"+parseFloat(r.pricePerUnit).toFixed(2),col5,y);
-        total+=sqft;y+=14;
+        doc.text(sizeStr,c3,y+11,{maxWidth:74});
+        doc.text(sqft.toLocaleString(),c4,y+11);
+        if(r.pricePerUnit)doc.text("$"+parseFloat(r.pricePerUnit).toFixed(2),c5,y+11);
+        doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
+        grandTotal+=sqft;y+=16;
       });
-      y+=6;
-      doc.setFontSize(12);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-      doc.text("Total",W-M-100,y,{align:"left"});
-      doc.text(total.toLocaleString()+" sq ft",W-M-8,y,{align:"right"});
-      y+=24;
+      // Total sqft box
+      y+=8;
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.roundedRect(W-M-160,y,160,30,4,4,"F");
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(14);doc.setFont("helvetica","bold");
+      doc.text(grandTotal.toLocaleString()+" sq ft",W-M-80,y+20,{align:"center"});
+      y+=46;
     }
 
-    // Internal Adders (manager only)
+    // ── INTERNAL ADDERS ──
     if(quoteOpts&&quoteOpts.length>0){
       var hasAdders=quoteOpts.some(function(opt){return opt.items&&opt.items.some(function(i){return i.sqft&&i.pricePerUnit;});});
       if(hasAdders){
-        if(y>650){doc.addPage();y=50;}
-        doc.setFillColor(255,251,235);doc.rect(x,y-10,RW,18,"F");
-        doc.setDrawColor(253,211,77);doc.setLineWidth(0.5);doc.rect(x,y-10,RW,18,"S");
-        doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(146,64,14);
-        doc.text("INTERNAL — DO NOT SHARE WITH CUSTOMER",x+6,y+2);
-        y+=18;
+        if(y>640){doc.addPage();y=40;}
+        // Warning header
+        doc.setFillColor(254,243,199);doc.rect(x,y,RW,20,"F");
+        doc.setFillColor(217,119,6);doc.rect(x,y,4,20,"F");
+        doc.setDrawColor(251,191,36);doc.setLineWidth(0.5);doc.rect(x,y,RW,20,"S");
+        doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(120,53,15);
+        doc.text("INTERNAL — DO NOT SHARE WITH CUSTOMER",x+12,y+13);
+        y+=26;
         quoteOpts.forEach(function(opt){
           if(!opt.items||!opt.items.length)return;
-          if(quoteOpts.filter(function(o){return o.items&&o.items.length;}).length>1){
-            doc.setFontSize(9);doc.setFont("helvetica","bold");doc.setTextColor(80,80,80);
-            doc.text(opt.name,x,y);y+=12;
+          var validOpts=quoteOpts.filter(function(o){return o.items&&o.items.length;});
+          if(validOpts.length>1){
+            doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,RW,18,"F");
+            doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(9);doc.setFont("helvetica","bold");
+            doc.text(opt.name.toUpperCase(),x+10,y+12);y+=24;
           }
-          opt.items.forEach(function(item){
+          opt.items.forEach(function(item,i){
             if(!item.sqft||!item.pricePerUnit)return;
-            if(y>720){doc.addPage();y=50;}
-            doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(40,40,40);
+            if(y>710){doc.addPage();y=40;}
+            doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
+            doc.rect(x,y,RW,16,"F");
+            doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(x+5,y+8,2,"F");
+            doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
             var lineTotal="$"+Math.ceil(item.sqft*item.pricePerUnit).toLocaleString();
-            var right=item.sqft.toLocaleString()+" sf @ $"+parseFloat(item.pricePerUnit).toFixed(2)+"/sf = "+lineTotal;
-            doc.text(item.location||"",x,y);
-            doc.text(right,W-M-8,y,{align:"right"});
-            y+=13;
+            doc.text(item.location||"",x+12,y+11,{maxWidth:200});
+            doc.text(item.sqft.toLocaleString()+" sf @ $"+parseFloat(item.pricePerUnit).toFixed(2)+"/sf = "+lineTotal,W-M,y+11,{align:"right"});
+            doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
+            y+=16;
           });
-          // Subtotal before adders
+          y+=8;
           var sub=opt.items.reduce(function(s,i){return s+(i.total||0);},0);
-          doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-          doc.text("Subtotal before adders",x,y);
-          doc.text("$"+Math.ceil(sub).toLocaleString(),W-M-8,y,{align:"right"});
-          y+=13;
-          if(opt.pso){doc.setTextColor(180,30,30);doc.setFont("helvetica","normal");doc.text("Less PSO Credit Attic",x,y);doc.text("-$600",W-M-8,y,{align:"right"});y+=13;}
-          if(opt.psoKw){doc.setTextColor(180,30,30);doc.setFont("helvetica","normal");doc.text("Less PSO Credit KW",x,y);doc.text("-$525",W-M-8,y,{align:"right"});y+=13;}
-          if(opt.extraLabor&&opt.extraLaborAmt){doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.text("Extra Labor",x,y);doc.text("+$"+parseFloat(opt.extraLaborAmt).toFixed(0),W-M-8,y,{align:"right"});y+=13;}
-          if(opt.tripCharge&&opt.tripChargeAmt){doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.text("Trip Charge",x,y);doc.text("+$"+parseFloat(opt.tripChargeAmt).toFixed(0),W-M-8,y,{align:"right"});y+=13;}
-          if(opt.energySeal&&opt.energySealAmt){doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.text("Energy Seal",x,y);doc.text("+$"+parseFloat(opt.energySealAmt).toFixed(0),W-M-8,y,{align:"right"});y+=13;}
-          if(opt.dumpster&&opt.dumpsterAmt){doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.text("Dumpster",x,y);doc.text("+$"+parseFloat(opt.dumpsterAmt).toFixed(0),W-M-8,y,{align:"right"});y+=13;}
+          doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          doc.text("Subtotal",x,y);doc.text("$"+Math.ceil(sub).toLocaleString(),W-M,y,{align:"right"});y+=13;
+          if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit — Attic",x,y);doc.text("-$600",W-M,y,{align:"right"});y+=13;}
+          if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit — Kneewall",x,y);doc.text("-$525",W-M,y,{align:"right"});y+=13;}
+          if(opt.extraLabor&&opt.extraLaborAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Extra Labor",x,y);doc.text("+$"+parseFloat(opt.extraLaborAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
+          if(opt.tripCharge&&opt.tripChargeAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Trip Charge",x,y);doc.text("+$"+parseFloat(opt.tripChargeAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
+          if(opt.energySeal&&opt.energySealAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Energy Seal",x,y);doc.text("+$"+parseFloat(opt.energySealAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
+          if(opt.dumpster&&opt.dumpsterAmt){doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.text("Dumpster",x,y);doc.text("+$"+parseFloat(opt.dumpsterAmt).toFixed(0),W-M,y,{align:"right"});y+=13;}
+          // Final total for this option
+          var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
+          var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
+          var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
+          var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
+          var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
+          var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit+el+tc+es+du);
+          if(opt.pso||opt.psoKw||el||tc||es||du){
+            doc.setDrawColor(220,220,230);doc.setLineWidth(0.5);doc.line(x,y,W-M,y);y+=6;
+            doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.roundedRect(W-M-160,y,160,30,4,4,"F");
+            doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(14);doc.setFont("helvetica","bold");
+            doc.text("$"+Math.ceil(finalTotal).toLocaleString(),W-M-80,y+20,{align:"center"});
+            y+=40;
+          }
           y+=6;
         });
       }
     }
 
-    // Footer
-    doc.setDrawColor(200,200,200);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);y+=12;
-    doc.setFontSize(8);doc.setTextColor(150,150,150);doc.setFont("helvetica","normal");
-    doc.text("Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient—one home at a time.",W/2,y,{align:"center"});
+    // ── FOOTER ──
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,756,W,36,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,756,W,3,"F");
+    doc.setTextColor(180,200,240);doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.text("Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient — one home at a time.",W/2,771,{align:"center"});
+    doc.setTextColor(100,130,180);doc.setFontSize(7);
+    doc.text("Licensed & Insured  •  Proudly serving Tulsa and Northeastern Oklahoma",W/2,782,{align:"center"});
 
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-    sharePdfBlob(doc.output("blob"),filename);
+    if(outputMode==="save"){doc.save(filename);return null;}
+    return doc.output("blob");
+  });
+}
+
+function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
+  buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,"blob").then(function(blob){
+    if(blob){
+      var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+      sharePdfBlob(blob,filename);
+    }
   }).catch(function(err){alert("PDF error: "+err.message);});
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden;margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
-  var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
-  if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
+  buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,"save").catch(function(err){alert("PDF error: "+err.message);});
 }
 
 function buildQuoteHtml(customer,opts,salesman){try{return _buildQuoteHtml(customer,opts,salesman);}catch(e){alert("Quote error: "+e.message);return "";}}

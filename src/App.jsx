@@ -1178,35 +1178,43 @@ function QuoteBuilderSection(p){
               <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button>
             </div>
           </div>
-          {pricingId===item.id&&(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
-            <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:6}}>{"Adding to: "+opt.name}</div>
-            {(["flat_ceiling","attic_area_house","attic_area_garage","attic_slopes","open_attic_walls"].includes(item.locationId))&&(
-              <div style={{marginBottom:8}}>
-                <div style={{fontSize:11,color:C.textSec,fontWeight:600,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Quick Select R-Value"}</div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {[["R13","R13 Fiberglass Batts"],["R15","R15 Fiberglass Batts"],["R19","R19 Fiberglass Batts"],["R22","R22 Blown Fiberglass"],["R26","R26 Blown Fiberglass"],["R38","R38 Fiberglass Batts"]].map(function(rv){
-                    var active=pricingMat===rv[1];
-                    return(<button key={rv[0]} onClick={function(){setPricingMat(rv[1]);}}
-                      style={{padding:"6px 12px",borderRadius:20,border:"2px solid "+(active?C.accent:C.border),background:active?C.accent:"transparent",color:active?"#fff":C.text,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
-                      {rv[0]}
-                    </button>);
-                  })}
-                </div>
+          {pricingId===item.id&&(function(){
+            var PMBTNS=[
+              {id:"R11",label:"R11",value:"R11 Fiberglass Batts",sub:null},
+              {id:"R13",label:"R13",value:null,sub:[{id:"x15",label:"x15",value:"R13 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R13 x24 Fiberglass Batts"}]},
+              {id:"R19",label:"R19",value:null,sub:[{id:"x15",label:"x15",value:"R19 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R19 x24 Fiberglass Batts"}]},
+              {id:"R30",label:"R30",value:null,sub:[{id:"x15",label:"x15",value:"R30 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R30 x24 Fiberglass Batts"}]},
+              {id:"opencell",label:"Open Cell",value:null,sub:["2\"","3\"","4\"","5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
+              {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","2\"","3\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
+              {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
+              {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
+              {id:"removal",label:"Removal",value:"Removal",sub:null},
+            ];
+            var bs=function(active){return{padding:"7px 11px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:12,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s"};};
+            var activePrimary=PMBTNS.find(function(b){return pricingMat&&(b.value===pricingMat||(b.sub&&b.sub.some(function(s){return s.value===pricingMat;})));});
+            var activePrimaryId=activePrimary?activePrimary.id:"";
+            return(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
+              <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:8}}>{"Adding to: "+opt.name}</div>
+              <div style={{fontSize:10,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{"Material"}{!pricingMat&&<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>}</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
+                {PMBTNS.map(function(b){
+                  var active=activePrimaryId===b.id;
+                  return(<button key={b.id} onClick={function(){if(b.value){setPricingMat(b.value);}else{setPricingMat("");}}} style={bs(active)}>{b.label}</button>);
+                })}
               </div>
-            )}
-            <select style={matSs} value={pricingMat} onChange={function(e){setPricingMat(e.target.value);}}>
-              <option value="">{"— Select Material —"}</option>
-              <optgroup label="Fiberglass">{FIBERGLASS_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
-              <optgroup label="Open Cell Foam">{OPEN_CELL_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
-              <optgroup label="Closed Cell Foam">{CLOSED_CELL_MATERIALS.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</optgroup>
-              <optgroup label="Other"><option value="Removal">{"Removal"}</option></optgroup>
-            </select>
-            <div style={{display:"flex",gap:6,alignItems:"center"}}>
-              <input style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}} type="number" value={pricingPrice} onChange={function(e){setPricingPrice(e.target.value);}} placeholder="$/sf" step="0.01" autoFocus/>
-              <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
-              <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Cancel"}</button>
-            </div>
-          </div>)}
+              {activePrimary&&activePrimary.sub&&(<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8,paddingLeft:8,borderLeft:"3px solid "+C.accent}}>
+                {activePrimary.sub.map(function(s){
+                  return(<button key={s.id} onClick={function(){setPricingMat(s.value);}} style={bs(pricingMat===s.value)}>{s.label}</button>);
+                })}
+              </div>)}
+              {pricingMat&&<div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:8}}>{"✓ "+pricingMat}</div>}
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <input style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}} type="number" value={pricingPrice} onChange={function(e){setPricingPrice(e.target.value);}} placeholder="$/sf" step="0.01"/>
+                <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
+                <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Cancel"}</button>
+              </div>
+            </div>);
+          })()}
         </div>);})}
       </div>
       <button onClick={function(){if(confirm("Clear all imported items?"))p.setImportedItems(function(prev){return prev.filter(function(i){return i.priced;});});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>

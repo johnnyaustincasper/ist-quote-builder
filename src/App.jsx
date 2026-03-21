@@ -170,10 +170,12 @@ function WallMeasurement(p){
   var s6=useState(""),cw=s6[0],setCw=s6[1];
   var sq=mode==="count"?(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0):(parseFloat(ln)||0)*(parseFloat(ht)||0);
   function notify(sqftVal,wiVal,wcVal,lnVal,htVal,modeVal,cwVal){
-    var heightLabel=null;
-    if((modeVal||mode)==="count"){var h=WALL_HEIGHTS[parseInt(wiVal!==undefined?wiVal:wi)];if(h)heightLabel=h.label;var cavities=parseInt(wcVal!==undefined?wcVal:wc)||0;if(cavities>0&&heightLabel)heightLabel=cavities+" cavities @ "+heightLabel;}
+    var heightLabel=null;var dimStr="";
+    var m=modeVal||mode;
+    if(m==="count"){var h=WALL_HEIGHTS[parseInt(wiVal!==undefined?wiVal:wi)];if(h)heightLabel=h.label;var cavities=parseInt(wcVal!==undefined?wcVal:wc)||0;if(cavities>0&&heightLabel){heightLabel=cavities+" cavities @ "+heightLabel;dimStr=heightLabel;}}
+    else{var l=lnVal!==undefined?lnVal:ln;var ht2=htVal!==undefined?htVal:ht;if(l&&ht2)dimStr=l+"×"+ht2;}
     var cavity=cwVal!==undefined?cwVal:cw;
-    p.onSqftChange(sqftVal,heightLabel,cavity||null);
+    p.onSqftChange(sqftVal,heightLabel,cavity||null,dimStr||null);
   }
   return(<div>
     {!p.lhOnly&&<ToggleButtons mode={mode} setMode={setMode} options={[{id:"count",label:"Wall Count"},{id:"lh",label:"L × H"}]}/>}
@@ -191,7 +193,7 @@ function AreaMeasurement(p){
   var sq=mode==="dims"?(parseFloat(ln)||0)*(parseFloat(wd)||0):(parseFloat(ds)||0);
   return(<div>
     <ToggleButtons mode={mode} setMode={setMode} options={[{id:"dims",label:"L × W"},{id:"sqft",label:"Sq Ft"}]}/>
-    {mode==="dims"?(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);p.onSqftChange((parseFloat(v)||0)*(parseFloat(wd)||0));}}/></Col><Col><Input label="Width (ft)" value={wd} placeholder="0" onChange={function(v){setWd(v);p.onSqftChange((parseFloat(ln)||0)*(parseFloat(v)||0));}}/></Col></Row>):(<div style={{marginBottom:10}}><Input label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0);}}/></div>)}
+    {mode==="dims"?(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);var sq2=(parseFloat(v)||0)*(parseFloat(wd)||0);p.onSqftChange(sq2,null,null,(v&&wd)?v+"×"+wd:null);}}/></Col><Col><Input label="Width (ft)" value={wd} placeholder="0" onChange={function(v){setWd(v);var sq2=(parseFloat(ln)||0)*(parseFloat(v)||0);p.onSqftChange(sq2,null,null,(ln&&v)?ln+"×"+v:null);}}/></Col></Row>):(<div style={{marginBottom:10}}><Input label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0,null,null,v?v+" sf":null);}}/></div>)}
     {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
   </div>);
 }
@@ -255,6 +257,7 @@ function MeasurementForm(p){
   var s4=useState(0),sqft=s4[0],setSqft=s4[1];
   var s4b=useState(null),wallHeightLabel=s4b[0],setWallHeightLabel=s4b[1];
   var s4c=useState(null),cavityWidth=s4c[0],setCavityWidth=s4c[1];
+  var s4d=useState(null),dimStr=s4d[0],setDimStr=s4d[1];
   var s5=useState(""),price=s5[0],setPrice=s5[1];
   var s6=useState("Flat (0/12)"),pitch=s6[0],setPitch=s6[1];
   var s7=useState(0),mk=s7[0],setMk=s7[1];
@@ -277,8 +280,8 @@ function MeasurementForm(p){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
     var useMat=hp?mat:"(material TBD)";
     var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
-    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null});
-    setSqft(0);setWallHeightLabel(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");
+    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null,dimStr:dimStr||null});
+    setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");
   }
   return(<div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)"}}>
     <StepBar steps={stepLabels} current={stepCurrent}/>
@@ -296,7 +299,7 @@ function MeasurementForm(p){
       <div style={{marginBottom:4}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
       </div>
-      {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"} onSqftChange={function(s,h,cw){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s){setSqft(s);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
+      {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"} onSqftChange={function(s,h,cw,ds){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);setDimStr(ds||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {!hp&&(<div style={{marginBottom:12}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{"Material (optional)"}</div>
@@ -715,24 +718,42 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     if(hasMeasurements){
       doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,RW,18,"F");
       doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
-      var c1=x+10,c2=x+200,c3=x+390,c4=x+460;
-      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("SQ FT",c3,y+12);doc.text("$/SQ FT",c4,y+12);
+      var c1=x+10,c2=x+190,c3=x+340,c4=x+420,c5=x+476;
+      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("DIMS",c3,y+12);doc.text("SQ FT",c4,y+12);doc.text("$/SQ FT",c5,y+12);
       y+=18;
-      measurements.forEach(function(r,i){
+      // Group by location+material+cavityWidth
+      var groups2=[];
+      measurements.forEach(function(r){
         var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
-        if(y>710){doc.addPage();y=40;}
-        doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
-        doc.rect(x,y,RW,16,"F");
-        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(x+5,y+8,2,"F");
-        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
-        var locStr=(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":"");
-        doc.text(locStr,c1,y+11,{maxWidth:184});
-        doc.text(r.material||"",c2,y+11,{maxWidth:184});
-        doc.text(sqft.toLocaleString(),c3,y+11);
-        var ppu=parseFloat(r.pricePerUnit)||0;
-        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+11);
-        doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
+        var key=(r.locationId||r.location)+"|"+(r.material||"")+"|"+(r.cavityWidth||"");
+        var g=groups2.find(function(g){return g.key===key;});
+        if(g){g.entries.push(r);g.totalSqft+=sqft;}
+        else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:r.material||"",pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
+      });
+      groups2.forEach(function(g,gi){
+        if(y>700){doc.addPage();y=40;}
+        // Location header row
+        doc.setFillColor(gi%2===0?242:250,gi%2===0?246:252,gi%2===0?255:255);
+        var groupH=16+g.entries.length*12;
+        doc.rect(x,y,RW,groupH,"F");
+        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,3,groupH,"F");
+        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","bold");doc.setFontSize(9);
+        doc.text(g.location,c1+4,y+11,{maxWidth:174});
+        doc.text(g.material,c2,y+11,{maxWidth:144});
+        doc.text(g.totalSqft.toLocaleString(),c4,y+11);
+        var ppu=parseFloat(g.pricePerUnit)||0;
+        if(ppu)doc.text("$"+ppu.toFixed(2),c5,y+11);
         y+=16;
+        // Individual dim entries
+        g.entries.forEach(function(r){
+          doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          var ds=r.dimStr||(r.wallHeightLabel)||((parseFloat(r.sqft)||0).toLocaleString()+" sf");
+          doc.text("  "+ds,c3,y+9,{maxWidth:150});
+          doc.text((parseFloat(r.sqft)||0).toLocaleString()+" sf",c4,y+9);
+          y+=12;
+        });
+        doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);
+        y+=2;
       });
     }
 
@@ -859,17 +880,6 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quote
 function TakeOff(p){
   function addM(item){
     p.setMeasurements(function(prev){
-      // Only merge if same location, same isRemoval, same wall height label, and same matNote
-      var existing=prev.find(function(m){
-        return m.location===item.location && m.locationId===item.locationId &&
-          !!m.isRemoval===!!item.isRemoval &&
-          (m.wallHeightLabel||null)===(item.wallHeightLabel||null) &&
-          (m.cavityWidth||null)===(item.cavityWidth||null) &&
-          (m.matNote||null)===(item.matNote||null);
-      });
-      if(existing){
-        return prev.map(function(m){return m.id===existing.id?Object.assign({},m,{sqft:m.sqft+item.sqft}):m;});
-      }
       return prev.concat([Object.assign({},item,{id:Date.now()+Math.random()})]);
     });
   }

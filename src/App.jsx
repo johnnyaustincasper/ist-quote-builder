@@ -1402,6 +1402,11 @@ function QuoteBuilderSection(p){
               </div>
             )}
           </label>
+          <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
+            <input type="checkbox" checked={p.showProductInfo||false} onChange={function(e){p.setShowProductInfo(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
+            <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Product Information"}</span>
+            <span style={{fontSize:11,color:C.dim,marginLeft:2}}>{"(adds spec sheet to PDF)"}</span>
+          </label>
         </div>
 
         {/* TOTAL */}
@@ -1422,11 +1427,6 @@ function QuoteBuilderSection(p){
 
     {/* PRINT/SHARE */}
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{marginBottom:16}}>
-      <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:10,background:"rgba(37,99,235,0.06)",borderRadius:8,border:"1px solid rgba(37,99,235,0.15)",cursor:"pointer"}}>
-        <input type="checkbox" checked={p.showProductInfo||false} onChange={function(e){p.setShowProductInfo(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
-        <span style={{fontSize:13,fontWeight:600,color:C.text,fontFamily:"'Inter',sans-serif"}}>{"Product Information"}</span>
-        <span style={{fontSize:11,color:C.dim}}>{"(adds spec sheet to quote PDF)"}</span>
-      </label>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser,p.showProductInfo||false);}}>{"Print Quote"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser,p.showProductInfo||false);}}>{"Share Quote"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts,p.showProductInfo||false);}}>{"Print Quote and Take Off"}</GreenBtn>

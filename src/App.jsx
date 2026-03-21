@@ -644,23 +644,23 @@ function buildQuotePdf(customer,opts,salesman,outputMode){
       y+=8;
       // PSO credits
       if(opt.pso||opt.psoKw){
-        doc.setFontSize(8.5);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-        doc.text("Subtotal",W-M-90,y);doc.text("$"+Math.ceil(sub).toLocaleString(),W-M,y,{align:"right"});y+=12;
-        if(opt.pso){doc.setTextColor(180,30,30);doc.text("PSO Credit — Attic",W-M-90,y);doc.text("-$600",W-M,y,{align:"right"});y+=12;}
-        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("PSO Credit — Kneewall",W-M-90,y);doc.text("-$525",W-M,y,{align:"right"});y+=12;}
-        y+=4;
+        doc.setFontSize(9);doc.setFont("helvetica","normal");
+        doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+        doc.text("Subtotal",x,y);doc.text("$"+Math.ceil(sub).toLocaleString(),W-M,y,{align:"right"});y+=14;
+        if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit — Attic",x,y);doc.text("-$600",W-M,y,{align:"right"});y+=14;}
+        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit — Kneewall",x,y);doc.text("-$525",W-M,y,{align:"right"});y+=14;}
+        doc.setDrawColor(220,220,230);doc.setLineWidth(0.5);doc.line(x,y,W-M,y);
+        y+=8;
       }
 
       // Total box
       if(y>700){doc.addPage();y=40;}
-      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
-      doc.roundedRect(W-M-160,y,160,34,4,4,"F");
       doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
-      doc.roundedRect(W-M-160,y,160,34,4,4,"F");
+      doc.roundedRect(W-M-180,y,180,36,4,4,"F");
       doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(9);doc.setFont("helvetica","normal");
-      doc.text(optsWithItems.length>1?opt.name+" Total":"TOTAL INVESTMENT",W-M-80,y+12,{align:"center"});
+      doc.text(optsWithItems.length>1?opt.name+" Total":"TOTAL INVESTMENT",W-M-90,y+12,{align:"center"});
       doc.setFontSize(16);doc.setFont("helvetica","bold");
-      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-80,y+27,{align:"center"});
+      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-90,y+27,{align:"center"});
       y+=50;
     });
 

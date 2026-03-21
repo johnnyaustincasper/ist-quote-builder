@@ -1580,17 +1580,22 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
   // Build initial mat rows from measurements
   var wallIds = ["ext_walls_house","ext_walls_garage","garage_common","ext_kneewall","open_attic_walls","attic_kneewall"];
 
-  // Build a map of locationId → R-value from quote items
+  // Build a map of locationId → R-value (or inches for foam) from quote items
   function buildRValueMap() {
     var map = {};
     var allItems = (quoteOpts || []).flatMap(function(o) { return o.items || []; });
     allItems.forEach(function(item) {
-      if (!item.locationId) return;
-      // Extract R-value from material string e.g. "R-13", "R-19"
-      var match = (item.material || item.description || "").match(/R-?(\d+)/i);
-      if (match && !map[item.locationId]) {
-        map[item.locationId] = "R-" + match[1];
+      if (!item.locationId || map[item.locationId]) return;
+      var mat = item.material || item.description || "";
+      // Foam: extract inches e.g. '3" Open Cell Foam' → '3"'
+      var foamMatch = mat.match(/^(\d+\.?\d*)"?\s*(Open Cell|Closed Cell)/i);
+      if (foamMatch) {
+        map[item.locationId] = foamMatch[1] + '"';
+        return;
       }
+      // Fiberglass: extract R-value e.g. "R-13"
+      var rMatch = mat.match(/R-?(\d+)/i);
+      if (rMatch) map[item.locationId] = "R-" + rMatch[1];
     });
     return map;
   }

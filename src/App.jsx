@@ -456,12 +456,11 @@ function generateAndSharePdf(html,filename){
   getHtml2pdf().then(function(html2pdf){
     var element=document.createElement("div");
     element.innerHTML=html;
-    element.style.position="fixed";
+    element.style.position="absolute";
     element.style.top="0";
-    element.style.left="0";
+    element.style.left="-9999px";
     element.style.width="750px";
     element.style.backgroundColor="#fff";
-    element.style.zIndex="-9999";
     document.body.appendChild(element);
     html2pdf().set({
       margin:[0.4,0.4,0.4,0.4],

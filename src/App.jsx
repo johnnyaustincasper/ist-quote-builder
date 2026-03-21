@@ -1850,7 +1850,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'*{box-sizing:border-box;margin:0;padding:0;}'
       +'body{font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif;background:#fff;color:#0f172a;}'
       +'table{border-collapse:collapse;width:100%;}'
-      +'@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}button{display:none !important;}}'
+      +'@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}button{display:none !important;}@page{size:letter;margin:0.35in;}}'
       +'</style></head><body>'
 
       // ── HEADER BAND ──
@@ -1921,12 +1921,6 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'</table>'
       +'</div>'
 
-      // ── NOTES ──
-      +'<div style="padding:12px 28px 0;">'
-      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2563eb;margin-bottom:6px;">Notes</div>'
-      +'<div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;font-size:12px;min-height:44px;color:#0f172a;background:#f8fafc;">'+notes+'</div>'
-      +'</div>'
-
       // ── EMPLOYEES + R-VALUE SUMMARY ──
       +'<div style="display:flex;gap:16px;padding:12px 28px 0;">'
 
@@ -1962,12 +1956,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       +'</div>'
       +'</div>'
 
-      // ── FOOTER ──
-      +'<div style="margin-top:16px;background:#0f1e46;padding:10px 28px;display:flex;flex-direction:column;align-items:center;">'
-      +'<div style="height:3px;width:100%;background:#2563eb;margin-bottom:8px;border-radius:2px;"></div>'
-      +'<div style="font-size:9px;color:#b4c8f0;letter-spacing:0.06em;text-align:center;">Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient — one home at a time.</div>'
-      +'<div style="font-size:8px;color:#6482b0;margin-top:3px;letter-spacing:0.05em;">Licensed &amp; Insured  •  Work Order Must Be Filled Out Completely</div>'
-      +'</div>'
+      +'<div style="text-align:center;font-size:10px;font-weight:700;color:#64748b;padding:8px 0;letter-spacing:0.06em;text-transform:uppercase;">Work Order Must Be Filled Out Completely</div>'
 
       +'</body></html>';
 

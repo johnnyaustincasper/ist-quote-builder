@@ -794,8 +794,8 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
       var py=y;
 
       // ── FIBERGLASS BOX ──
-      var FG_TITLE="Fiberglass Batt Insulation";
-      var FG_SUB="Johns Manville & CertainTeed";
+      var FG_TITLE="Johns Manville & CertainTeed";
+      var FG_SUB="Fiberglass Systems";
       var FG_INTRO="IST uses a mix of both brands based on availability. They are virtually identical in performance and quality:";
       var FG_BULLETS=["Formaldehyde-free with built-in kraft paper vapor retarder","Available in R-11 through R-49 for walls, floors, and attics","Class A fire rated — won't rot, mildew, or deteriorate","GREENGUARD Gold Certified for indoor air quality","Reduces sound transmission between rooms","Pre-cut batts for standard 16\" and 24\" framing"];
       var FG_FOOTER="Both meet the same ASTM C665 industry standards — no difference in protection regardless of which brand is installed.";
@@ -819,8 +819,7 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
         doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);
         doc.text(title,bx+9,ty);ty+=10;
         doc.setFont("helvetica","bold");doc.setFontSize(fs);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);
-        doc.text(sub,bx+9,ty);ty+=1;
-        doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.3);doc.line(bx+9,ty,bx+bw-9,ty);ty+=5;
+        doc.text(sub,bx+9,ty);ty+=7;
         if(intro){
           doc.setFont("helvetica","italic");doc.setFontSize(fs);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
           var il=doc.splitTextToSize(intro,bw-16);doc.text(il,bx+9,ty);ty+=il.length*lh+5;

@@ -953,6 +953,8 @@ function QuoteBuilderSection(p){
   var s12=useState(""),pricingMat=s12[0],setPricingMat=s12[1];
   var s13=useState(0),activeIdx=s13[0],setActiveIdx=s13[1];
   var s14=useState(false),editingName=s14[0],setEditingName=s14[1];
+  var ls=useState(""),lid=ls[0],setLid=ls[1];
+  var cs=useState(""),cl=cs[0],setCl=cs[1];
 
   var opts=p.quoteOpts;var setOpts=p.setQuoteOpts;
   if(activeIdx>=opts.length)setActiveIdx(0);
@@ -994,10 +996,30 @@ function QuoteBuilderSection(p){
 
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
-    <div className="ist-2col" style={{alignItems:"flex-start"}}>
-    <div className="ist-col-form">
+
+    {/* ROW 1: Location (left) | Material + Measure (right) */}
+    <div className="ist-2col" style={{marginBottom:0}}>
+      <div className="ist-col-form">
+        <div style={{padding:"0 16px 12px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"① Location"}</div>
+          <LocationGrid value={lid} onChange={function(v){setLid(v);}}/>
+          {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
+        </div>
+      </div>
+      <div className="ist-col-results">
+        <div style={{padding:"0 16px 12px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"② Material & Measure"}</div>
+          <MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/>
+          <MeasurementForm key={"qb-"+matTab+"-"+activeIdx} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={matTab} onAdd={addItem} hasPrice={true} hideLocation/>
+        </div>
+      </div>
+    </div>
+
+    {/* ROW 2: Full-width quote summary */}
+    <div style={{padding:"0 16px"}}>
+
     {/* OPTION TABS */}
-    <div style={{padding:"0 16px 12px"}}>
+    <div style={{marginBottom:12}}>
       <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
         {opts.map(function(o,idx){return(
           <button key={idx} onClick={function(){setActiveIdx(idx);setPricingId(null);}}
@@ -1006,23 +1028,22 @@ function QuoteBuilderSection(p){
           </button>
         );})}
         <button onClick={addOption} style={{padding:"8px 12px",borderRadius:6,border:"1px dashed "+C.dim,background:"transparent",color:C.dim,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"+"}</button>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
-        {editingName?(<div style={{display:"flex",gap:6,flex:1}}>
-          <input style={{flex:1,padding:"6px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}
-            type="text" value={opt.name} onChange={function(e){updateOpt({name:e.target.value});}} autoFocus
-            onKeyDown={function(e){if(e.key==="Enter")setEditingName(false);}}/>
-          <button onClick={function(){setEditingName(false);}} style={{padding:"6px 10px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"OK"}</button>
-        </div>):(<div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
-          <span style={{fontSize:14,fontWeight:600,color:C.text}}>{opt.name}</span>
-          <button onClick={function(){setEditingName(true);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Rename"}</button>
-          {opts.length>1&&(<button onClick={function(){if(confirm("Delete \""+opt.name+"\"?"))removeOption(activeIdx);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginLeft:"auto"}}>{"Delete option"}</button>)}
-        </div>)}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:8}}>
+          {editingName?(<div style={{display:"flex",gap:6}}>
+            <input style={{padding:"6px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}
+              type="text" value={opt.name} onChange={function(e){updateOpt({name:e.target.value});}} autoFocus
+              onKeyDown={function(e){if(e.key==="Enter")setEditingName(false);}}/>
+            <button onClick={function(){setEditingName(false);}} style={{padding:"6px 10px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"OK"}</button>
+          </div>):(<div style={{display:"flex",alignItems:"center",gap:8}}>
+            <button onClick={function(){setEditingName(true);}} style={{background:"none",border:"none",color:C.dim,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Rename"}</button>
+            {opts.length>1&&(<button onClick={function(){if(confirm("Delete \""+opt.name+"\"?"))removeOption(activeIdx);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Delete"}</button>)}
+          </div>)}
+        </div>
       </div>
     </div>
 
     {/* FROM TAKE OFF */}
-    {unpriced.length>0&&(<div style={{padding:"0 16px 16px"}}>
+    {unpriced.length>0&&(<div style={{marginBottom:16}}>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"From Take Off — Price These ("+unpriced.length+")"}</div>
       <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden"}}>
         {unpriced.map(function(item,idx){return(<div key={item.id} style={{padding:"12px 14px",borderBottom:idx<unpriced.length-1?"1px solid "+C.border:"none"}}>
@@ -1045,7 +1066,7 @@ function QuoteBuilderSection(p){
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
               <input style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none"}} type="number" value={pricingPrice} onChange={function(e){setPricingPrice(e.target.value);}} placeholder="$/sf" step="0.01" autoFocus/>
               <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
-              <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Remove"}</button>
+              <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Cancel"}</button>
             </div>
           </div>)}
         </div>);})}
@@ -1054,15 +1075,6 @@ function QuoteBuilderSection(p){
     </div>)}
 
     {/* ADD MANUALLY */}
-    <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/><MeasurementForm key={"qb-"+matTab+"-"+activeIdx} tab={matTab} onAdd={addItem} hasPrice={true}/></div>
-    {/* PRINT/SHARE BUTTONS */}
-    {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
-      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Share Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
-    </div>)}
-    </div>{/* end col-form */}
-    <div className="ist-col-results">
     {/* QUOTE TOTAL — pinned card */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 16px"}}>
       <div style={{background:C.accent,borderRadius:10,padding:"18px 22px",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:"0 4px 16px rgba(37,99,235,0.18)"}}>
@@ -1168,9 +1180,15 @@ function QuoteBuilderSection(p){
       <button onClick={function(){if(confirm("Clear items from "+opt.name+"?"))updateOpt({items:[]});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear "+opt.name}</button>
     </div>)}
 
+    {/* PRINT/SHARE */}
+    {opts.some(function(o){return o.items.length>0;})&&(<div style={{marginBottom:16}}>
+      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Share Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
+    </div>)}
+
     {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}
-    </div>{/* end col-results */}
-    </div>{/* end ist-2col */}
+    </div>{/* end bottom section */}
   </div>);
 }
 

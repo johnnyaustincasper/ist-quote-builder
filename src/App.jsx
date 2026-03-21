@@ -1705,7 +1705,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
 
   function buildMatRows(meas) {
     var rMap = buildRValueMap();
-    return (meas || []).map(function(m, i) {
+    var rows = (meas || []).map(function(m, i) {
       var isWall = wallIds.includes(m.locationId || "");
       var ht = "";
       if (isWall && m.wallHeightLabel) {
@@ -1726,6 +1726,18 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
         matIn: "",
         count: "",
       };
+    });
+    var atticList=["attic_area_garage","attic_area_house","attic_kneewall","attic_slopes","open_attic_walls"];
+    return rows.sort(function(a,b){
+      var aAttic=atticList.includes(a.locationId||"");
+      var bAttic=atticList.includes(b.locationId||"");
+      if(aAttic!==bAttic) return aAttic?1:-1;
+      var aR=parseInt((a.rValue||"").match(/(\d+)/)||[0,0])||0;
+      var bR=parseInt((b.rValue||"").match(/(\d+)/)||[0,0])||0;
+      if(aR!==bR) return aR-bR;
+      var aR2=parseInt(((a.rValue||"").match(/\d+x(\d+)/)||["","0"])[1])||0;
+      var bR2=parseInt(((b.rValue||"").match(/\d+x(\d+)/)||["","0"])[1])||0;
+      return aR2-bR2;
     });
   }
 

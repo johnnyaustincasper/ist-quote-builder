@@ -451,6 +451,40 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
     '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
+function shareQuote(customer,opts,salesman){
+  var html=buildQuoteHtml(customer,opts,salesman);
+  if(!html){alert("Quote generation failed");return;}
+  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".html";
+  var blob=new Blob([html],{type:"text/html"});
+  if(navigator.share){
+    var file=new File([blob],filename,{type:"text/html"});
+    navigator.share({files:[file],title:"Quote",text:"IST Quote"}).catch(function(err){
+      if(err.name!=="AbortError") alert("Share failed: "+err.message);
+    });
+  }else{
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);},100);
+  }
+}
+
+function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
+  var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
+  if(!html){alert("Take off generation failed");return;}
+  var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".html";
+  var blob=new Blob([html],{type:"text/html"});
+  if(navigator.share){
+    var file=new File([blob],filename,{type:"text/html"});
+    navigator.share({files:[file],title:"Take Off",text:"IST Take Off"}).catch(function(err){
+      if(err.name!=="AbortError") alert("Share failed: "+err.message);
+    });
+  }else{
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);},100);
+  }
+}
+
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden;margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
   var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
@@ -563,6 +597,7 @@ function TakeOff(p){
       <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
       <div style={{padding:"12px 16px 0"}}>
         <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
+        <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};shareTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Share Take Off"}</GreenBtn>
       </div>
     </div>
     <div className="ist-col-results">
@@ -826,6 +861,7 @@ function QuoteBuilderSection(p){
     {/* PRINT/DOWNLOAD — show when ANY option has items */}
     {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Share Quote"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
     </div>)}
 

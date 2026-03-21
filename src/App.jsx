@@ -1727,10 +1727,9 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
         count: "",
       };
     });
-    var atticList=["attic_area_garage","attic_area_house","attic_kneewall","attic_slopes","open_attic_walls"];
+    var atticList=["attic_area_garage","attic_area_house"];
     function getR(s){var m=String(s||"").match(/(\d+)/);return m?parseInt(m[1],10):0;}
     function getR2(s){var m=String(s||"").match(/\d+x(\d+)/);return m?parseInt(m[1],10):0;}
-    console.log("matRows before sort:",rows.map(function(r){return r.rValue+"("+r.locationId+")";}));
     var sorted=rows.slice().sort(function(a,b){
       var aAttic=atticList.includes(a.locationId||"");
       var bAttic=atticList.includes(b.locationId||"");
@@ -1739,7 +1738,6 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       if(aR!==bR) return aR-bR;
       return getR2(a.rValue)-getR2(b.rValue);
     });
-    console.log("matRows after sort:",sorted.map(function(r){return r.rValue+"("+r.locationId+")";}));
     return sorted;
   }
 
@@ -1779,7 +1777,7 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     }, 0);
   }
 
-  var atticIds=["attic_area_garage","attic_area_house","attic_kneewall","attic_slopes","open_attic_walls"];
+  var atticIds=["attic_area_garage","attic_area_house"];
   function sortedMatRows(rows){
     return rows.slice().sort(function(a,b){
       var aAttic=atticIds.includes(a.locationId||"");

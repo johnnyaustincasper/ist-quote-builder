@@ -25,7 +25,7 @@ var LOCATIONS = [
   { id: "garage_common",    label: "Garage Common Wall",            short: "Garage Common",     type: "wall",    group: "Walls" },
   { id: "attic_area_garage",label: "Open Attic Area of Garage",     short: "Attic Garage",      type: "area",    group: "Attic / Ceiling" },
   { id: "attic_area_house", label: "Open Attic Area of House",      short: "Attic House",       type: "area",    group: "Attic / Ceiling" },
-  { id: "attic_kneewall",   label: "Open Attic Kneewall",           short: "Attic Kneewall",    type: "area",    group: "Attic / Ceiling" },
+  { id: "attic_kneewall",   label: "Open Attic Kneewall",           short: "Attic Kneewall",    type: "wall",    group: "Attic / Ceiling" },
   { id: "attic_slopes",     label: "Open Attic Slopes",             short: "Attic Slopes",      type: "area",    group: "Attic / Ceiling" },
   { id: "open_attic_walls", label: "Open Attic Walls",              short: "Attic Walls",       type: "wall",    group: "Walls" },
   { id: "porch",            label: "Porch",                         short: "Porch",             type: "area",    group: "Porch / Blocking" },
@@ -359,7 +359,7 @@ function CustomerInfo(p){
     alert(entry.name+" saved!");
   }
 
-  var s6=useState(true),open=s6[0],setOpen=s6[1];
+  var s6=useState(false),open=s6[0],setOpen=s6[1];
   return(<div style={{padding:"0 16px 12px"}}>
     <div style={{background:C.card,borderRadius:8,border:"1px solid "+C.border,boxShadow:C.shadow,marginBottom:10,overflow:"visible"}}>
       <button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
@@ -816,20 +816,29 @@ function TakeOff(p){
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
+    {/* Step 1 + Step 2 side by side */}
     <div className="ist-2col">
-    <div className="ist-col-form">
-      <div style={{padding:"0 16px 12px"}}>
-        <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{"Job Notes / Description"}</label>
-        <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage, spray foam roofline + blown walls..."/>
+      <div className="ist-col-form">
+        <div style={{padding:"0 16px 12px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"Step 1 — Job Notes"}</div>
+          <textarea style={{width:"100%",padding:"10px 12px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:14,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical",transition:"border-color 0.15s"}} onFocus={function(e){e.target.style.borderColor=C.accent;}} onBlur={function(e){e.target.style.borderColor=C.inputBorder;}} value={p.jobNotes} onChange={function(e){p.setJobNotes(e.target.value);}} placeholder="e.g. 2-story, 4/12 pitch, no garage..."/>
+        </div>
+        <div style={{padding:"12px 16px 0"}}>
+          <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
+          <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};shareTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Share Take Off"}</GreenBtn>
+        </div>
       </div>
-      <div style={{padding:"0 16px"}}><MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/></div>
-      <div style={{padding:"12px 16px 0"}}>
-        <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
-        <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};shareTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Share Take Off"}</GreenBtn>
+      <div className="ist-col-results">
+        <div style={{padding:"0 16px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"Step 2 — Add Measurement"}</div>
+          <MeasurementForm key={"to-takeoff"} tab={"fiberglass"} onAdd={addM} hasPrice={false}/>
+        </div>
       </div>
     </div>
-    <div className="ist-col-results">
-    {p.measurements.length>0&&(<div style={{padding:"20px 16px"}}>
+
+    {/* Measurements full width at bottom */}
+    <div style={{padding:"16px 16px 0"}}>
+    {p.measurements.length>0&&(<div>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>{"Take Off ("+p.measurements.length+" items · "+total.toLocaleString()+" sq ft)"}</div>
       {sorted.map(function(gn){var gt=groups[gn].reduce(function(s,m){return s+m.sqft;},0);
         return(<div key={gn} style={{marginBottom:16}}>
@@ -862,8 +871,7 @@ function TakeOff(p){
       <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
     </div>)}
     {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
-    </div>{/* end col-results */}
-    </div>{/* end ist-2col */}
+    </div>
   </div>);
 }
 
@@ -1723,8 +1731,13 @@ export default function App() {
     });
   }, [currentUser]);
 
+  useEffect(function(){
+    var saved=localStorage.getItem("ist-session");
+    if(saved){try{var obj=JSON.parse(saved);if(obj.user&&obj.ts&&(Date.now()-obj.ts)<7200000){setCurrentUser(obj.user);}}catch(e){}}
+  },[]);
+
   if (!currentUser) {
-    return <LoginScreen onLogin={function(name) { setCurrentUser(name); }} />;
+    return <LoginScreen onLogin={function(name){setCurrentUser(name);localStorage.setItem("ist-session",JSON.stringify({user:name,ts:Date.now()}));}} />;
   }
 
   function sendToWorkOrder() { setSec("workorder"); }
@@ -1745,6 +1758,7 @@ export default function App() {
 
   function handleLogout() {
     localStorage.removeItem("ist-user");
+    localStorage.removeItem("ist-session");
     setCurrentUser("");
     setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
     setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");

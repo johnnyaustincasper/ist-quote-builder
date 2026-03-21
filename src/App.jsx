@@ -61,30 +61,30 @@ var WALL_HEIGHTS = [
 var GROUP_ORDER = ["Walls","Attic / Ceiling","Porch / Blocking","Roofline","Other"];
 
 var C = {
-  bg:"linear-gradient(135deg, #0a0f1e 0%, #0d1635 40%, #0f2050 100%)",
-  bgSolid:"#0a0f1e",
-  card:"rgba(255,255,255,0.07)",
-  cardHover:"rgba(255,255,255,0.11)",
-  glass:"rgba(255,255,255,0.08)",
-  glassBorder:"rgba(255,255,255,0.15)",
-  glassStrong:"rgba(255,255,255,0.12)",
-  accent:"#3b82f6",
-  accentHover:"#2563eb",
-  accentBg:"rgba(59,130,246,0.15)",
-  accentGlow:"0 0 20px rgba(59,130,246,0.4)",
-  text:"#f0f4ff",
-  textSec:"#94a3b8",
-  dim:"#4a5568",
-  border:"rgba(255,255,255,0.1)",
-  borderLight:"rgba(255,255,255,0.06)",
-  input:"rgba(255,255,255,0.06)",
-  inputBorder:"rgba(255,255,255,0.15)",
-  danger:"#f87171",
-  dangerBg:"rgba(248,113,113,0.12)",
-  green:"#34d399",
-  blue:"#3b82f6",
-  shadow:"0 4px 24px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.05) inset",
-  shadowMd:"0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08) inset",
+  bg:"linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%)",
+  bgSolid:"#e8eef8",
+  card:"rgba(255,255,255,0.65)",
+  cardHover:"rgba(255,255,255,0.8)",
+  glass:"rgba(255,255,255,0.6)",
+  glassBorder:"rgba(255,255,255,0.8)",
+  glassStrong:"rgba(255,255,255,0.75)",
+  accent:"#2563eb",
+  accentHover:"#1d4ed8",
+  accentBg:"rgba(37,99,235,0.08)",
+  accentGlow:"0 0 20px rgba(37,99,235,0.2)",
+  text:"#0f172a",
+  textSec:"#475569",
+  dim:"#94a3b8",
+  border:"rgba(0,0,0,0.08)",
+  borderLight:"rgba(0,0,0,0.04)",
+  input:"rgba(255,255,255,0.7)",
+  inputBorder:"rgba(0,0,0,0.12)",
+  danger:"#dc2626",
+  dangerBg:"rgba(220,38,38,0.06)",
+  green:"#16a34a",
+  blue:"#2563eb",
+  shadow:"0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+  shadowMd:"0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
 };
 
 /* ──────── STORAGE HELPERS (Supabase) ──────── */
@@ -144,18 +144,18 @@ async function loadPasscode(user) {
 
 /* ──────── UI COMPONENTS ──────── */
 
-var glassInput={width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,color:C.text,fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",transition:"border-color 0.15s, box-shadow 0.15s"};
-function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={Object.assign({},glassInput)} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(59,130,246,0.2)";}} onBlur={function(e){e.target.style.borderColor="rgba(255,255,255,0.15)";e.target.style.boxShadow="none";}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
+var glassInput={width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.7)",border:"1px solid rgba(0,0,0,0.1)",borderRadius:8,color:"#0f172a",fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",transition:"border-color 0.15s, box-shadow 0.15s"};
+function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={Object.assign({},glassInput)} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
 
-function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={Object.assign({},glassInput,{WebkitAppearance:"none"})} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(59,130,246,0.2)";}} onBlur={function(e){e.target.style.borderColor="rgba(255,255,255,0.15)";e.target.style.boxShadow="none";}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v} style={{background:"#0d1635",color:"#f0f4ff"}}>{l}</option>);})}</select></div>);}
+function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={Object.assign({},glassInput,{WebkitAppearance:"none"})} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v} style={{background:"#fff",color:"#0f172a"}}>{l}</option>);})}</select></div>);}
 
 function Row(p){return <div style={{display:"flex",gap:10,marginBottom:10}}>{p.children}</div>;}
 function Col(p){return <div style={{flex:1}}>{p.children}</div>;}
 function StepLabel(p){return(<label style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.children}</label>);}
 
-function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:"rgba(255,255,255,0.05)",padding:3,borderRadius:8,marginBottom:12,border:"1px solid rgba(255,255,255,0.08)"}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",border:p.mode===o.id?"1px solid rgba(59,130,246,0.5)":"1px solid transparent",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?"rgba(59,130,246,0.3)":"transparent",color:p.mode===o.id?"#e0eaff":C.textSec,backdropFilter:p.mode===o.id?"blur(8px)":"none",transition:"all 0.15s"}}>{o.label}</button>);})}</div>);}
+function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.05)",padding:3,borderRadius:8,marginBottom:12,border:"1px solid rgba(0,0,0,0.07)"}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",border:p.mode===o.id?"1px solid rgba(37,99,235,0.3)":"1px solid transparent",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?"rgba(255,255,255,0.9)":"transparent",color:p.mode===o.id?C.accent:C.textSec,boxShadow:p.mode===o.id?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.15s"}}>{o.label}</button>);})}</div>);}
 
-function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:8,border:"1px solid rgba(59,130,246,0.5)",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:"rgba(59,130,246,0.25)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",color:"#e0eaff",marginTop:p.mt||0,boxShadow:"0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",transition:"all 0.15s"}} onMouseOver={function(e){e.currentTarget.style.background="rgba(59,130,246,0.4)";e.currentTarget.style.boxShadow="0 4px 24px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.15)";}} onMouseOut={function(e){e.currentTarget.style.background="rgba(59,130,246,0.25)";e.currentTarget.style.boxShadow="0 4px 16px rgba(59,130,246,0.2), inset 0 1px 0 rgba(255,255,255,0.1)";}}>{p.children}</button>);}
+function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:8,border:"1px solid rgba(37,99,235,0.3)",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:"rgba(37,99,235,0.12)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",color:"#1d4ed8",marginTop:p.mt||0,boxShadow:"0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8)",transition:"all 0.15s"}} onMouseOver={function(e){e.currentTarget.style.background="rgba(37,99,235,0.2)";e.currentTarget.style.boxShadow="0 4px 20px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.9)";}} onMouseOut={function(e){e.currentTarget.style.background="rgba(37,99,235,0.12)";e.currentTarget.style.boxShadow="0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8)";}}>{p.children}</button>);}
 
 /* ──────── MEASUREMENTS ──────── */
 
@@ -207,7 +207,7 @@ function LocationGrid(p){
           {locs.map(function(loc){
             var active=p.value===loc.id;
             return(<button key={loc.id} onClick={function(){p.onChange(loc.id);}}
-              style={{padding:"8px 13px",borderRadius:8,border:active?"2px solid rgba(59,130,246,0.7)":"1px solid rgba(255,255,255,0.1)",background:active?"rgba(59,130,246,0.25)":"rgba(255,255,255,0.04)",color:active?"#93c5fd":C.textSec,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",lineHeight:1.2,backdropFilter:"blur(8px)"}}>
+              style={{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",lineHeight:1.2,backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"}}>
               {loc.short}
             </button>);
           })}
@@ -215,7 +215,7 @@ function LocationGrid(p){
       </div>);
     })}
     <button onClick={function(){p.onChange("custom");}}
-      style={{padding:"8px 13px",borderRadius:8,border:p.value==="custom"?"2px solid rgba(59,130,246,0.7)":"1px dashed rgba(255,255,255,0.2)",background:p.value==="custom"?"rgba(59,130,246,0.2)":"transparent",color:p.value==="custom"?"#93c5fd":"rgba(255,255,255,0.3)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+      style={{padding:"8px 13px",borderRadius:8,border:p.value==="custom"?"2px solid "+C.accent:"1px dashed rgba(0,0,0,0.2)",background:p.value==="custom"?"rgba(37,99,235,0.08)":"rgba(255,255,255,0.4)",color:p.value==="custom"?C.accent:C.dim,fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
       + Custom
     </button>
   </div>);
@@ -280,7 +280,7 @@ function MeasurementForm(p){
     p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null});
     setSqft(0);setWallHeightLabel(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");
   }
-  return(<div style={{background:"rgba(255,255,255,0.06)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)"}}>
+  return(<div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)"}}>
     <StepBar steps={stepLabels} current={stepCurrent}/>
     {/* STEP 1: Location grid */}
     {!p.hideLocation&&(<div style={{marginBottom:16}}>
@@ -336,7 +336,7 @@ function SavedDropdown({label, icon, color, bg, items, onSelect, onDelete}){
         <span>{icon} {label} ({items.length})</span><span style={{fontSize:11}}>{open?"▲":"▼"}</span>
       </button>
       {open&&(
-        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"rgba(13,22,53,0.95)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,boxShadow:"0 16px 48px rgba(0,0,0,0.6)",zIndex:9999,minWidth:200}}>
+        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"rgba(255,255,255,0.92)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(0,0,0,0.1)",borderRadius:8,boxShadow:"0 8px 32px rgba(0,0,0,0.15)",zIndex:9999,minWidth:200}}>
           <input autoFocus value={q} onChange={function(e){setQ(e.target.value);}} placeholder={"Search "+label+"..."} style={{width:"100%",padding:"8px 12px",border:"none",borderBottom:"1px solid #e5e7eb",borderRadius:"8px 8px 0 0",fontSize:13,fontFamily:"'Inter',sans-serif",boxSizing:"border-box",outline:"none"}}/>
           <div style={{maxHeight:220,overflowY:"auto"}}>
             {sorted.length===0
@@ -392,7 +392,7 @@ function CustomerInfo(p){
 
   var s6=useState(false),open=s6[0],setOpen=s6[1];
   return(<div style={{padding:"0 16px 12px"}}>
-    <div style={{background:"rgba(255,255,255,0.06)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)",marginBottom:10,overflow:"visible"}}>
+    <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)",marginBottom:10,overflow:"visible"}}>
       <button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
         <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>👤 Customer Info</span>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1823,8 +1823,8 @@ export default function App() {
     <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 32, minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        html, body { background: #0a0f1e; margin: 0; }
-        .ist-app { background: linear-gradient(135deg, #0a0f1e 0%, #0d1635 40%, #0f2050 100%); min-height: 100vh; }
+        html, body { background: #dde6f5; margin: 0; }
+        .ist-app { background: linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%); min-height: 100vh; }
         .ist-2col { display: flex; flex-direction: column; }
         .ist-col-form { min-width: 0; }
         .ist-col-results { min-width: 0; }
@@ -1835,24 +1835,24 @@ export default function App() {
         }
         @media (min-width: 1024px) { .ist-col-form { flex: 0 0 440px; } }
         .ist-clear-btn-inner { max-width: 1140px; margin: 0 auto; }
-        input::placeholder, textarea::placeholder { color: rgba(148,163,184,0.5) !important; }
-        input, textarea, select { color-scheme: dark; }
+        input::placeholder, textarea::placeholder { color: rgba(100,116,139,0.5) !important; }
+        input, textarea, select { color-scheme: light; }
         * { box-sizing: border-box; }
       `}</style>
 
       {/* HEADER */}
-      <div style={{ background: "rgba(10,15,30,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "18px 20px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 4px 32px rgba(0,0,0,0.5)" }}>
+      <div style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", padding: "18px 20px 0", borderBottom: "1px solid rgba(0,0,0,0.07)", textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 24px rgba(0,0,0,0.08)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>👤 {currentUser}</div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button onClick={function(){if(window.confirm("Clear everything?")){setMeas([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
-            <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: C.textSec, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase", padding: "5px 10px" }}>{"Switch User"}</button>
+            <button onClick={function(){if(window.confirm("Clear everything?")){setMeas([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
+            <button onClick={handleLogout} style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, color: C.textSec, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase", padding: "5px 10px" }}>{"Switch User"}</button>
           </div>
         </div>
-        <h1 style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "0.05em", margin: 0, textTransform: "uppercase", textShadow: "0 0 30px rgba(59,130,246,0.5)" }}>{"Insulation Services of Tulsa"}</h1>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3, letterSpacing: "0.14em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
+        <h1 style={{ fontSize: 17, fontWeight: 800, color: C.text, letterSpacing: "0.05em", margin: 0, textTransform: "uppercase" }}>{"Insulation Services of Tulsa"}</h1>
+        <div style={{ fontSize: 10, color: C.dim, marginTop: 3, letterSpacing: "0.14em", textTransform: "uppercase" }}>{COMPANY.tagline}</div>
 
-        <div className="ist-nav-tabs" style={{ display: "flex", gap: 0, overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 14 }}>
+        <div className="ist-nav-tabs" style={{ display: "flex", gap: 0, overflow: "hidden", borderTop: "1px solid rgba(0,0,0,0.06)", marginTop: 14 }}>
           {[
             { id: "takeoff", label: "TAKE OFF", badge: meas.length || null },
             { id: "quote", label: "QUOTE", badge: qOpts.reduce(function(s,o){return s+o.items.length;},0) || null },
@@ -1862,9 +1862,9 @@ export default function App() {
             var active = sec === t.id;
             return (
               <button key={t.id} onClick={function() { setSec(t.id); }}
-                style={{ flex: 1, padding: "10px 6px", border: "none", borderRight: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: active ? "rgba(59,130,246,0.3)" : "transparent", color: active ? "#e0eaff" : "rgba(255,255,255,0.4)", backdropFilter: active ? "blur(12px)" : "none", WebkitBackdropFilter: active ? "blur(12px)" : "none", transition: "all 0.15s ease", boxShadow: active ? "inset 0 -2px 0 #3b82f6" : "none" }}>
+                style={{ flex: 1, padding: "10px 6px", border: "none", borderRight: "1px solid rgba(0,0,0,0.05)", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: active ? "rgba(255,255,255,0.5)" : "transparent", color: active ? C.accent : C.dim, transition: "all 0.15s ease", boxShadow: active ? "inset 0 -2px 0 "+C.accent : "none" }}>
                 {t.label}
-                {t.badge ? (<span style={{ display: "inline-block", marginLeft: 5, background: active ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)", color: active ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, minWidth: 18, textAlign: "center" }}>{t.badge}</span>) : null}
+                {t.badge ? (<span style={{ display: "inline-block", marginLeft: 5, background: active ? C.accent : "rgba(0,0,0,0.08)", color: active ? "#fff" : C.textSec, fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, minWidth: 18, textAlign: "center" }}>{t.badge}</span>) : null}
               </button>
             );
           })}

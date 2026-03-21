@@ -846,10 +846,11 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
       var groups2=[];
       measurements.forEach(function(r){
         var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
-        var key=(r.locationId||r.location)+"|"+(r.material||"")+"|"+(r.cavityWidth||"");
+        var matLabel=(r.matNote&&r.matNote.trim())||r.material||"";
+        var key=(r.locationId||r.location)+"|"+matLabel+"|"+(r.cavityWidth||"");
         var g=groups2.find(function(gg){return gg.key===key;});
         if(g){g.entries.push(r);g.totalSqft+=sqft;}
-        else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:r.material||"",pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
+        else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:matLabel,pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
       });
       groups2.forEach(function(g,gi){
         if(y>700){doc.addPage();y=40;}

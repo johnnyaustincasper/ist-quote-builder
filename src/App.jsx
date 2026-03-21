@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
+const getHtml2pdf = () => import("html2pdf.js").then(m => m.default);
 
 var COMPANY = {
   name: "Insulation Services of Tulsa",
@@ -454,35 +455,67 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
 function shareQuote(customer,opts,salesman){
   var html=buildQuoteHtml(customer,opts,salesman);
   if(!html){alert("Quote generation failed");return;}
-  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".html";
-  var blob=new Blob([html],{type:"text/html"});
-  if(navigator.share){
-    var file=new File([blob],filename,{type:"text/html"});
-    navigator.share({files:[file],title:"Quote",text:"IST Quote"}).catch(function(err){
-      if(err.name!=="AbortError") alert("Share failed: "+err.message);
+  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+  
+  getHtml2pdf().then(function(html2pdf){
+    var element=document.createElement("div");
+    element.innerHTML=html;
+    element.style.width="8.5in";
+    
+    html2pdf().set({
+      margin:0.3,
+      filename:filename,
+      image:{type:"jpeg",quality:0.98},
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
+    }).from(element).output("blob").then(function(blob){
+      if(navigator.share){
+        var file=new File([blob],filename,{type:"application/pdf"});
+        navigator.share({files:[file],title:"Quote",text:"IST Quote"}).catch(function(err){
+          if(err.name!=="AbortError") alert("Share failed: "+err.message);
+        });
+      }else{
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+        setTimeout(function(){URL.revokeObjectURL(url);},100);
+      }
     });
-  }else{
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-    setTimeout(function(){URL.revokeObjectURL(url);},100);
-  }
+  }).catch(function(err){
+    alert("PDF generation failed: "+err.message);
+  });
 }
 
 function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
   var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   if(!html){alert("Take off generation failed");return;}
-  var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".html";
-  var blob=new Blob([html],{type:"text/html"});
-  if(navigator.share){
-    var file=new File([blob],filename,{type:"text/html"});
-    navigator.share({files:[file],title:"Take Off",text:"IST Take Off"}).catch(function(err){
-      if(err.name!=="AbortError") alert("Share failed: "+err.message);
+  var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+  
+  getHtml2pdf().then(function(html2pdf){
+    var element=document.createElement("div");
+    element.innerHTML=html;
+    element.style.width="8.5in";
+    
+    html2pdf().set({
+      margin:0.3,
+      filename:filename,
+      image:{type:"jpeg",quality:0.98},
+      html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
+    }).from(element).output("blob").then(function(blob){
+      if(navigator.share){
+        var file=new File([blob],filename,{type:"application/pdf"});
+        navigator.share({files:[file],title:"Take Off",text:"IST Take Off"}).catch(function(err){
+          if(err.name!=="AbortError") alert("Share failed: "+err.message);
+        });
+      }else{
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement("a");a.href=url;a.download=filename;a.click();
+        setTimeout(function(){URL.revokeObjectURL(url);},100);
+      }
     });
-  }else{
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-    setTimeout(function(){URL.revokeObjectURL(url);},100);
-  }
+  }).catch(function(err){
+    alert("PDF generation failed: "+err.message);
+  });
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){

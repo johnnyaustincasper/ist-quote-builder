@@ -505,81 +505,132 @@ function shareQuote(customer,opts,salesman){
   import("jspdf").then(function(mod){
     var jsPDF=mod.jsPDF||mod.default;
     var doc=new jsPDF({unit:"pt",format:"letter"});
-    var W=612,M=40,x=M,y=50,RW=W-M*2;
+    var W=612,M=36,x=M,RW=W-M*2;
     var si=SALESMAN_INFO[salesman];
     var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
     var qn="IST-"+Date.now().toString(36).toUpperCase();
     var optsWithItems=opts.filter(function(o){return o.items&&o.items.length>0;});
+    // Brand colors
+    var NAVY=[15,30,70],BLUE=[37,99,235],LIGHTBLUE=[219,234,254],GRAY=[100,116,139],LIGHTGRAY=[248,250,252],WHITE=[255,255,255],BLACK=[15,23,42];
 
-    // Header
-    doc.setFillColor(17,17,17);doc.rect(M,y-14,RW,36,"F");
-    doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont("helvetica","bold");
-    doc.text("Insulation Services of Tulsa",x+8,y+8);
+    // ── HEADER BAND ──
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
+    doc.rect(0,0,W,72,"F");
+    // Accent stripe
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
+    doc.rect(0,68,W,4,"F");
+    // Company name
+    doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
+    doc.setFontSize(20);doc.setFont("helvetica","bold");
+    doc.text("INSULATION SERVICES OF TULSA",M,30);
+    // Tagline
     doc.setFontSize(9);doc.setFont("helvetica","normal");
-    doc.text("QUOTE   "+qn+"   "+today,W-M-8,y+8,{align:"right"});
-    y+=50;
+    doc.setTextColor(180,200,240);
+    doc.text("Serving Northeastern Oklahoma  •  1 (918) 232-9055",M,46);
+    // QUOTE label top right
+    doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);
+    doc.setFontSize(11);doc.setFont("helvetica","bold");
+    doc.text("QUOTE",W-M,24,{align:"right"});
+    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+    doc.text(qn,W-M,36,{align:"right"});
+    doc.text(today,W-M,48,{align:"right"});
 
-    // Customer + Sales Rep
-    doc.setTextColor(100,100,100);doc.setFontSize(8);doc.setFont("helvetica","bold");
-    doc.text("PREPARED FOR",x,y);
-    if(si)doc.text("SALES REP",W-M-8,y,{align:"right"});
-    y+=12;
-    doc.setTextColor(17,17,17);doc.setFontSize(11);doc.setFont("helvetica","bold");
-    doc.text(customer.name||"—",x,y);
-    if(si)doc.text(si.fullName,W-M-8,y,{align:"right"});
-    y+=14;
-    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
-    if(customer.address){doc.text(customer.address,x,y);y+=12;}
-    if(customer.phone){doc.text(customer.phone,x,y);}
-    if(si){doc.text(si.phone,W-M-8,y,{align:"right"});}
-    y+=12;
-    if(customer.email){doc.text(customer.email,x,y);}
-    if(si){doc.text(si.email,W-M-8,y,{align:"right"});}
-    y+=20;
+    var y=90;
 
-    // Job site
-    doc.setFontSize(9);doc.setTextColor(100,100,100);
-    doc.text("Job Site: "+(customer.jobAddress||customer.address||"—"),x,y);
-    y+=20;
+    // ── INFO CARDS ──
+    var cardH=80;var col=RW/3+4;
+    // Card 1: Prepared For
+    doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);
+    doc.roundedRect(x,y,col-8,cardH,4,4,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,4,cardH,"F");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");
+    doc.text("PREPARED FOR",x+12,y+13);
+    doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFontSize(11);doc.setFont("helvetica","bold");
+    doc.text(customer.name||"—",x+12,y+27,{maxWidth:col-24});
+    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    var cy=y+40;
+    if(customer.address){var al=doc.splitTextToSize(customer.address,col-24);doc.text(al,x+12,cy);cy+=al.length*11;}
+    if(customer.phone){doc.text(customer.phone,x+12,cy);cy+=11;}
+    if(customer.email){doc.text(customer.email,x+12,cy);}
 
-    // Options
+    // Card 2: Job Site
+    var c2x=x+col;
+    doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);
+    doc.roundedRect(c2x,y,col-8,cardH,4,4,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(c2x,y,4,cardH,"F");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");
+    doc.text("JOB SITE",c2x+12,y+13);
+    doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFontSize(10);doc.setFont("helvetica","bold");
+    var jsAddr=customer.jobAddress||customer.address||"—";
+    var jsal=doc.splitTextToSize(jsAddr,col-24);
+    doc.text(jsal,c2x+12,y+27);
+    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    doc.text("Valid for 30 days from quote date",c2x+12,y+66);
+
+    // Card 3: Sales Rep
+    var c3x=x+col*2;
+    if(si){
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
+      doc.roundedRect(c3x,y,col-8,cardH,4,4,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(c3x,y,4,cardH,"F");
+      doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");
+      doc.text("YOUR SALES REP",c3x+12,y+13);
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(11);doc.setFont("helvetica","bold");
+      doc.text(si.fullName,c3x+12,y+27);
+      doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+      doc.text(si.phone,c3x+12,y+40);
+      doc.text(si.email,c3x+12,y+53);
+    }
+
+    y+=cardH+20;
+
+    // ── OPTIONS ──
     optsWithItems.forEach(function(opt,oi){
       var sortedItems=opt.items.slice().sort(function(a,b){
+        var aFoam=a.type==="Foam"||/foam/i.test(a.material||"");
+        var bFoam=b.type==="Foam"||/foam/i.test(b.material||"");
+        if(aFoam&&!bFoam)return -1;if(!aFoam&&bFoam)return 1;
         var aR=parseInt((a.material||"").match(/R(\d+)/i)||[0,0])||0;
         var bR=parseInt((b.material||"").match(/R(\d+)/i)||[0,0])||0;
         return aR-bR;
       });
+
       if(optsWithItems.length>1){
-        doc.setFontSize(12);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-        doc.text(opt.name,x,y);y+=6;
-        doc.setDrawColor(17,17,17);doc.setLineWidth(1);doc.line(x,y,x+RW,y);y+=12;
+        if(y>680){doc.addPage();y=40;}
+        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,RW,22,"F");
+        doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(11);doc.setFont("helvetica","bold");
+        doc.text(opt.name.toUpperCase(),x+10,y+15);
+        y+=30;
       }
+
       // Table header
-      doc.setFillColor(17,17,17);doc.rect(x,y-10,RW,16,"F");
-      doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont("helvetica","bold");
-      doc.text("#",x+4,y+2);doc.text("Description",x+22,y+2);
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,RW,18,"F");
+      doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
+      doc.text("SCOPE OF WORK",x+10,y+12);
       y+=18;
+
       // Rows
-      sortedItems.forEach(function(item,i){
-        if(y>720){doc.addPage();y=50;}
-        var bg=i%2===0?[250,250,250]:[255,255,255];
-        doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(x,y-10,RW,14,"F");
-        doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
-        doc.text(String(i+1),x+4,y);
-        var desc=doc.splitTextToSize(item.description||"",RW-30);
-        doc.text(desc,x+22,y);
-        y+=Math.max(14,desc.length*11);
+      var allItems=sortedItems.slice();
+      if(opt.energySeal)allItems.push({description:"Energy seal and plates per city code."});
+      allItems.forEach(function(item,i){
+        if(y>710){doc.addPage();y=40;}
+        var rowH=18;
+        var desc=doc.splitTextToSize(item.description||"",RW-28);
+        rowH=Math.max(18,desc.length*12+8);
+        // Alternating bg
+        doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
+        doc.rect(x,y,RW,rowH,"F");
+        // Left accent dot
+        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
+        doc.circle(x+7,y+rowH/2,2,"F");
+        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9.5);
+        doc.text(desc,x+16,y+rowH/2+3.5);
+        // Bottom border
+        doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+rowH,x+RW,y+rowH);
+        y+=rowH;
       });
-      if(opt.energySeal){
-        var esi=sortedItems.length;
-        var bg2=esi%2===0?[250,250,250]:[255,255,255];
-        doc.setFillColor(bg2[0],bg2[1],bg2[2]);doc.rect(x,y-10,RW,14,"F");
-        doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
-        doc.text(String(esi+1),x+4,y);
-        doc.text("Energy seal and plates per city code.",x+22,y);
-        y+=14;
-      }
-      // Total
+
+      // Total section
       var lineTotal=opt.items.reduce(function(s,i){return s+(i.total||0);},0);
       var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
       var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
@@ -588,26 +639,58 @@ function shareQuote(customer,opts,salesman){
       var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
       var sub=lineTotal+el+tc+es+du;
       var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
-      var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
-      y+=6;
+
+      y+=8;
+      // PSO credits
       if(opt.pso||opt.psoKw){
-        doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
-        doc.text("Price",x,y);
-        doc.text("$"+Math.ceil(sub).toLocaleString(),W-M-8,y,{align:"right"});y+=12;
-        if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit Attic",x,y);doc.text("-$600",W-M-8,y,{align:"right"});y+=12;}
-        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit KW",x,y);doc.text("-$525",W-M-8,y,{align:"right"});y+=12;}
+        doc.setFontSize(8.5);doc.setFont("helvetica","normal");doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+        doc.text("Subtotal",W-M-90,y);doc.text("$"+Math.ceil(sub).toLocaleString(),W-M,y,{align:"right"});y+=12;
+        if(opt.pso){doc.setTextColor(180,30,30);doc.text("PSO Credit — Attic",W-M-90,y);doc.text("-$600",W-M,y,{align:"right"});y+=12;}
+        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("PSO Credit — Kneewall",W-M-90,y);doc.text("-$525",W-M,y,{align:"right"});y+=12;}
+        y+=4;
       }
-      var totalStr="$"+Math.ceil(total).toLocaleString();
-      doc.setFontSize(13);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-      doc.text(totalStr,W-M-8,y,{align:"right"});
-      doc.text("Total",W-M-8-doc.getTextWidth(totalStr)-8,y,{align:"right"});
-      y+=24;
+
+      // Total box
+      if(y>700){doc.addPage();y=40;}
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
+      doc.roundedRect(W-M-160,y,160,34,4,4,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
+      doc.roundedRect(W-M-160,y,160,34,4,4,"F");
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(9);doc.setFont("helvetica","normal");
+      doc.text(optsWithItems.length>1?opt.name+" Total":"TOTAL INVESTMENT",W-M-80,y+12,{align:"center"});
+      doc.setFontSize(16);doc.setFont("helvetica","bold");
+      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-80,y+27,{align:"center"});
+      y+=50;
     });
 
-    // Footer
-    doc.setDrawColor(200,200,200);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);y+=12;
-    doc.setFontSize(8);doc.setTextColor(150,150,150);doc.setFont("helvetica","normal");
-    doc.text("Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient—one home at a time.",W/2,y,{align:"center"});
+    // ── TERMS ──
+    if(y>680){doc.addPage();y=40;}
+    y+=4;
+    doc.setFillColor(LIGHTGRAY[0],LIGHTGRAY[1],LIGHTGRAY[2]);
+    doc.roundedRect(x,y,RW,44,4,4,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,4,44,"F");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(7);doc.setFont("helvetica","bold");
+    doc.text("TERMS & CONDITIONS",x+12,y+11);
+    doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+    doc.text("All work performed to manufacturer specifications and local building codes. Quote valid for 30 days. 50% deposit required to schedule.",x+12,y+23,{maxWidth:RW-20});
+    doc.text("Remaining balance due upon completion. All materials are guaranteed against defect.",x+12,y+34,{maxWidth:RW-20});
+    y+=56;
+
+    // ── SIGNATURE LINE ──
+    doc.setDrawColor(180,180,200);doc.setLineWidth(0.5);
+    doc.line(x,y,x+200,y);doc.line(W-M-200,y,W-M,y);
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.text("Customer Signature",x,y+12);doc.text("Date",W-M-200,y+12);
+    y+=28;
+
+    // ── FOOTER ──
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
+    doc.rect(0,756,W,36,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,756,W,3,"F");
+    doc.setTextColor(180,200,240);doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.text("Insulation Services of Tulsa  •  1 (918) 232-9055  •  Helping Oklahoma stay energy efficient — one home at a time.",W/2,771,{align:"center"});
+    doc.setTextColor(100,130,180);doc.setFontSize(7);
+    doc.text("Licensed & Insured  •  Proudly serving Tulsa and Northeastern Oklahoma",W/2,782,{align:"center"});
 
     var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
     sharePdfBlob(doc.output("blob"),filename);

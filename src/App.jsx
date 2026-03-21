@@ -806,46 +806,35 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
       var FM_BULLETS=["R-Value: 3.8 per inch","Density: 0.5 lb/ft³","Class 1 (Class A) fire rated — Flame Spread <25, Smoke Developed <450","Air barrier at 3.5\" per ASTM E-2178","Low VOC — CA Section 01350 compliant","Fungi resistant (ASTM C-1338)","Service temp range: -40°F to 180°F (220°F intermittent)","UL Certified · ENERGY STAR® qualified","Manufactured by Holcim — Spring, TX / Waukesha, WI"];
 
       function drawProductBox(bx,by,bw,title,sub,intro,bullets,footer){
-        doc.setFont("helvetica","normal");doc.setFontSize(8.5);
-        // Measure height needed
-        var lh=13;
-        var introLines=intro?doc.splitTextToSize(intro,bw-20).length:0;
-        var bulletLines=bullets.reduce(function(n,b){return n+doc.splitTextToSize(b,bw-30).length;},0);
-        var footerLines=footer?doc.splitTextToSize(footer,bw-20).length:0;
-        var bh=20+14+8+(introLines*lh)+8+(bulletLines*lh+bullets.length*3)+8+(footerLines*lh)+16;
-
-        // Box bg
-        doc.setFillColor(248,250,255);doc.roundedRect(bx,by,bw,bh,6,6,"F");
-        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(bx,by,4,bh,"F");
-        doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.roundedRect(bx,by,bw,bh,6,6,"S");
-
-        var ty=by+14;
-        // Title
-        doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);
-        doc.text(title,bx+12,ty);ty+=14;
-        // Subtitle
-        doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);
-        doc.text(sub,bx+12,ty);ty+=10;
-        // Divider
-        doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.5);doc.line(bx+12,ty,bx+bw-12,ty);ty+=8;
-        // Intro
+        var lh=10;var fs=7;
+        doc.setFont("helvetica","normal");doc.setFontSize(fs);
+        var introLines=intro?doc.splitTextToSize(intro,bw-16).length:0;
+        var bulletLines=bullets.reduce(function(n,b){return n+doc.splitTextToSize(b,bw-24).length;},0);
+        var footerLines=footer?doc.splitTextToSize(footer,bw-16).length:0;
+        var bh=8+10+7+4+(introLines?introLines*lh+5:0)+(bulletLines*lh+bullets.length*2)+(footerLines?footerLines*lh+8:0)+8;
+        doc.setFillColor(248,250,255);doc.roundedRect(bx,by,bw,bh,4,4,"F");
+        doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(bx,by,3,bh,"F");
+        doc.setDrawColor(210,220,240);doc.setLineWidth(0.4);doc.roundedRect(bx,by,bw,bh,4,4,"S");
+        var ty=by+9;
+        doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);
+        doc.text(title,bx+9,ty);ty+=10;
+        doc.setFont("helvetica","bold");doc.setFontSize(fs);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);
+        doc.text(sub,bx+9,ty);ty+=7;
+        doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.3);doc.line(bx+9,ty,bx+bw-9,ty);ty+=5;
         if(intro){
-          doc.setFont("helvetica","italic");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-          var il=doc.splitTextToSize(intro,bw-20);doc.text(il,bx+12,ty);ty+=il.length*lh+8;
+          doc.setFont("helvetica","italic");doc.setFontSize(fs);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          var il=doc.splitTextToSize(intro,bw-16);doc.text(il,bx+9,ty);ty+=il.length*lh+5;
         }
-        // Bullets
-        doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+        doc.setFont("helvetica","normal");doc.setFontSize(fs);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
         bullets.forEach(function(b){
-          var bl=doc.splitTextToSize(b,bw-30);
-          doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(bx+18,ty-2.5,2,"F");
-          doc.text(bl,bx+26,ty);ty+=bl.length*lh+3;
+          var bl=doc.splitTextToSize(b,bw-24);
+          doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.circle(bx+14,ty-2,1.5,"F");
+          doc.text(bl,bx+20,ty);ty+=bl.length*lh+2;
         });
-        ty+=5;
-        // Footer
         if(footer){
-          doc.setDrawColor(210,220,240);doc.setLineWidth(0.4);doc.line(bx+12,ty,bx+bw-12,ty);ty+=8;
-          doc.setFont("helvetica","italic");doc.setFontSize(7.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-          var fl=doc.splitTextToSize(footer,bw-20);doc.text(fl,bx+12,ty);
+          ty+=3;doc.setDrawColor(210,220,240);doc.setLineWidth(0.3);doc.line(bx+9,ty,bx+bw-9,ty);ty+=6;
+          doc.setFont("helvetica","italic");doc.setFontSize(6.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          var fl=doc.splitTextToSize(footer,bw-16);doc.text(fl,bx+9,ty);
         }
         return by+bh;
       }

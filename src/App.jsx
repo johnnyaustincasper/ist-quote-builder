@@ -560,9 +560,10 @@ function shareQuote(customer,opts,salesman){
         if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit Attic",x,y);doc.text("-$600",W-M-8,y,{align:"right"});y+=12;}
         if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit KW",x,y);doc.text("-$525",W-M-8,y,{align:"right"});y+=12;}
       }
+      var totalStr="$"+Math.ceil(total).toLocaleString();
       doc.setFontSize(13);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-      doc.text(totalLabel,x,y);
-      doc.text("$"+Math.ceil(total).toLocaleString(),W-M-8,y,{align:"right"});
+      doc.text(totalStr,W-M-8,y,{align:"right"});
+      doc.text("Total",W-M-8-doc.getTextWidth(totalStr)-8,y,{align:"right"});
       y+=24;
     });
 

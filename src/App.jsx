@@ -159,7 +159,7 @@ function Input(p){
     <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label>
     <input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{caretColor:isNum?"transparent":"auto"})}
       onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";if(isNum)setShowPad(true);}}
-      onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}}
+      onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";if(isNum)setShowPad(false);}}
       readOnly={isNum} inputMode={isNum?"none":undefined}
       type={isNum?"text":p.type} value={p.value}
       onChange={isNum?function(){}:function(e){p.onChange(e.target.value);}}

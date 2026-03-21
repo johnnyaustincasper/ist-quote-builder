@@ -145,9 +145,9 @@ async function loadPasscode(user) {
 /* ──────── UI COMPONENTS ──────── */
 
 var glassInput={width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.7)",border:"1px solid rgba(0,0,0,0.1)",borderRadius:8,color:"#0f172a",fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",transition:"border-color 0.15s, box-shadow 0.15s"};
-function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input style={Object.assign({},glassInput)} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
+function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput)} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
 
-function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select style={Object.assign({},glassInput,{WebkitAppearance:"none"})} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v} style={{background:"#fff",color:"#0f172a"}}>{l}</option>);})}</select></div>);}
+function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{WebkitAppearance:"none"})} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v} style={{background:"#fff",color:"#0f172a"}}>{l}</option>);})}</select></div>);}
 
 function Row(p){return <div style={{display:"flex",gap:10,marginBottom:10}}>{p.children}</div>;}
 function Col(p){return <div style={{flex:1}}>{p.children}</div>;}
@@ -155,7 +155,7 @@ function StepLabel(p){return(<label style={{fontSize:11,fontWeight:700,color:C.a
 
 function ToggleButtons(p){return(<div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.05)",padding:3,borderRadius:8,marginBottom:12,border:"1px solid rgba(0,0,0,0.07)"}}>{p.options.map(function(o){return(<button key={o.id} onClick={function(){p.setMode(o.id);}} style={{flex:1,padding:"8px 6px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer",border:p.mode===o.id?"1px solid rgba(37,99,235,0.3)":"1px solid transparent",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em",background:p.mode===o.id?"rgba(255,255,255,0.9)":"transparent",color:p.mode===o.id?C.accent:C.textSec,boxShadow:p.mode===o.id?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.15s"}}>{o.label}</button>);})}</div>);}
 
-function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",padding:"13px 20px",borderRadius:8,border:"1px solid rgba(37,99,235,0.3)",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:"rgba(37,99,235,0.12)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",color:"#1d4ed8",marginTop:p.mt||0,boxShadow:"0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8)",transition:"all 0.15s"}} onMouseOver={function(e){e.currentTarget.style.background="rgba(37,99,235,0.2)";e.currentTarget.style.boxShadow="0 4px 20px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.9)";}} onMouseOut={function(e){e.currentTarget.style.background="rgba(37,99,235,0.12)";e.currentTarget.style.boxShadow="0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8)";}}>{p.children}</button>);}
+function GreenBtn(p){return(<button onClick={p.onClick} className={p.pulse?"ist-pulse":""} style={{width:"100%",padding:"13px 20px",borderRadius:8,border:"1px solid rgba(37,99,235,0.3)",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.06em",background:"rgba(37,99,235,0.12)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",color:"#1d4ed8",marginTop:p.mt||0,boxShadow:"0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8)",transition:"all 0.15s"}} onMouseOver={function(e){e.currentTarget.style.background="rgba(37,99,235,0.2)";e.currentTarget.style.boxShadow="0 4px 20px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.9)";}} onMouseOut={function(e){e.currentTarget.style.background="rgba(37,99,235,0.12)";e.currentTarget.style.boxShadow="0 2px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8)";}}>{p.children}</button>);}
 
 /* ──────── MEASUREMENTS ──────── */
 
@@ -181,10 +181,10 @@ function WallMeasurement(p){
   }
   return(<div>
     <ToggleButtons mode={mode} setMode={function(v){setMode(v);}} options={p.lhOnly?[{id:"lh",label:"L × H"},{id:"sqft",label:"Sq Ft"}]:[{id:"count",label:"Wall Count"},{id:"lh",label:"L × H"},{id:"sqft",label:"Sq Ft"}]}/>
-    {mode==="count"&&(<Row><Col><Input label="# of Cavities" value={wc} placeholder="0" onChange={function(v){setWc(v);var s=(parseInt(v)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0);notify(s,wi,v,ln,ht,"count",cw);}}/></Col><Col><AppSelect label="Wall Height" value={wi} onChange={function(v){setWi(v);var s=(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(v)]?WALL_HEIGHTS[parseInt(v)].sqftPer:0);notify(s,v,wc,ln,ht,"count",cw);}} options={WALL_HEIGHTS.map(function(w,i){return{value:String(i),label:w.label};})}/></Col></Row>)}
-    {mode==="lh"&&(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);notify((parseFloat(v)||0)*(parseFloat(ht)||0),wi,wc,v,ht,"lh",cw);}}/></Col><Col><Input label="Height (ft)" value={ht} placeholder="0" onChange={function(v){setHt(v);notify((parseFloat(ln)||0)*(parseFloat(v)||0),wi,wc,ln,v,"lh",cw);}}/></Col></Row>)}
-    {mode==="sqft"&&(<div style={{marginBottom:10}}><Input label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0,null,null,v?v+" sf":null);}}/></div>)}
-    {mode!=="sqft"&&<div style={{marginBottom:8}}><AppSelect label="Cavity Width" value={cw} onChange={function(v){setCw(v);notify(sq,wi,wc,ln,ht,mode,v);}} options={CAVITY_WIDTHS}/></div>}
+    {mode==="count"&&(<Row><Col><Input pulse={p.pulse} label="# of Cavities" value={wc} placeholder="0" onChange={function(v){setWc(v);var s=(parseInt(v)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0);notify(s,wi,v,ln,ht,"count",cw);}}/></Col><Col><AppSelect pulse={p.pulse} label="Wall Height" value={wi} onChange={function(v){setWi(v);var s=(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(v)]?WALL_HEIGHTS[parseInt(v)].sqftPer:0);notify(s,v,wc,ln,ht,"count",cw);}} options={WALL_HEIGHTS.map(function(w,i){return{value:String(i),label:w.label};})}/></Col></Row>)}
+    {mode==="lh"&&(<Row><Col><Input pulse={p.pulse} label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);notify((parseFloat(v)||0)*(parseFloat(ht)||0),wi,wc,v,ht,"lh",cw);}}/></Col><Col><Input pulse={p.pulse} label="Height (ft)" value={ht} placeholder="0" onChange={function(v){setHt(v);notify((parseFloat(ln)||0)*(parseFloat(v)||0),wi,wc,ln,v,"lh",cw);}}/></Col></Row>)}
+    {mode==="sqft"&&(<div style={{marginBottom:10}}><Input pulse={p.pulse} label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0,null,null,v?v+" sf":null);}}/></div>)}
+    {mode!=="sqft"&&<div style={{marginBottom:8}}><AppSelect pulse={p.pulse} label="Cavity Width" value={cw} onChange={function(v){setCw(v);notify(sq,wi,wc,ln,ht,mode,v);}} options={CAVITY_WIDTHS}/></div>}
     {(sq>0||parseFloat(ds)>0)&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(mode==="sqft"?parseFloat(ds)||0:sq)+" sq ft"+(cw&&mode!=="sqft"?" · "+cw:"")}</div>)}
   </div>);
 }
@@ -197,7 +197,7 @@ function AreaMeasurement(p){
   var sq=mode==="dims"?(parseFloat(ln)||0)*(parseFloat(wd)||0):(parseFloat(ds)||0);
   return(<div>
     <ToggleButtons mode={mode} setMode={setMode} options={[{id:"dims",label:"L × W"},{id:"sqft",label:"Sq Ft"}]}/>
-    {mode==="dims"?(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);var sq2=(parseFloat(v)||0)*(parseFloat(wd)||0);p.onSqftChange(sq2,null,null,(v&&wd)?v+"×"+wd:null);}}/></Col><Col><Input label="Width (ft)" value={wd} placeholder="0" onChange={function(v){setWd(v);var sq2=(parseFloat(ln)||0)*(parseFloat(v)||0);p.onSqftChange(sq2,null,null,(ln&&v)?ln+"×"+v:null);}}/></Col></Row>):(<div style={{marginBottom:10}}><Input label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0,null,null,v?v+" sf":null);}}/></div>)}
+    {mode==="dims"?(<Row><Col><Input pulse={p.pulse} label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);var sq2=(parseFloat(v)||0)*(parseFloat(wd)||0);p.onSqftChange(sq2,null,null,(v&&wd)?v+"×"+wd:null);}}/></Col><Col><Input pulse={p.pulse} label="Width (ft)" value={wd} placeholder="0" onChange={function(v){setWd(v);var sq2=(parseFloat(ln)||0)*(parseFloat(v)||0);p.onSqftChange(sq2,null,null,(ln&&v)?ln+"×"+v:null);}}/></Col></Row>):(<div style={{marginBottom:10}}><Input pulse={p.pulse} label="Total Sq Ft" value={ds} placeholder="0" onChange={function(v){setDs(v);p.onSqftChange(parseFloat(v)||0,null,null,v?v+" sf":null);}}/></div>)}
     {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
   </div>);
 }
@@ -212,7 +212,7 @@ function LocationGrid(p){
         <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
           {locs.map(function(loc){
             var active=p.value===loc.id;
-            return(<button key={loc.id} onClick={function(){p.onChange(loc.id);}}
+            return(<button key={loc.id} onClick={function(){p.onChange(loc.id);}} className={(p.pulse&&!p.value)?"ist-pulse":active?"ist-pulse-selected":""}
               style={{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",lineHeight:1.2,backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"}}>
               {loc.short}
             </button>);
@@ -280,6 +280,12 @@ function MeasurementForm(p){
   // Step tracking
   var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Measure","Material","Add"];
   var stepCurrent = !lid ? 0 : (fin<=0) ? 1 : (!hp&&!matNote.trim()) ? 2 : 3;
+  React.useEffect(function(){
+    if(document.getElementById("ist-pulse-style"))return;
+    var s=document.createElement("style");s.id="ist-pulse-style";
+    s.textContent="@keyframes ist-pulse{0%{box-shadow:0 0 0 0 rgba(147,197,253,0.85)}60%{box-shadow:0 0 0 7px rgba(147,197,253,0)}100%{box-shadow:0 0 0 0 rgba(147,197,253,0)}}.ist-pulse{animation:ist-pulse 1.5s ease-in-out infinite !important;border-radius:8px;}.ist-pulse-selected{animation:ist-pulse 1.5s ease-in-out infinite !important;}";
+    document.head.appendChild(s);
+  },[]);
   function handleAdd(){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;if(!hp&&!matNote.trim()){alert("Please select a material first.");return;}
     var useMat=hp?mat:"(material TBD)";
@@ -292,7 +298,7 @@ function MeasurementForm(p){
     {/* STEP 1: Location grid */}
     {!p.hideLocation&&(<div style={{marginBottom:16}}>
       <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"① Location"}</div>
-      <LocationGrid value={lid} onChange={function(v){setLid(v);setSqft(0);setMk(function(k){return k+1;});}}/>
+      <LocationGrid pulse={!hp&&stepCurrent===0} value={lid} onChange={function(v){setLid(v);setSqft(0);setMk(function(k){return k+1;});}}/>
       {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
     </div>)}
     {loc&&(<div>
@@ -303,7 +309,7 @@ function MeasurementForm(p){
       <div style={{marginBottom:4}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
       </div>
-      {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"||lid==="attic_kneewall"} onSqftChange={function(s,h,cw,ds){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);setDimStr(ds||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}}/>)}
+      {measType==="wall"?(<WallMeasurement key={"w-"+mk} pulse={!hp&&stepCurrent===1} lhOnly={lid==="ext_kneewall"||lid==="attic_kneewall"} onSqftChange={function(s,h,cw,ds){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);setDimStr(ds||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} pulse={!hp&&stepCurrent===1} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} pulse={!hp&&stepCurrent===1} onSqftChange={function(s,h,cw,ds){setSqft(s);setDimStr(ds||null);}}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {!hp&&(<div style={{marginBottom:12}}>
         <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"③ Material"}{!matNote.trim()&&(<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>)}</div>
@@ -319,12 +325,15 @@ function MeasurementForm(p){
             {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
           ];
           var btnStyle=function(active){return{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"};};
+          var matPulse=stepCurrent===2;
           var activeBtn=BTNS.find(function(b){return b.id===tmpMat;});
+          var subPulse=matPulse&&activeBtn&&activeBtn.sub&&!matNote.trim();
           return React.createElement("div",null,
             React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}},
               BTNS.map(function(b){
                 var active=tmpMat===b.id;
-                return React.createElement("button",{key:b.id,onClick:function(){
+                var shouldPulse=matPulse&&!tmpMat;
+                return React.createElement("button",{key:b.id,className:shouldPulse||active?"ist-pulse":"",onClick:function(){
                   setTmpMat(b.id);
                   if(b.value){setMatNote(b.value);}else{setMatNote("");}
                 },style:btnStyle(active)},b.label);
@@ -333,7 +342,7 @@ function MeasurementForm(p){
             activeBtn&&activeBtn.sub&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:4,paddingLeft:8,borderLeft:"3px solid "+C.accent}},
               activeBtn.sub.map(function(s){
                 var subActive=matNote===s.value;
-                return React.createElement("button",{key:s.id,onClick:function(){setMatNote(s.value);},style:btnStyle(subActive)},s.label);
+                return React.createElement("button",{key:s.id,className:subPulse||subActive?"ist-pulse":"",onClick:function(){setMatNote(s.value);},style:btnStyle(subActive)},s.label);
               })
             )
           );
@@ -353,7 +362,7 @@ function MeasurementForm(p){
         <input type="checkbox" checked={isRemoval} onChange={function(e){setIsRemoval(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
         <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Removal"}</span>
       </label>)}
-      <GreenBtn onClick={handleAdd}>{"+ "+(hp?"Add to Quote":"Add Measurement")}</GreenBtn>
+      <GreenBtn pulse={!hp&&stepCurrent===3} onClick={handleAdd}>{"+ "+(hp?"Add to Quote":"Add Measurement")}</GreenBtn>
     </div>)}
   </div>);
 }
@@ -917,7 +926,7 @@ function TakeOff(p){
       <div className="ist-col-form">
         <div style={{padding:"0 16px 12px"}}>
           <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"① Location"}</div>
-          <LocationGrid value={lid} onChange={function(v){setLid(v);}}/>
+          <LocationGrid pulse={!lid} value={lid} onChange={function(v){setLid(v);}}/>
           {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
         </div>
       </div>

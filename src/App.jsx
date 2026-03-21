@@ -1728,17 +1728,19 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       };
     });
     var atticList=["attic_area_garage","attic_area_house","attic_kneewall","attic_slopes","open_attic_walls"];
-    return rows.sort(function(a,b){
+    function getR(s){var m=String(s||"").match(/(\d+)/);return m?parseInt(m[1],10):0;}
+    function getR2(s){var m=String(s||"").match(/\d+x(\d+)/);return m?parseInt(m[1],10):0;}
+    console.log("matRows before sort:",rows.map(function(r){return r.rValue+"("+r.locationId+")";}));
+    var sorted=rows.slice().sort(function(a,b){
       var aAttic=atticList.includes(a.locationId||"");
       var bAttic=atticList.includes(b.locationId||"");
       if(aAttic!==bAttic) return aAttic?1:-1;
-      var aR=parseInt((a.rValue||"").match(/(\d+)/)||[0,0])||0;
-      var bR=parseInt((b.rValue||"").match(/(\d+)/)||[0,0])||0;
+      var aR=getR(a.rValue),bR=getR(b.rValue);
       if(aR!==bR) return aR-bR;
-      var aR2=parseInt(((a.rValue||"").match(/\d+x(\d+)/)||["","0"])[1])||0;
-      var bR2=parseInt(((b.rValue||"").match(/\d+x(\d+)/)||["","0"])[1])||0;
-      return aR2-bR2;
+      return getR2(a.rValue)-getR2(b.rValue);
     });
+    console.log("matRows after sort:",sorted.map(function(r){return r.rValue+"("+r.locationId+")";}));
+    return sorted;
   }
 
   var [matRows, setMatRows] = React.useState(function() { return buildMatRows(measurements); });

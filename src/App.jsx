@@ -716,75 +716,46 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     // ── MEASUREMENTS TABLE ──
     var hasMeasurements=measurements&&measurements.some(function(r){return parseFloat(r.sqft)>0;});
     if(hasMeasurements){
+      // Columns: LOCATION | MATERIAL | SQ FT | $/SQ FT
+      var c1=x+10,c2=x+180,c3=x+340,c4=x+420;
       doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,RW,18,"F");
       doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
-      var c1=x+10,c2=x+190,c3=x+340,c4=x+420,c5=x+476;
-      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("DIMS",c3,y+12);doc.text("SQ FT",c4,y+12);doc.text("$/SQ FT",c5,y+12);
+      doc.text("LOCATION",c1,y+12);doc.text("MATERIAL",c2,y+12);doc.text("SQ FT",c3,y+12);doc.text("$/SQ FT",c4,y+12);
       y+=18;
       // Group by location+material+cavityWidth
       var groups2=[];
       measurements.forEach(function(r){
         var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
         var key=(r.locationId||r.location)+"|"+(r.material||"")+"|"+(r.cavityWidth||"");
-        var g=groups2.find(function(g){return g.key===key;});
+        var g=groups2.find(function(gg){return gg.key===key;});
         if(g){g.entries.push(r);g.totalSqft+=sqft;}
         else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:r.material||"",pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
       });
       groups2.forEach(function(g,gi){
         if(y>700){doc.addPage();y=40;}
-        // Location header row
+        var groupH=18+g.entries.length*13;
         doc.setFillColor(gi%2===0?242:250,gi%2===0?246:252,gi%2===0?255:255);
-        var groupH=16+g.entries.length*12;
         doc.rect(x,y,RW,groupH,"F");
         doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,3,groupH,"F");
-        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","bold");doc.setFontSize(9);
-        doc.text(g.location,c1+4,y+11,{maxWidth:174});
-        doc.text(g.material,c2,y+11,{maxWidth:144});
-        doc.text(g.totalSqft.toLocaleString(),c4,y+11);
+        // Header row
+        doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","bold");doc.setFontSize(9.5);
+        doc.text(g.location,c1+4,y+13,{maxWidth:164});
+        doc.text(g.material,c2,y+13,{maxWidth:154});
+        doc.text(g.totalSqft.toLocaleString(),c3,y+13);
         var ppu=parseFloat(g.pricePerUnit)||0;
-        if(ppu)doc.text("$"+ppu.toFixed(2),c5,y+11);
-        y+=16;
-        // Individual dim entries
+        if(ppu)doc.text("$"+ppu.toFixed(2),c4,y+13);
+        y+=18;
+        // Individual dim entries indented under location
         g.entries.forEach(function(r){
-          doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-          var ds=r.dimStr||(r.wallHeightLabel)||((parseFloat(r.sqft)||0).toLocaleString()+" sf");
-          doc.text("  "+ds,c3,y+9,{maxWidth:150});
-          doc.text((parseFloat(r.sqft)||0).toLocaleString()+" sf",c4,y+9);
-          y+=12;
+          doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+          var dimLabel=r.dimStr||(r.wallHeightLabel)||"";
+          var sqftLabel=(parseFloat(r.sqft)||0).toLocaleString()+" sf";
+          doc.text(dimLabel?dimLabel+" = "+sqftLabel:sqftLabel,c1+12,y+9);
+          y+=13;
         });
         doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.line(x,y,x+RW,y);
         y+=2;
       });
-    }
-
-    // ── INTERNAL ADDERS ──
-    if(quoteOpts&&quoteOpts.length>0){
-      var hasAdders=quoteOpts.some(function(opt){return opt.items&&opt.items.some(function(i){return i.sqft&&i.pricePerUnit;});});
-      if(hasAdders){
-        y+=10;
-        if(y>640){doc.addPage();y=40;}
-        doc.setFillColor(254,243,199);doc.rect(x,y,RW,20,"F");
-        doc.setFillColor(217,119,6);doc.rect(x,y,4,20,"F");
-        doc.setDrawColor(251,191,36);doc.setLineWidth(0.5);doc.rect(x,y,RW,20,"S");
-        doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(120,53,15);
-        doc.text("INTERNAL — DO NOT SHARE WITH CUSTOMER",x+12,y+13);
-        y+=20;
-        var allItems=[];
-        quoteOpts.forEach(function(opt){(opt.items||[]).forEach(function(item){if(item.sqft&&item.pricePerUnit)allItems.push(item);});});
-        allItems.forEach(function(item,i){
-          if(y>710){doc.addPage();y=40;}
-          doc.setFillColor(i%2===0?248:255,i%2===0?250:255,i%2===0?252:255);
-          doc.rect(x,y,RW,16,"F");
-          doc.setFillColor(217,119,6);doc.circle(x+5,y+8,2,"F");
-          doc.setTextColor(15,23,42);doc.setFont("helvetica","normal");doc.setFontSize(9);
-          doc.text(item.location||"",c1,y+11,{maxWidth:184});
-          doc.text(item.material||"",c2,y+11,{maxWidth:184});
-          doc.text((parseFloat(item.sqft)||0).toLocaleString(),c3,y+11);
-          doc.text("$"+(parseFloat(item.pricePerUnit)||0).toFixed(2),c4,y+11);
-          doc.setDrawColor(226,232,240);doc.setLineWidth(0.4);doc.line(x,y+16,x+RW,y+16);
-          y+=16;
-        });
-      }
     }
 
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
@@ -907,7 +878,7 @@ function TakeOff(p){
         <div className="ist-col-results">
           <div style={{padding:"0 16px 12px"}}>
             <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"② Measure & Add"}</div>
-            <MeasurementForm key={"to-takeoff-"+lid} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={"fiberglass"} onAdd={addM} hasPrice={false} hideLocation/>
+            <MeasurementForm key={"to-takeoff"} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={"fiberglass"} onAdd={addM} hasPrice={false} hideLocation/>
           </div>
         </div>
       </div>);

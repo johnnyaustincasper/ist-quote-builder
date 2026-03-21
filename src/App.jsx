@@ -1843,7 +1843,7 @@ export default function App() {
       `}</style>
 
       {/* HEADER */}
-      <div style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", padding: "18px 20px 0", borderBottom: "1px solid rgba(0,0,0,0.07)", textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 24px rgba(0,0,0,0.08)" }}>
+      <div style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)", padding: "18px 20px 0", borderBottom: "none", borderRadius: "0 0 24px 24px", textAlign: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 8px 40px rgba(180,200,240,0.25), inset 0 1px 0 rgba(255,255,255,0.9)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>👤 {currentUser}</div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

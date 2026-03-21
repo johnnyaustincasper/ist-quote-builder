@@ -1683,6 +1683,26 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
     return map;
   }
 
+  function shortRValue(mat) {
+    if (!mat) return "";
+    // "R13 x15 Fiberglass Batts" → "13x15"
+    var batt = mat.match(/R(\d+)\s*x(\d+)/i);
+    if (batt) return batt[1]+"x"+batt[2];
+    // "R11 Fiberglass Batts" → "11"
+    var simple = mat.match(/^R(\d+)\s+Fiberglass/i);
+    if (simple) return simple[1];
+    // "Open Cell Foam" → "Open Cell"
+    if (/open cell/i.test(mat)) return "Open Cell";
+    if (/closed cell/i.test(mat)) return "Closed Cell";
+    // "Blown Fiberglass R30" → "BF R30"
+    var bfg = mat.match(/Blown Fiberglass\s*R?(\d+)/i);
+    if (bfg) return "BF R"+bfg[1];
+    // "Blown Cellulose R30" → "BC R30"
+    var bcel = mat.match(/Blown Cellulose\s*R?(\d+)/i);
+    if (bcel) return "BC R"+bcel[1];
+    return mat;
+  }
+
   function buildMatRows(meas) {
     var rMap = buildRValueMap();
     return (meas || []).map(function(m, i) {
@@ -1692,7 +1712,8 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
         var match = m.wallHeightLabel.match(/(\d+)['']/);
         ht = match ? match[1] : m.wallHeightLabel.match(/(\d+)/)?.[1] || "";
       }
-      var rValue = (m.matNote && m.matNote.trim()) ? m.matNote.trim() : (rMap[m.locationId] || m.rValue || "");
+      var rawMat = (m.matNote && m.matNote.trim()) ? m.matNote.trim() : (rMap[m.locationId] || m.rValue || "");
+      var rValue = shortRValue(rawMat) || rawMat;
       return {
         id: "mr-" + i,
         locationId: m.locationId || "",
@@ -1750,9 +1771,14 @@ function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentU
       var aAttic=atticIds.includes(a.locationId||"");
       var bAttic=atticIds.includes(b.locationId||"");
       if(aAttic!==bAttic) return aAttic?1:-1;
+      // Extract first number from short value e.g. "13x15" → 13, "Open Cell" → 0
       var aR=parseInt((a.rValue||"").match(/(\d+)/)||[0,0])||0;
       var bR=parseInt((b.rValue||"").match(/(\d+)/)||[0,0])||0;
-      return aR-bR;
+      if(aR!==bR) return aR-bR;
+      // Secondary sort by second number e.g. 13x15 vs 13x24
+      var aR2=parseInt(((a.rValue||"").match(/\d+x(\d+)/)||[0,0])[1])||0;
+      var bR2=parseInt(((b.rValue||"").match(/\d+x(\d+)/)||[0,0])[1])||0;
+      return aR2-bR2;
     });
   }
 

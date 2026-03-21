@@ -419,7 +419,7 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
   var si=SALESMAN_INFO[salesman];
   var salesHtml=si?'<div style="text-align:right"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Your Sales Rep</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:2px">'+si.fullName+'</div><div style="font-size:13px;color:#111;font-weight:600;margin-bottom:1px">'+si.phone+'</div><div style="font-size:13px;color:#111;font-weight:600">'+si.email+'</div></div>':'';
   var totalRow=measurements.length>0?'<div style="margin-top:24px;padding-top:16px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:800;text-transform:uppercase;color:#111">Total</div><div style="font-size:18px;font-weight:800;color:#111">'+total.toLocaleString()+' sq ft</div></div>':'';
-  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:800px;margin:0 auto">'+
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:24px;max-width:100%;margin:0;width:100%;box-sizing:border-box">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #111"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#888">'+COMPANY.tagline+'</p></div><div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#111;text-transform:uppercase">Take Off</div><div style="font-size:12px;color:#888;margin-top:2px">'+today+'</div></div></div>'+
     '<div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #ddd"><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Customer</div><div style="font-size:15px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:13px;color:#666">'+(customer.address||"")+'</div><div style="font-size:13px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:13px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Job Site</div><div style="font-size:15px;font-weight:600">'+(customer.jobAddress||customer.address||"—")+'</div></div>'+salesHtml+'</div>'+
     notesHtml+
@@ -452,70 +452,54 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
     '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
-function shareQuote(customer,opts,salesman){
-  var html=buildQuoteHtml(customer,opts,salesman);
-  if(!html){alert("Quote generation failed");return;}
-  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  
+function generateAndSharePdf(html,filename){
   getHtml2pdf().then(function(html2pdf){
     var element=document.createElement("div");
     element.innerHTML=html;
-    element.style.width="8.5in";
-    
+    element.style.position="fixed";
+    element.style.top="0";
+    element.style.left="0";
+    element.style.width="750px";
+    element.style.backgroundColor="#fff";
+    element.style.zIndex="-9999";
+    document.body.appendChild(element);
     html2pdf().set({
-      margin:0.3,
+      margin:[0.4,0.4,0.4,0.4],
       filename:filename,
       image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff",windowWidth:750},
       jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
     }).from(element).output("blob").then(function(blob){
-      if(navigator.share){
+      document.body.removeChild(element);
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],filename,{type:"application/pdf"})]})){
         var file=new File([blob],filename,{type:"application/pdf"});
-        navigator.share({files:[file],title:"Quote",text:"IST Quote"}).catch(function(err){
+        navigator.share({files:[file],title:filename}).catch(function(err){
           if(err.name!=="AbortError") alert("Share failed: "+err.message);
         });
       }else{
         var url=URL.createObjectURL(blob);
         var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-        setTimeout(function(){URL.revokeObjectURL(url);},100);
+        setTimeout(function(){URL.revokeObjectURL(url);},1000);
       }
+    }).catch(function(err){
+      if(document.body.contains(element))document.body.removeChild(element);
+      alert("PDF error: "+err.message);
     });
-  }).catch(function(err){
-    alert("PDF generation failed: "+err.message);
   });
+}
+
+function shareQuote(customer,opts,salesman){
+  var html=buildQuoteHtml(customer,opts,salesman);
+  if(!html){alert("Quote generation failed");return;}
+  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+  generateAndSharePdf(html,filename);
 }
 
 function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
   var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
   if(!html){alert("Take off generation failed");return;}
   var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  
-  getHtml2pdf().then(function(html2pdf){
-    var element=document.createElement("div");
-    element.innerHTML=html;
-    element.style.width="8.5in";
-    
-    html2pdf().set({
-      margin:0.3,
-      filename:filename,
-      image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true},
-      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).from(element).output("blob").then(function(blob){
-      if(navigator.share){
-        var file=new File([blob],filename,{type:"application/pdf"});
-        navigator.share({files:[file],title:"Take Off",text:"IST Take Off"}).catch(function(err){
-          if(err.name!=="AbortError") alert("Share failed: "+err.message);
-        });
-      }else{
-        var url=URL.createObjectURL(blob);
-        var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-        setTimeout(function(){URL.revokeObjectURL(url);},100);
-      }
-    });
-  }).catch(function(err){
-    alert("PDF generation failed: "+err.message);
-  });
+  generateAndSharePdf(html,filename);
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
@@ -572,7 +556,7 @@ function _buildQuoteHtml(customer,opts,salesman){
     }
     return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><thead><tr style="background:#111"><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
   }).join("");
-  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:0;max-width:100%;margin:0">'+
+  return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:24px;max-width:100%;margin:0;width:100%;box-sizing:border-box">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:3px solid #222"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:3px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:12px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:19px;font-weight:700;color:#111">QUOTE</div><div style="font-size:12px;color:#666;margin-top:3px">'+qn+'</div><div style="font-size:12px;color:#666">'+today+'</div></div></div>'+
     '<div style="display:flex;gap:20px;margin-bottom:18px"><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Prepared For</div><div style="font-size:14px;font-weight:600">'+(customer.name||"—")+'</div><div style="font-size:12px;color:#666">'+(customer.address||"")+'</div><div style="font-size:12px;color:#666">'+(customer.phone||"")+'</div><div style="font-size:12px;color:#666">'+(customer.email||"")+'</div></div><div style="flex:1"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Project</div><div style="font-size:12px;color:#666">Job Site: '+(customer.jobAddress||customer.address||"—")+'</div><div style="font-size:12px;color:#666">Valid 30 days from quote date</div></div>'+salesHtml+'</div>'+
     optSections+

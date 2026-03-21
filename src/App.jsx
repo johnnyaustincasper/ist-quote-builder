@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase";
-const getHtml2pdf = () => import("html2pdf.js").then(m => m.default);
+
 
 var COMPANY = {
   name: "Insulation Services of Tulsa",
@@ -452,53 +452,20 @@ function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
     '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">'+COMPANY.name+' &bull; '+COMPANY.phone+'<br/>Helping Oklahoma stay energy efficient—one home at a time.</div></div>';
 }
 
-function generateAndSharePdf(html,filename){
-  getHtml2pdf().then(function(html2pdf){
-    var element=document.createElement("div");
-    element.innerHTML=html;
-    element.style.position="absolute";
-    element.style.top="0";
-    element.style.left="-9999px";
-    element.style.width="750px";
-    element.style.backgroundColor="#fff";
-    document.body.appendChild(element);
-    html2pdf().set({
-      margin:[0.4,0.4,0.4,0.4],
-      filename:filename,
-      image:{type:"jpeg",quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:"#fff",windowWidth:750},
-      jsPDF:{unit:"in",format:"letter",orientation:"portrait"}
-    }).from(element).output("blob").then(function(blob){
-      document.body.removeChild(element);
-      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],filename,{type:"application/pdf"})]})){
-        var file=new File([blob],filename,{type:"application/pdf"});
-        navigator.share({files:[file],title:filename}).catch(function(err){
-          if(err.name!=="AbortError") alert("Share failed: "+err.message);
-        });
-      }else{
-        var url=URL.createObjectURL(blob);
-        var a=document.createElement("a");a.href=url;a.download=filename;a.click();
-        setTimeout(function(){URL.revokeObjectURL(url);},1000);
-      }
-    }).catch(function(err){
-      if(document.body.contains(element))document.body.removeChild(element);
-      alert("PDF error: "+err.message);
-    });
-  });
-}
-
 function shareQuote(customer,opts,salesman){
-  var html=buildQuoteHtml(customer,opts,salesman);
-  if(!html){alert("Quote generation failed");return;}
-  var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  generateAndSharePdf(html,filename);
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{margin:0}}</style></head><body>'+buildQuoteHtml(customer,opts,salesman)+'</body></html>';
+  var blob=new Blob([html],{type:"text/html"});
+  var url=URL.createObjectURL(blob);
+  var win=window.open(url,"_blank");
+  if(win){win.onload=function(){setTimeout(function(){win.print();},400);};}
 }
 
 function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
-  var html=buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts);
-  if(!html){alert("Take off generation failed");return;}
-  var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-  generateAndSharePdf(html,filename);
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Take Off</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{body{margin:0}}</style></head><body>'+buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+'</body></html>';
+  var blob=new Blob([html],{type:"text/html"});
+  var url=URL.createObjectURL(blob);
+  var win=window.open(url,"_blank");
+  if(win){win.onload=function(){setTimeout(function(){win.print();},400);};}
 }
 
 function printTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){

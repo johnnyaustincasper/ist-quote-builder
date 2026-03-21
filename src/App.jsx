@@ -133,22 +133,27 @@ function GreenBtn(p){return(<button onClick={p.onClick} style={{width:"100%",pad
 
 /* ──────── MEASUREMENTS ──────── */
 
+var CAVITY_WIDTHS=[{value:"",label:"— Cavity Width —"},{value:"2x4",label:"2x4"},{value:"2x6",label:"2x6"},{value:"2x8",label:"2x8"}];
+
 function WallMeasurement(p){
   var s1=useState(p.lhOnly?"lh":"count"),mode=s1[0],setMode=s1[1];
   var s2=useState(""),wc=s2[0],setWc=s2[1];
   var s3=useState("0"),wi=s3[0],setWi=s3[1];
   var s4=useState(""),ln=s4[0],setLn=s4[1];
   var s5=useState(""),ht=s5[0],setHt=s5[1];
+  var s6=useState(""),cw=s6[0],setCw=s6[1];
   var sq=mode==="count"?(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0):(parseFloat(ln)||0)*(parseFloat(ht)||0);
-  function notify(sqftVal, wiVal, wcVal, lnVal, htVal, modeVal){
+  function notify(sqftVal,wiVal,wcVal,lnVal,htVal,modeVal,cwVal){
     var heightLabel=null;
     if((modeVal||mode)==="count"){var h=WALL_HEIGHTS[parseInt(wiVal!==undefined?wiVal:wi)];if(h)heightLabel=h.label;var cavities=parseInt(wcVal!==undefined?wcVal:wc)||0;if(cavities>0&&heightLabel)heightLabel=cavities+" cavities @ "+heightLabel;}
-    p.onSqftChange(sqftVal,heightLabel);
+    var cavity=cwVal!==undefined?cwVal:cw;
+    p.onSqftChange(sqftVal,heightLabel,cavity||null);
   }
   return(<div>
     {!p.lhOnly&&<ToggleButtons mode={mode} setMode={setMode} options={[{id:"count",label:"Wall Count"},{id:"lh",label:"L × H"}]}/>}
-    {mode==="count"?(<Row><Col><Input label="# of Cavities" value={wc} placeholder="0" onChange={function(v){setWc(v);var s=(parseInt(v)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0);notify(s,wi,v,ln,ht,"count");}}/></Col><Col><AppSelect label="Wall Height" value={wi} onChange={function(v){setWi(v);var s=(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(v)]?WALL_HEIGHTS[parseInt(v)].sqftPer:0);notify(s,v,wc,ln,ht,"count");}} options={WALL_HEIGHTS.map(function(w,i){return{value:String(i),label:w.label};})}/></Col></Row>):(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);notify((parseFloat(v)||0)*(parseFloat(ht)||0),wi,wc,v,ht,"lh");}}/></Col><Col><Input label="Height (ft)" value={ht} placeholder="0" onChange={function(v){setHt(v);notify((parseFloat(ln)||0)*(parseFloat(v)||0),wi,wc,ln,v,"lh");}}/></Col></Row>)}
-    {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"}</div>)}
+    {mode==="count"?(<Row><Col><Input label="# of Cavities" value={wc} placeholder="0" onChange={function(v){setWc(v);var s=(parseInt(v)||0)*(WALL_HEIGHTS[parseInt(wi)]?WALL_HEIGHTS[parseInt(wi)].sqftPer:0);notify(s,wi,v,ln,ht,"count",cw);}}/></Col><Col><AppSelect label="Wall Height" value={wi} onChange={function(v){setWi(v);var s=(parseInt(wc)||0)*(WALL_HEIGHTS[parseInt(v)]?WALL_HEIGHTS[parseInt(v)].sqftPer:0);notify(s,v,wc,ln,ht,"count",cw);}} options={WALL_HEIGHTS.map(function(w,i){return{value:String(i),label:w.label};})}/></Col></Row>):(<Row><Col><Input label="Length (ft)" value={ln} placeholder="0" onChange={function(v){setLn(v);notify((parseFloat(v)||0)*(parseFloat(ht)||0),wi,wc,v,ht,"lh",cw);}}/></Col><Col><Input label="Height (ft)" value={ht} placeholder="0" onChange={function(v){setHt(v);notify((parseFloat(ln)||0)*(parseFloat(v)||0),wi,wc,ln,v,"lh",cw);}}/></Col></Row>)}
+    <div style={{marginBottom:8}}><AppSelect label="Cavity Width" value={cw} onChange={function(v){setCw(v);notify(sq,wi,wc,ln,ht,mode,v);}} options={CAVITY_WIDTHS}/></div>
+    {sq>0&&(<div style={{fontSize:13,color:C.accent,fontWeight:600,marginBottom:8}}>{Math.round(sq)+" sq ft"+(cw?" · "+cw:"")}</div>)}
   </div>);
 }
 
@@ -218,6 +223,7 @@ function MeasurementForm(p){
   var s3=useState(mats[0]||""),mat=s3[0],setMat=s3[1];
   var s4=useState(0),sqft=s4[0],setSqft=s4[1];
   var s4b=useState(null),wallHeightLabel=s4b[0],setWallHeightLabel=s4b[1];
+  var s4c=useState(null),cavityWidth=s4c[0],setCavityWidth=s4c[1];
   var s5=useState(""),price=s5[0],setPrice=s5[1];
   var s6=useState("Flat (0/12)"),pitch=s6[0],setPitch=s6[1];
   var s7=useState(0),mk=s7[0],setMk=s7[1];
@@ -240,7 +246,7 @@ function MeasurementForm(p){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;
     var useMat=hp?mat:"(material TBD)";
     var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
-    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,matNote:(!hp&&matNote.trim())||null});
+    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null});
     setSqft(0);setWallHeightLabel(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");
   }
   return(<div style={{background:C.card,borderRadius:8,padding:18,border:"1px solid "+C.border,boxShadow:C.shadow}}>
@@ -259,7 +265,7 @@ function MeasurementForm(p){
       <div style={{marginBottom:4}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
       </div>
-      {measType==="wall"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s,h){setSqft(s);setWallHeightLabel(h||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s){setSqft(s);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
+      {measType==="wall"?(<WallMeasurement key={"w-"+mk} lhOnly={lid==="ext_kneewall"} onSqftChange={function(s,h,cw){setSqft(s);setWallHeightLabel(h||null);setCavityWidth(cw||null);}}/>):measType==="slope"?(<WallMeasurement key={"w-"+mk} onSqftChange={function(s){setSqft(s);}} lhOnly/>):(<AreaMeasurement key={"a-"+mk} onSqftChange={setSqft}/>)}
       {needsPitch&&(<div style={{marginBottom:10}}><AppSelect label="Roof Pitch" value={pitch} onChange={setPitch} options={Object.keys(PITCH_FACTORS)}/></div>)}
       {!hp&&(<div style={{marginBottom:12}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{"Material (optional)"}</div>
@@ -637,7 +643,8 @@ function shareTakeOff(customer,jobNotes,measurements,salesman,quoteOpts){
         var bg=i%2===0?[250,250,250]:[255,255,255];
         doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(x,y-10,RW,14,"F");
         doc.setTextColor(40,40,40);doc.setFont("helvetica","normal");doc.setFontSize(9);
-        doc.text(r.location||"",col1,y,{maxWidth:160});
+        var locStr=(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":"");
+        doc.text(locStr,col1,y,{maxWidth:160});
         doc.text(r.material||"",col2,y,{maxWidth:110});
         var sizeStr=(r.width&&r.height)?r.width+"×"+r.height:(r.width||r.height||"");
         doc.text(sizeStr,col3,y,{maxWidth:70});
@@ -831,6 +838,7 @@ function TakeOff(p){
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div>
                 {item.wallHeightLabel&&(<div style={{fontSize:12,color:C.accent,marginTop:2,fontWeight:500}}>{"↳ "+item.wallHeightLabel}</div>)}
+                {item.cavityWidth&&(<div style={{fontSize:12,color:C.textSec,marginTop:2,fontWeight:500}}>{"↳ "+item.cavityWidth+" cavity"}</div>)}
                 {item.matNote&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{"📋 "+item.matNote}</div>)}
                 {item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}
               </div>

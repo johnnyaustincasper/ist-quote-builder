@@ -841,13 +841,26 @@ function generatePDF(customer,opts,salesman){
 }
 
 function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quoteOpts){
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title><style>*{margin:0;padding:0;box-sizing:border-box}@page{margin:0;size:letter}@media print{html,body{height:auto;overflow:hidden;margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page-break{page-break-before:always}}</style></head><body>'+
-    buildQuoteHtml(customer,opts,salesman)+
-    '<div class="page-break"></div>'+
-    buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts)+
-    '</body></html>';
-  var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);var win=window.open(url,"_blank");
-  if(win){win.onload=function(){setTimeout(function(){win.print();},500);};}
+  // Build both PDFs then merge pages into one jsPDF doc
+  Promise.all([
+    buildQuotePdf(customer,opts,salesman,"blob"),
+    buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,"blob")
+  ]).then(function(blobs){
+    // Open quote PDF first, then takeoff as separate share — or just share both
+    var quoteName="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+    var takeoffName="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
+    var files=[];
+    if(blobs[0])files.push(new File([blobs[0]],quoteName,{type:"application/pdf"}));
+    if(blobs[1])files.push(new File([blobs[1]],takeoffName,{type:"application/pdf"}));
+    if(navigator.canShare&&navigator.canShare({files:files})){
+      navigator.share({files:files,title:"Quote & Take Off"}).catch(function(){});
+    } else {
+      // fallback: download both
+      files.forEach(function(f){
+        var url=URL.createObjectURL(f);var a=document.createElement("a");a.href=url;a.download=f.name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+      });
+    }
+  }).catch(function(err){alert("PDF error: "+err.message);});
 }
 
 /* ══════════ TAKE OFF ══════════ */

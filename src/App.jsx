@@ -1527,7 +1527,7 @@ function LoginScreen(p) {
 }
 
 /* ══════════ WORK ORDER ══════════ */
-function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
+function WorkOrderSection({measurements, quoteOpts, custName, custAddr, currentUser}) {
   var today = new Date().toISOString().slice(0,10);
 
   // WO number
@@ -1580,7 +1580,23 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
   // Build initial mat rows from measurements
   var wallIds = ["ext_walls_house","ext_walls_garage","garage_common","ext_kneewall","open_attic_walls","attic_kneewall"];
 
+  // Build a map of locationId → R-value from quote items
+  function buildRValueMap() {
+    var map = {};
+    var allItems = (quoteOpts || []).flatMap(function(o) { return o.items || []; });
+    allItems.forEach(function(item) {
+      if (!item.locationId) return;
+      // Extract R-value from material string e.g. "R-13", "R-19"
+      var match = (item.material || item.description || "").match(/R-?(\d+)/i);
+      if (match && !map[item.locationId]) {
+        map[item.locationId] = "R-" + match[1];
+      }
+    });
+    return map;
+  }
+
   function buildMatRows(meas) {
+    var rMap = buildRValueMap();
     return (meas || []).map(function(m, i) {
       var isWall = wallIds.includes(m.locationId || "");
       var ht = "";
@@ -1588,11 +1604,12 @@ function WorkOrderSection({measurements, custName, custAddr, currentUser}) {
         var match = m.wallHeightLabel.match(/(\d+)['']/);
         ht = match ? match[1] : m.wallHeightLabel.match(/(\d+)/)?.[1] || "";
       }
+      var rValue = rMap[m.locationId] || m.rValue || "";
       return {
         id: "mr-" + i,
         matType: matTypeLabel(m),
         wallHeight: ht,
-        rValue: m.rValue || "",
+        rValue: rValue,
         width: m.width || "",
         sqft: m.sqft ? String(Math.round(m.sqft)) : "",
         matOut: "",
@@ -1922,7 +1939,7 @@ export default function App() {
       <div>
         {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} onSendToWorkOrder={sendToWorkOrder} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} {...cp2} />)}
-        {sec === "workorder" && (<WorkOrderSection measurements={meas} custName={cn} custAddr={ca} currentUser={currentUser} jobAddr={ja} />)}
+        {sec === "workorder" && (<WorkOrderSection measurements={meas} quoteOpts={qOpts} custName={cn} custAddr={ca} currentUser={currentUser} jobAddr={ja} />)}
         {sec === "jobs" && (
           <div>
             <SavedJobsPanel

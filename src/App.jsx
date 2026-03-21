@@ -555,13 +555,13 @@ function shareQuote(customer,opts,salesman){
       y+=6;
       if(opt.pso||opt.psoKw){
         doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(80,80,80);
-        doc.text("Price",W-M-100,y,{align:"left"});
+        doc.text("Price",x,y);
         doc.text("$"+Math.ceil(sub).toLocaleString(),W-M-8,y,{align:"right"});y+=12;
-        if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit Attic",W-M-100,y,{align:"left"});doc.text("-$600",W-M-8,y,{align:"right"});y+=12;}
-        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit KW",W-M-100,y,{align:"left"});doc.text("-$525",W-M-8,y,{align:"right"});y+=12;}
+        if(opt.pso){doc.setTextColor(180,30,30);doc.text("Less PSO Credit Attic",x,y);doc.text("-$600",W-M-8,y,{align:"right"});y+=12;}
+        if(opt.psoKw){doc.setTextColor(180,30,30);doc.text("Less PSO Credit KW",x,y);doc.text("-$525",W-M-8,y,{align:"right"});y+=12;}
       }
       doc.setFontSize(13);doc.setFont("helvetica","bold");doc.setTextColor(17,17,17);
-      doc.text(totalLabel,W-M-100,y,{align:"left"});
+      doc.text(totalLabel,x,y);
       doc.text("$"+Math.ceil(total).toLocaleString(),W-M-8,y,{align:"right"});
       y+=24;
     });

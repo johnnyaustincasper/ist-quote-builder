@@ -332,8 +332,37 @@ function MeasurementForm(p){
     </div>)}
     {loc&&(<div>
       {hp&&(<div style={{marginBottom:14}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"② Material"}</div>
-        <select style={ss} value={mat} onChange={function(e){setMat(e.target.value);}}>{mats.map(function(m){return(<option key={m} value={m}>{m}</option>);})}</select>
+        <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"② Material"}{!mat&&(<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>)}</div>
+        {(function(){
+          var HPBTNS=[
+            {id:"R11",label:"R11",value:"R11 Fiberglass Batts",sub:null},
+            {id:"R13",label:"R13",value:null,sub:[{id:"x15",label:"x15",value:"R13 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R13 x24 Fiberglass Batts"}]},
+            {id:"R19",label:"R19",value:null,sub:[{id:"x15",label:"x15",value:"R19 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R19 x24 Fiberglass Batts"}]},
+            {id:"R30",label:"R30",value:null,sub:[{id:"x15",label:"x15",value:"R30 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R30 x24 Fiberglass Batts"}]},
+            {id:"opencell",label:"Open Cell",value:null,sub:["2\"","3\"","4\"","5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
+            {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","2\"","3\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
+            {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
+            {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
+          ];
+          var hpBtnStyle=function(active){return{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"};};
+          var activePrimary=HPBTNS.find(function(b){return mat&&(b.value===mat||b.sub&&b.sub.some(function(s){return s.value===mat;}));});
+          var activePrimaryId=activePrimary?activePrimary.id:"";
+          return React.createElement("div",null,
+            React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}},
+              HPBTNS.map(function(b){
+                var active=activePrimaryId===b.id;
+                return React.createElement("button",{key:b.id,onClick:function(){if(b.value){setMat(b.value);}else{setMat("");}setTmpMat(b.id);},style:hpBtnStyle(active)},b.label);
+              })
+            ),
+            activePrimary&&activePrimary.sub&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:4,paddingLeft:8,borderLeft:"3px solid "+C.accent}},
+              activePrimary.sub.map(function(s){
+                var subActive=mat===s.value;
+                return React.createElement("button",{key:s.id,onClick:function(){setMat(s.value);},style:hpBtnStyle(subActive)},s.label);
+              })
+            )
+          );
+        })()}
+        {mat&&(<div style={{marginTop:6,fontSize:12,color:C.accent,fontWeight:600}}>{"✓ "+mat}</div>)}
       </div>)}
       <div style={{marginBottom:4}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{(hp?"③":"②")+" Measurements"}</div>
@@ -1076,24 +1105,36 @@ function QuoteBuilderSection(p){
   function addOption(){setOpts(function(prev){return prev.concat([newOption("Option "+(prev.length+1))]);});setActiveIdx(opts.length);}
   function removeOption(idx){if(opts.length<=1)return;setOpts(function(prev){return prev.filter(function(_,i){return i!==idx;});});if(activeIdx>=opts.length-1)setActiveIdx(Math.max(0,opts.length-2));}
 
+  var qs1=useState(false),locOpen=qs1[0],setLocOpen=qs1[1];
+  var qs2=useState(false),matOpen=qs2[0],setMatOpen=qs2[1];
+  var accordionBtn=function(label,open,setOpen,badge){return(<button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+    <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>{label}</span>
+    <div style={{display:"flex",alignItems:"center",gap:10}}>
+      {badge&&<span style={{fontSize:13,fontWeight:600,color:"#93c5fd"}}>{badge}</span>}
+      <span style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>{open?"▲":"▼"}</span>
+    </div>
+  </button>);};
+
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
 
-    {/* ROW 1: Location (left) | Material + Measure (right) */}
-    <div className="ist-2col" style={{marginBottom:0}}>
-      <div className="ist-col-form">
-        <div style={{padding:"0 16px 12px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"① Location"}</div>
+    {/* ROW 1: Location + Material & Measure as collapsible accordions */}
+    <div style={{padding:"0 16px 12px",display:"flex",flexDirection:"column",gap:8}}>
+      {/* ① Location */}
+      <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07)",overflow:"hidden"}}>
+        {accordionBtn("① Location",locOpen,setLocOpen,lid&&lid!=="custom"?LOCATIONS.find(function(l){return l.id===lid;})?LOCATIONS.find(function(l){return l.id===lid;}).label:cl:lid==="custom"?cl:null)}
+        {locOpen&&(<div style={{padding:"12px 14px"}}>
           <LocationGrid value={lid} onChange={function(v){setLid(v);}}/>
           {lid==="custom"&&(<div style={{marginTop:8}}><Input label="Custom Location Name" value={cl} onChange={setCl} type="text" placeholder="e.g. Bonus room walls"/></div>)}
-        </div>
+        </div>)}
       </div>
-      <div className="ist-col-results">
-        <div style={{padding:"0 16px 12px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{"② Material & Measure"}</div>
-          <MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/>
-          <MeasurementForm key={"qb-"+matTab+"-"+activeIdx} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={matTab} onAdd={addItem} hasPrice={true} hideLocation/>
-        </div>
+
+      {/* ② Material & Measure */}
+      <div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07)",overflow:"hidden"}}>
+        {accordionBtn("② Material & Measure",matOpen,setMatOpen,null)}
+        {matOpen&&(<div style={{padding:"12px 14px"}}>
+          <MeasurementForm key={"qb-"+activeIdx} lid={lid} setLid={setLid} cl={cl} setCl={setCl} tab={matTab} onAdd={addItem} hasPrice={true} hideLocation/>
+        </div>)}
       </div>
     </div>
 

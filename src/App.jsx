@@ -1820,11 +1820,13 @@ export default function App() {
   var cp2 = { custName: cn, setCustName: setCn, custAddr: ca, setCustAddr: setCa, custPhone: cph, setCustPhone: setCph, custEmail: ce, setCustEmail: setCe, jobAddr: ja, setJobAddr: setJa, jobNotes: jn, setJobNotes: setJn };
 
   return (
-    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", background: C.bg, color: C.text, maxWidth: 1140, margin: "0 auto", paddingBottom: 32, minHeight: "100vh" }}>
+    <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", color: C.text, paddingBottom: 32 }}><div style={{ maxWidth: 1140, margin: "0 auto" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        html, body { background: #dde6f5; margin: 0; }
-        .ist-app { background: linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%); min-height: 100vh; }
+        html, body { background: linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%); margin: 0; min-height: 100vh; background-attachment: fixed; }
+        .ist-app { background: transparent; min-height: 100vh; }
+        .ist-app::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.5) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+        .ist-app > * { position: relative; z-index: 1; }
         .ist-2col { display: flex; flex-direction: column; }
         .ist-col-form { min-width: 0; }
         .ist-col-results { min-width: 0; }
@@ -1895,6 +1897,6 @@ export default function App() {
       </div>
 
 
-    </div>
+    </div></div>
   );
 }

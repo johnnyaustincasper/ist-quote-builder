@@ -795,14 +795,14 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
 
       // ── FIBERGLASS BOX ──
       var FG_TITLE="Johns Manville & CertainTeed";
-      var FG_SUB="Fiberglass Systems";
+      var FG_SUB="";
       var FG_INTRO="IST uses a mix of both brands based on availability. They are virtually identical in performance and quality:";
       var FG_BULLETS=["Formaldehyde-free with built-in kraft paper vapor retarder","Available in R-11 through R-49 for walls, floors, and attics","Class A fire rated — won't rot, mildew, or deteriorate","GREENGUARD Gold Certified for indoor air quality","Reduces sound transmission between rooms","Pre-cut batts for standard 16\" and 24\" framing"];
       var FG_FOOTER="Both meet the same ASTM C665 industry standards — no difference in protection regardless of which brand is installed.";
 
       // ── FOAM BOX ──
       var FM_TITLE="Enverge® Spray Foam Systems";
-      var FM_SUB="by Holcim — Spring, TX / Waukesha, WI";
+      var FM_SUB="";
       var FM_BULLETS=["OPEN CELL — EasySeal .5:  R-3.8/in · 0.5 lb/ft³ · air barrier at 3.5\" · UL Certified · ENERGY STAR® qualified","CLOSED CELL — NexSeal:  R-7.2/in (R-28 @ 4\") · 2.1 lb/ft³ · adds structural rigidity · built-in Class II vapor retarder at 1.6\"","Both: Class 1 (Class A) fire rated — Flame Spread <25, Smoke Developed <450","Both: Low VOC — CA Section 01350 compliant · Fungi resistant (ASTM C-1338)","Both: Service temp range: -40°F to 180°F (220°F intermittent)","Closed cell water absorption <0.3% by volume — moisture resistant"];
 
       function drawProductBox(bx,by,bw,title,sub,intro,bullets,footer){
@@ -818,8 +818,7 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
         var ty=by+9;
         doc.setFont("helvetica","bold");doc.setFontSize(8.5);doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);
         doc.text(title,bx+9,ty);ty+=10;
-        doc.setFont("helvetica","bold");doc.setFontSize(fs);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);
-        doc.text(sub,bx+9,ty);ty+=7;
+        if(sub){doc.setFont("helvetica","bold");doc.setFontSize(fs);doc.setTextColor(BLUE[0],BLUE[1],BLUE[2]);doc.text(sub,bx+9,ty);ty+=7;}
         if(intro){
           doc.setFont("helvetica","italic");doc.setFontSize(fs);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
           var il=doc.splitTextToSize(intro,bw-16);doc.text(il,bx+9,ty);ty+=il.length*lh+5;

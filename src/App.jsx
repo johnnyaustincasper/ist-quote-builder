@@ -145,7 +145,33 @@ async function loadPasscode(user) {
 /* ──────── UI COMPONENTS ──────── */
 
 var glassInput={width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.7)",border:"1px solid rgba(0,0,0,0.1)",borderRadius:8,color:"#0f172a",fontSize:15,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",transition:"border-color 0.15s, box-shadow 0.15s"};
-function Input(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput)} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} type={p.type||"number"} value={p.value} onChange={function(e){p.onChange(e.target.value);}} placeholder={p.placeholder} step={p.step}/></div>);}
+function Input(p){
+  var isNum=!p.type||p.type==="number";
+  var sp=React.useState(false),showPad=sp[0],setShowPad=sp[1];
+  function padPress(v){
+    var cur=String(p.value||"");
+    if(v==="⌫"){p.onChange(cur.slice(0,-1));}
+    else if(v==="."&&cur.includes(".")){return;}
+    else{p.onChange(cur+v);}
+  }
+  var padNums=["7","8","9","4","5","6","1","2","3",".","0","⌫"];
+  return(<div style={{position:"relative"}}>
+    <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label>
+    <input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{caretColor:isNum?"transparent":"auto"})}
+      onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";if(isNum)setShowPad(true);}}
+      onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}}
+      readOnly={isNum} inputMode={isNum?"none":undefined}
+      type={isNum?"text":p.type} value={p.value}
+      onChange={isNum?function(){}:function(e){p.onChange(e.target.value);}}
+      placeholder={p.placeholder} step={p.step}/>
+    {isNum&&showPad&&(<div onMouseDown={function(e){e.preventDefault();}} style={{position:"absolute",zIndex:999,top:"100%",left:0,marginTop:4,background:"rgba(255,255,255,0.97)",backdropFilter:"blur(16px)",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",border:"1px solid rgba(37,99,235,0.2)",padding:8,width:200}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:6}}>
+        {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"12px 0",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:v==="⌫"?"rgba(239,68,68,0.08)":"rgba(37,99,235,0.06)",color:v==="⌫"?"#dc2626":C.text,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"background 0.1s"}}>{v}</button>);})}
+      </div>
+      <button onMouseDown={function(e){e.preventDefault();setShowPad(false);}} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>Done</button>
+    </div>)}
+  </div>);}
+
 
 function AppSelect(p){return(<div><label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label><select className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{WebkitAppearance:"none"})} onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";}} onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";}} value={p.value} onChange={function(e){p.onChange(e.target.value);}}>{p.options.map(function(o){var v=typeof o==="string"?o:o.value;var l=typeof o==="string"?o:o.label;return(<option key={v} value={v} style={{background:"#fff",color:"#0f172a"}}>{l}</option>);})}</select></div>);}
 

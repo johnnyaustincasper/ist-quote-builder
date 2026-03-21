@@ -994,7 +994,7 @@ function QuoteBuilderSection(p){
 
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
-    <div className="ist-2col">
+    <div className="ist-2col" style={{alignItems:"flex-start"}}>
     <div className="ist-col-form">
     {/* OPTION TABS */}
     <div style={{padding:"0 16px 12px"}}>
@@ -1055,6 +1055,12 @@ function QuoteBuilderSection(p){
 
     {/* ADD MANUALLY */}
     <div style={{padding:"0 16px",marginBottom:16}}><MaterialTabs activeTab={matTab} setActiveTab={setMatTab}/><MeasurementForm key={"qb-"+matTab+"-"+activeIdx} tab={matTab} onAdd={addItem} hasPrice={true}/></div>
+    {/* PRINT/SHARE BUTTONS */}
+    {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
+      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Share Quote"}</GreenBtn>
+      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
+    </div>)}
     </div>{/* end col-form */}
     <div className="ist-col-results">
     {/* QUOTE TOTAL — pinned card */}
@@ -1160,13 +1166,6 @@ function QuoteBuilderSection(p){
         </div>
       </div>
       <button onClick={function(){if(confirm("Clear items from "+opt.name+"?"))updateOpt({items:[]});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear "+opt.name}</button>
-    </div>)}
-
-    {/* PRINT/DOWNLOAD — show when ANY option has items */}
-    {opts.some(function(o){return o.items.length>0;})&&(<div style={{padding:"0 16px 20px"}}>
-      <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Print Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser);}}>{"Share Quote"}</GreenBtn>
-      <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts);}}>{"Print Quote and Take Off"}</GreenBtn>
     </div>)}
 
     {opt.items.length===0&&unpriced.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Use Take Off to measure first, or add items manually"}</div></div>)}

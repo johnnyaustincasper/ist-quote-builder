@@ -1102,6 +1102,11 @@ function TakeOff(p){
         <div style={{padding:"0 16px"}}>
           <GreenBtn onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};printTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Print Take Off"}</GreenBtn>
           <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr||p.custAddr};shareTakeOff(cust,p.jobNotes,p.measurements,p.currentUser,p.quoteOpts);}}>{"Share Take Off"}</GreenBtn>
+          {p.measurements.length>0&&(<>
+            <GreenBtn mt={8} onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
+            <GreenBtn mt={8} onClick={p.onSendToWorkOrder}>{"Send to Work Order"}</GreenBtn>
+            <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
+          </>)}
         </div>
       </div>
 
@@ -1136,9 +1141,6 @@ function TakeOff(p){
               </div>);})}
             </div>
           </div>)}
-          <GreenBtn onClick={p.onSendToQuote}>{"Send to Quote Builder"}</GreenBtn>
-          <GreenBtn onClick={p.onSendToWorkOrder} mt={8}>{"Send to Work Order"}</GreenBtn>
-          <button onClick={function(){if(confirm("Clear all measurements?"))p.setMeasurements([]);}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear All"}</button>
         </div>)}
         {p.measurements.length===0&&(<div style={{textAlign:"center",padding:"40px 16px",color:C.dim}}><div style={{fontSize:14}}>{"Start measuring — add locations above"}</div></div>)}
         </div>

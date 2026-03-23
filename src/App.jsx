@@ -1465,19 +1465,26 @@ function SavedJobsPanel(p) {
 
   function handleSave() {
     var name = saveName.trim();
-    if (!name) return;
+    if (!name) { setStatus("⚠️ Enter a job name first."); return; }
+    setStatus("Saving...");
     var jobData = {
       custName: p.custName, custAddr: p.custAddr, custPhone: p.custPhone, custEmail: p.custEmail, jobAddr: p.jobAddr, jobNotes: p.jobNotes,
       measurements: p.measurements, quoteOpts: p.quoteOpts, importedItems: p.importedItems, section: p.section,
     };
     saveJob(name, p.currentUser, jobData).then(function(ok) {
       if (ok) {
-        setStatus("Saved: " + name);
+        setStatus("✓ Saved: " + name);
         setSaveName("");
         setShowSave(false);
         refreshJobs();
-        setTimeout(function() { setStatus(""); }, 2000);
+        setTimeout(function() { setStatus(""); }, 3000);
+      } else {
+        setStatus("❌ Save failed — check your connection and try again.");
+        setTimeout(function() { setStatus(""); }, 4000);
       }
+    }).catch(function(e) {
+      setStatus("❌ Error: " + (e.message || "Unknown error"));
+      setTimeout(function() { setStatus(""); }, 4000);
     });
   }
 
@@ -1504,7 +1511,7 @@ function SavedJobsPanel(p) {
     deleteJob(job.id).then(function() { refreshJobs(); });
   }
 
-  var hasWork = p.measurements.length > 0 || p.quoteOpts.some(function(o){return o.items.length>0;});
+  var hasWork = p.measurements.length > 0 || p.quoteOpts.some(function(o){return o.items.length>0;}) || (p.custName && p.custName.trim().length > 0) || (p.importedItems && p.importedItems.length > 0);
 
   return (
     <div style={{ padding: "0 16px 16px" }}>

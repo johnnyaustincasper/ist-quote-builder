@@ -1209,6 +1209,8 @@ function QuoteBuilderSection(p){
   function removeOption(idx){if(opts.length<=1)return;setOpts(function(prev){return prev.filter(function(_,i){return i!==idx;});});if(activeIdx>=opts.length-1)setActiveIdx(Math.max(0,opts.length-2));}
 
   var qs1=useState(false),locOpen=qs1[0],setLocOpen=qs1[1];
+  var cid1=useState(""),customDesc=cid1[0],setCustomDesc=cid1[1];
+  var cid2=useState(""),customPrice=cid2[0],setCustomPrice=cid2[1];
   var accordionBtn=function(label,open,setOpen,badge){return(<button onClick={function(){setOpen(!open);}} style={{width:"100%",padding:"10px 14px",background:"#1e293b",display:"flex",justifyContent:"space-between",alignItems:"center",borderRadius:open?"8px 8px 0 0":"8px",border:"none",cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
     <span style={{fontSize:12,fontWeight:800,color:"#fff",textTransform:"uppercase",letterSpacing:0.8}}>{label}</span>
     <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1423,30 +1425,20 @@ function QuoteBuilderSection(p){
                 <button onClick={function(){updateOpt({customItems:(opt.customItems||[]).filter(function(x){return x.id!==ci.id;}),overrideTotal:""});}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"✕"}</button>
               </div>
             );})}
-            {(function(){
-              var cs1=useState(""),desc=cs1[0],setDesc=cs1[1];
-              var cs2=useState(""),price=cs2[0],setPrice=cs2[1];
-              function addCustom(){
-                var d=desc.trim();var pr=parseFloat(price)||0;
-                if(!d||pr<=0)return;
-                updateOpt({customItems:(opt.customItems||[]).concat([{id:Date.now()+Math.random(),description:d,price:pr}]),overrideTotal:""});
-                setDesc("");setPrice("");
-              }
-              return React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
-                React.createElement("input",{type:"text",value:desc,onChange:function(e){setDesc(e.target.value);},placeholder:"e.g. Treat top of sheetrock with Sterifab",
-                  onKeyDown:function(e){if(e.key==="Enter"&&price)addCustom();},
-                  style:{width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box"}}),
-                React.createElement("div",{style:{display:"flex",gap:6}},
-                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,flex:1}},
-                    React.createElement("span",{style:{fontSize:13,color:C.text,fontWeight:600}},"$"),
-                    React.createElement("input",{type:"number",value:price,onChange:function(e){setPrice(e.target.value);},placeholder:"Price",
-                      onKeyDown:function(e){if(e.key==="Enter"&&desc.trim())addCustom();},
-                      style:{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}})
-                  ),
-                  React.createElement("button",{onClick:addCustom,style:{padding:"8px 16px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}},"Add")
-                )
-              );
-            })()}
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <input type="text" value={customDesc} onChange={function(e){setCustomDesc(e.target.value);}} placeholder="e.g. Treat top of sheetrock with Sterifab"
+                onKeyDown={function(e){if(e.key==="Enter"&&customPrice){var d=customDesc.trim();var pr=parseFloat(customPrice)||0;if(d&&pr>0){updateOpt({customItems:(opt.customItems||[]).concat([{id:Date.now()+Math.random(),description:d,price:pr}]),overrideTotal:""});setCustomDesc("");setCustomPrice("");}}} }
+                style={{width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box"}}/>
+              <div style={{display:"flex",gap:6}}>
+                <div style={{display:"flex",alignItems:"center",gap:4,flex:1}}>
+                  <span style={{fontSize:13,color:C.text,fontWeight:600}}>{"$"}</span>
+                  <input type="number" value={customPrice} onChange={function(e){setCustomPrice(e.target.value);}} placeholder="Price"
+                    style={{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}/>
+                </div>
+                <button onClick={function(){var d=customDesc.trim();var pr=parseFloat(customPrice)||0;if(!d||pr<=0)return;updateOpt({customItems:(opt.customItems||[]).concat([{id:Date.now()+Math.random(),description:d,price:pr}]),overrideTotal:""});setCustomDesc("");setCustomPrice("");}}
+                  style={{padding:"8px 16px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
+              </div>
+            </div>
           </div>
 
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>

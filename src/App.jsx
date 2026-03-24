@@ -399,8 +399,9 @@ function MeasurementForm(p){
             {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","1.5\"","2\"","2.5\"","3\"","3.5\"","4\"","4.5\"","5\"","5.5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
             {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
             {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
+            {id:"removal",label:"Removal",value:"Removal",sub:null,isRemoval:true},
           ];
-          var btnStyle=function(active){return{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"};};
+          var btnStyle=function(active,rem){return{padding:"8px 13px",borderRadius:8,border:active?(rem?"2px solid "+C.danger:"2px solid "+C.accent):"1px solid rgba(0,0,0,0.08)",background:active?(rem?"rgba(220,38,38,0.1)":"rgba(37,99,235,0.1)"):"rgba(255,255,255,0.6)",color:active?(rem?C.danger:C.accent):C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",backdropFilter:"blur(8px)",boxShadow:active?(rem?"0 0 0 3px rgba(220,38,38,0.1)":"0 0 0 3px rgba(37,99,235,0.1)"):"0 1px 3px rgba(0,0,0,0.06)"};};
           var matPulse=stepCurrent===2;
           var activeBtn=BTNS.find(function(b){return b.id===tmpMat;});
           var subPulse=matPulse&&activeBtn&&activeBtn.sub&&!matNote.trim();
@@ -412,7 +413,8 @@ function MeasurementForm(p){
                 return React.createElement("button",{key:b.id,className:shouldPulse||active?"ist-pulse":"",onClick:function(){
                   setTmpMat(b.id);
                   if(b.value){setMatNote(b.value);}else{setMatNote("");}
-                },style:btnStyle(active)},b.label);
+                  setIsRemoval(!!b.isRemoval);
+                },style:btnStyle(active,b.isRemoval)},b.label);
               })
             ),
             activeBtn&&activeBtn.sub&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:4,paddingLeft:8,borderLeft:"3px solid "+C.accent}},
@@ -434,7 +436,7 @@ function MeasurementForm(p){
         <div>{"Total: "}<span style={{color:C.text,fontWeight:600}}>{fin.toLocaleString()+" sq ft"}</span>{needsPitch&&sqft!==adj&&(<span>{" (adj. from "+Math.round(sqft)+" w/ "+pitch+")"}</span>)}</div>
         {hp&&(parseFloat(price)||0)>0&&(<div>{"Line Total: "}<span style={{color:C.accent,fontWeight:700}}>{"$"+Math.ceil(fin*(parseFloat(price)||0)).toLocaleString()+".00"}</span></div>)}
       </div>)}
-      {!hp&&fin>0&&(<label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",marginBottom:8,cursor:"pointer"}}>
+      {!hp&&fin>0&&false&&(<label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",marginBottom:8,cursor:"pointer"}}>
         <input type="checkbox" checked={isRemoval} onChange={function(e){setIsRemoval(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
         <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Removal"}</span>
       </label>)}

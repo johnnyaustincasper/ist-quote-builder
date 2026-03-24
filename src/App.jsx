@@ -738,6 +738,7 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
       // Rows
       var allItems=sortedItems.slice();
       if(opt.energySeal)allItems.push({description:"Energy seal and plates per city code."});
+      (opt.customItems||[]).forEach(function(ci){allItems.push({description:ci.description,customPrice:parseFloat(ci.price)||0});});
       allItems.forEach(function(item,i){
         if(y>710){doc.addPage();y=40;}
         doc.setFont("helvetica","normal");doc.setFontSize(9.5);
@@ -763,7 +764,8 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
       var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
       var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
       var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
-      var sub=lineTotal+el+tc+es+du;
+      var ciTotal=(opt.customItems||[]).reduce(function(s,x){return s+(parseFloat(x.price)||0);},0);
+      var sub=lineTotal+el+tc+es+du+ciTotal;
       var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
 
       y+=8;
@@ -998,13 +1000,15 @@ function _buildQuoteHtml(customer,opts,salesman){
     });
     var rows=sortedItems.map(function(item,i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+item.description+'</td></tr>';}).join("");
     var energySealRow=opt.energySeal?'<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(opt.items.length+1)+'</td><td style="padding:6px 8px;font-size:13px">Energy seal and plates per city code.</td></tr>':"";
+    var customRows=(opt.customItems||[]).map(function(ci,ci_i){return '<tr style="border-bottom:1px solid #ddd"><td style="padding:6px 8px;font-size:13px">'+(opt.items.length+(opt.energySeal?1:0)+ci_i+1)+'</td><td style="padding:6px 8px;font-size:13px">'+ci.description+'</td></tr>';}).join("");
     var lineTotal=opt.items.reduce(function(s,i){return s+i.total;},0);
     var psoCredit=((opt.pso||false)?600:0)+((opt.psoKw||false)?525:0);
     var el=opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0;
     var tc=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
     var es=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
     var du=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
-    var sub=lineTotal+el+tc+es+du;
+    var ciTotal=(opt.customItems||[]).reduce(function(s,x){return s+(parseFloat(x.price)||0);},0);
+    var sub=lineTotal+el+tc+es+du+ciTotal;
     var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
     var header=optsWithItems.length>1?'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
@@ -1021,7 +1025,7 @@ function _buildQuoteHtml(customer,opts,salesman){
     }else{
       totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"20":"0")+'px"><div style="width:260px"><div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div></div></div>';
     }
-    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><thead><tr style="background:#111"><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+'</tbody></table>'+totalHtml;
+    return header+'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><thead><tr style="background:#111"><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">#</th><th style="padding:7px 8px;font-size:11px;font-weight:700;text-transform:uppercase;text-align:left;color:#fff">Description</th></tr></thead><tbody>'+rows+energySealRow+customRows+'</tbody></table>'+totalHtml;
   }).join("");
   return '<div style="font-family:Arial,sans-serif;color:#1a1a1a;padding:24px;max-width:100%;margin:0;width:100%;box-sizing:border-box">'+
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:3px solid #222"><div><h1 style="font-size:22px;font-weight:800;color:#111;margin-bottom:3px">'+COMPANY.name+'</h1><p style="font-size:12px;color:#666">'+COMPANY.tagline+'</p><p style="font-size:12px;color:#666">'+COMPANY.phone+'</p></div><div style="text-align:right"><div style="font-size:19px;font-weight:700;color:#111">QUOTE</div><div style="font-size:12px;color:#666;margin-top:3px">'+qn+'</div><div style="font-size:12px;color:#666">'+today+'</div></div></div>'+
@@ -1153,7 +1157,7 @@ function TakeOff(p){
 
 /* ══════════ QUOTE BUILDER ══════════ */
 
-function newOption(name){return{name:name,items:[],pso:false,psoKw:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",dumpster:false,dumpsterAmt:"",overrideTotal:""};}
+function newOption(name){return{name:name,items:[],pso:false,psoKw:false,extraLabor:false,extraLaborAmt:"",tripCharge:false,tripChargeAmt:"",energySeal:false,energySealAmt:"",dumpster:false,dumpsterAmt:"",customItems:[],overrideTotal:""};}
 
 function QuoteBuilderSection(p){
   var s1=useState("fiberglass"),matTab=s1[0],setMatTab=s1[1];
@@ -1189,7 +1193,8 @@ function QuoteBuilderSection(p){
   var tripCharge=opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0;
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
   var dumpster=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
-  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal+dumpster;
+  var customItemsTotal=(opt.customItems||[]).reduce(function(s,ci){return s+(parseFloat(ci.price)||0);},0);
+  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal+dumpster+customItemsTotal;
   var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 
@@ -1406,6 +1411,44 @@ function QuoteBuilderSection(p){
               </div>
             )}
           </label>
+          {/* Custom Line Items */}
+          <div style={{borderTop:"1px solid "+C.borderLight,paddingTop:10,marginTop:2}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{"+ Custom Line Items"}</div>
+            {(opt.customItems||[]).map(function(ci){return(
+              <div key={ci.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"8px 10px",background:C.accentBg,borderRadius:6,border:"1px solid "+C.borderLight}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,color:C.text,fontWeight:500}}>{ci.description}</div>
+                  <div style={{fontSize:12,color:C.accent,fontWeight:700,marginTop:2}}>{"$"+(parseFloat(ci.price)||0).toLocaleString()}</div>
+                </div>
+                <button onClick={function(){updateOpt({customItems:(opt.customItems||[]).filter(function(x){return x.id!==ci.id;}),overrideTotal:""});}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"✕"}</button>
+              </div>
+            );})}
+            {(function(){
+              var cs1=useState(""),desc=cs1[0],setDesc=cs1[1];
+              var cs2=useState(""),price=cs2[0],setPrice=cs2[1];
+              function addCustom(){
+                var d=desc.trim();var pr=parseFloat(price)||0;
+                if(!d||pr<=0)return;
+                updateOpt({customItems:(opt.customItems||[]).concat([{id:Date.now()+Math.random(),description:d,price:pr}]),overrideTotal:""});
+                setDesc("");setPrice("");
+              }
+              return React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+                React.createElement("input",{type:"text",value:desc,onChange:function(e){setDesc(e.target.value);},placeholder:"e.g. Treat top of sheetrock with Sterifab",
+                  onKeyDown:function(e){if(e.key==="Enter"&&price)addCustom();},
+                  style:{width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box"}}),
+                React.createElement("div",{style:{display:"flex",gap:6}},
+                  React.createElement("div",{style:{display:"flex",alignItems:"center",gap:4,flex:1}},
+                    React.createElement("span",{style:{fontSize:13,color:C.text,fontWeight:600}},"$"),
+                    React.createElement("input",{type:"number",value:price,onChange:function(e){setPrice(e.target.value);},placeholder:"Price",
+                      onKeyDown:function(e){if(e.key==="Enter"&&desc.trim())addCustom();},
+                      style:{flex:1,padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}})
+                  ),
+                  React.createElement("button",{onClick:addCustom,style:{padding:"8px 16px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}},"Add")
+                )
+              );
+            })()}
+          </div>
+
           <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
             <input type="checkbox" checked={p.showProductInfo||false} onChange={function(e){p.setShowProductInfo(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Product Information"}</span>

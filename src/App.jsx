@@ -886,11 +886,11 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,56,"F");
     doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,52,W,4,"F");
     doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(16);doc.setFont("helvetica","bold");
-    doc.text("INSULATION SERVICES OF TULSA",M,22);
+    doc.text("INSULATION SERVICES OF TULSA",M,30);
     doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
-    doc.text((customer.name||"")+(customer.jobAddress||customer.address?" — "+(customer.jobAddress||customer.address):""),M,38);
+    doc.text((customer.name||"")+(customer.jobAddress||customer.address?" — "+(customer.jobAddress||customer.address):""),M,46);
     doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(9);doc.setFont("helvetica","bold");
-    doc.text("TAKE OFF  •  "+today,W-M,30,{align:"right"});
+    doc.text("TAKE OFF  •  "+today,W-M,38,{align:"right"});
 
     var y=72;
 

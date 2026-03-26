@@ -958,6 +958,22 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
       });
     }
 
+    // ── JOB NOTES ──
+    if(jobNotes&&jobNotes.trim()){
+      y+=8;
+      var noteLines=doc.splitTextToSize(jobNotes.trim(),RW-24);
+      var noteBlockH=noteLines.length*13+20;
+      if(y+noteBlockH>720){doc.addPage();y=40;}
+      doc.setFillColor(249,249,249);doc.rect(x,y,RW,noteBlockH,"F");
+      doc.setDrawColor(200,210,230);doc.setLineWidth(0.5);doc.rect(x,y,RW,noteBlockH,"S");
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(x,y,3,noteBlockH,"F");
+      doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFontSize(8);doc.setFont("helvetica","bold");
+      doc.text("JOB NOTES",x+10,y+12);
+      doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+      doc.text(noteLines,x+10,y+24);
+      y+=noteBlockH+6;
+    }
+
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
     if(outputMode==="save"){doc.save(filename);return null;}
     return doc.output("blob");

@@ -1274,7 +1274,7 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quote
 
 /* ══════════ TAKE OFF ══════════ */
 
-function newMeasureModeRow(){return{id:Date.now()+Math.random(),area:"flat_ceiling",customArea:"",material:"Blown Fiberglass",measure:"",notes:"",sqft:"",rate:""};}
+function newMeasureModeRow(){return{id:Date.now()+Math.random(),area:"flat_ceiling",customArea:"",material:"Blown Fiberglass",height:"",centers:"",measure:"",notes:"",sqft:"",rate:""};}
 function measureModeNumber(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}
 function measureModeSqft(row){
   var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
@@ -1294,7 +1294,14 @@ function measureModeSqft(row){
       total+=linear*(cavity===24?2:1.25);
     }
     else if(nums.length>=2)total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);
-    else total+=parseFloat(nums[0])||0;
+    else {
+      var linearOnly=parseFloat(nums[0])||0;
+      var rowCenters=parseFloat(row.centers)||0;
+      var rowHeight=measureModeNumber(row.height);
+      if(rowCenters===16)total+=linearOnly*(rowHeight>0?rowHeight:1.25);
+      else if(rowCenters===24)total+=linearOnly*(rowHeight>0?rowHeight:2);
+      else total+=linearOnly;
+    }
   });
   return Math.round(total);
 }
@@ -1335,12 +1342,18 @@ function MeasureMode(p){
         {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}
       </div>
     </div>
-    <div style={{overflowX:"auto",borderRadius:10,border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.35)"}}><div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(78px,0.72fr) minmax(96px,0.9fr) minmax(170px,1.7fr) minmax(58px,0.58fr) minmax(54px,0.52fr) minmax(64px,0.62fr) 34px",minWidth:isFullScreen?760:0,borderRadius:10,overflow:"hidden"}}>
-      {["Area","Material","Measurement / Notes","Sq Ft","Rate","Price",""] .map(function(h){return(<div key={h} style={Object.assign({},cell,{background:"rgba(37,99,235,0.09)",fontSize:10,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.06em"})}>{h}</div>);})}
+    <div style={{overflowX:"auto",borderRadius:10,border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.35)"}}><div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(78px,0.72fr) minmax(96px,0.9fr) minmax(92px,0.72fr) minmax(170px,1.65fr) minmax(58px,0.55fr) minmax(54px,0.5fr) minmax(64px,0.6fr) 34px",minWidth:isFullScreen?760:0,borderRadius:10,overflow:"hidden"}}>
+      {["Area","Material","Height / Centers","Measurement / Notes","Sq Ft","Rate","Price",""] .map(function(h){return(<div key={h} style={Object.assign({},cell,{background:"rgba(37,99,235,0.09)",fontSize:10,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.06em"})}>{h}</div>);})}
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<React.Fragment key={r.id}>
         <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}</div>
         <div style={cell}><select value={r.material} onChange={function(e){updateRow(r.id,{material:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12})}>{materialOptions.map(function(m){return <option key={m} value={m}>{m}</option>;})}</select></div>
-        <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="12x10 + 8x9 or 40@16" inputMode="decimal" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>
+        <div style={cell}>
+          <input value={r.height} onChange={function(e){updateRow(r.id,{height:e.target.value});}} placeholder="Ht" inputMode="decimal" style={Object.assign({},inputBase,{fontSize:12,fontWeight:800})}/>
+          <select value={r.centers} onChange={function(e){updateRow(r.id,{centers:e.target.value});}} style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}>
+            <option value="">Sq Ft</option><option value="16">16" OC</option><option value="24">24" OC</option>
+          </select>
+        </div>
+        <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="40 or 12x10 + 8x9" inputMode="decimal" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>
         <div style={cell}><input value={r.sqft} onChange={function(e){updateRow(r.id,{sqft:e.target.value});}} placeholder={sqft?String(sqft):"0"} inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right",fontWeight:800,color:C.accent})}/></div>
         <div style={cell}><input value={r.rate} onChange={function(e){updateRow(r.id,{rate:e.target.value});}} placeholder="0" inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right"})}/></div>
         <div style={Object.assign({},cell,{textAlign:"right",fontWeight:800,fontSize:13,color:C.text})}>{price>0?"$"+Math.ceil(price).toLocaleString():"—"}</div>

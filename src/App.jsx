@@ -1274,11 +1274,11 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quote
 
 /* ══════════ TAKE OFF ══════════ */
 
-function newMeasureModeRow(){return{id:Date.now()+Math.random(),area:"flat_ceiling",customArea:"",material:"Blown Fiberglass",height:"",centers:"",measure:"",notes:"",sqft:"",rate:""};}
+function newMeasureModeEntry(){return{id:Date.now()+Math.random(),height:"",centers:"",measure:""};}
+function newMeasureModeRow(){var entry=newMeasureModeEntry();return{id:Date.now()+Math.random(),area:"flat_ceiling",customArea:"",material:"Blown Fiberglass",height:"",centers:"",measure:"",entries:[entry],notes:"",sqft:"",rate:""};}
 function measureModeNumber(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}
-function measureModeSqft(row){
-  var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
-  var text=String(row.measure||"").toLowerCase().replace(/×/g,"x").replace(/by/g,"x");
+function measureModeEntrySqft(row,entry){
+  var text=String((entry&&entry.measure)!=null?entry.measure:row.measure||"").toLowerCase().replace(/×/g,"x").replace(/by/g,"x");
   if(!text.trim())return 0;
   var total=0;
   text.split(/[\n,;+]+/).forEach(function(part){
@@ -1296,14 +1296,19 @@ function measureModeSqft(row){
     else if(nums.length>=2)total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);
     else {
       var linearOnly=parseFloat(nums[0])||0;
-      var rowCenters=parseFloat(row.centers)||0;
-      var rowHeight=measureModeNumber(row.height);
+      var rowCenters=parseFloat((entry&&entry.centers)!=null?entry.centers:row.centers)||0;
+      var rowHeight=measureModeNumber((entry&&entry.height)!=null?entry.height:row.height);
       if(rowCenters===16)total+=linearOnly*(rowHeight>0?rowHeight*1.25:1.25);
       else if(rowCenters===24)total+=linearOnly*(rowHeight>0?rowHeight*2:2);
       else total+=linearOnly;
     }
   });
   return Math.round(total);
+}
+function measureModeSqft(row){
+  var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
+  var entries=row.entries&&row.entries.length?row.entries:[row];
+  return entries.reduce(function(sum,e){return sum+measureModeEntrySqft(row,e);},0);
 }
 function MeasureMode(p){
   var isFullScreen=!!p.fullScreen;
@@ -1313,6 +1318,9 @@ function MeasureMode(p){
   function updateRow(id,changes){setRows(function(prev){return prev.map(function(r){return r.id===id?Object.assign({},r,changes):r;});});}
   function addRow(){setRows(function(prev){return prev.concat([newMeasureModeRow()]);});}
   function removeRow(id){setRows(function(prev){return prev.length<=1?prev:prev.filter(function(r){return r.id!==id;});});}
+  function updateEntry(rowId,entryId,changes){setRows(function(prev){return prev.map(function(r){return r.id===rowId?Object.assign({},r,{entries:(r.entries||[]).map(function(e){return e.id===entryId?Object.assign({},e,changes):e;})}):r;});});}
+  function addEntry(rowId){setRows(function(prev){return prev.map(function(r){return r.id===rowId?Object.assign({},r,{entries:(r.entries&&r.entries.length?r.entries:[]).concat([newMeasureModeEntry()])}):r;});});}
+  function removeEntry(rowId,entryId){setRows(function(prev){return prev.map(function(r){if(r.id!==rowId)return r;var entries=(r.entries||[]).filter(function(e){return e.id!==entryId;});return Object.assign({},r,{entries:entries.length?entries:[newMeasureModeEntry()]});});});}
   function clearSavedRows(savedIds){setRows(function(prev){var left=prev.filter(function(r){return savedIds.indexOf(r.id)<0;});return left.length?left:[newMeasureModeRow()];});}
   function saveRows(){
     var savedIds=[];var items=[];
@@ -1322,7 +1330,7 @@ function MeasureMode(p){
       var locLabel=loc.id==="custom"?(r.customArea.trim()||"Custom"):loc.label;
       var rate=measureModeNumber(r.rate);var isRemoval=r.material==="Removal";
       var matNote=isRemoval?"Removal":(r.material||"Material TBD");
-      var measureLabel=(r.measure||r.sqft||"").trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
+      var measureLabel=((r.entries&&r.entries.length)?r.entries.map(function(e){return [e.height,e.centers,e.measure].filter(Boolean).join("/");}).filter(Boolean).join(" + "):(r.measure||r.sqft||"")).trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
       items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measureNotes:noteLabel||null});
       savedIds.push(r.id);
     });
@@ -1349,10 +1357,14 @@ function MeasureMode(p){
           <label style={{fontSize:10,fontWeight:900,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em"}}>Area<select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:800}}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select></label>
           <label style={{fontSize:10,fontWeight:900,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em"}}>Material<select value={r.material} onChange={function(e){updateRow(r.id,{material:e.target.value});}} style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8}}>{materialOptions.map(function(m){return <option key={m} value={m}>{m}</option>;})}</select></label>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"78px 88px 1fr",gap:8,alignItems:"end"}}>
-          <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Height<input value={r.height} onChange={function(e){updateRow(r.id,{height:e.target.value});}} placeholder="Ht" inputMode="decimal" style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:800}}/></label>
-          <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Centers<select value={r.centers} onChange={function(e){updateRow(r.id,{centers:e.target.value});}} style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8}}><option value="">—</option><option value="16">16&quot;</option><option value="24">24&quot;</option></select></label>
-          <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Measurement<input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="40 + 22 + 18" inputMode="text" style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:900}}/></label>
+        <div style={{display:"grid",gap:6}}>
+          {(r.entries&&r.entries.length?r.entries:[newMeasureModeEntry()]).map(function(e,ei){return <div key={e.id} style={{display:"grid",gridTemplateColumns:"64px 82px 1fr 28px",gap:7,alignItems:"end"}}>
+            <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>{ei===0?"Height":""}<input value={e.height} onChange={function(ev){updateEntry(r.id,e.id,{height:ev.target.value});}} placeholder="Ht" inputMode="decimal" style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:800}}/></label>
+            <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>{ei===0?"Centers":""}<select value={e.centers} onChange={function(ev){updateEntry(r.id,e.id,{centers:ev.target.value});}} style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8}}><option value="">—</option><option value="16">16&quot;</option><option value="24">24&quot;</option></select></label>
+            <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>{ei===0?"Measurement":""}<input value={e.measure} onChange={function(ev){updateEntry(r.id,e.id,{measure:ev.target.value});}} placeholder="40 + 22 + 18" inputMode="text" style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:900}}/></label>
+            <button onClick={function(){removeEntry(r.id,e.id);}} style={{width:28,height:28,border:"none",borderRadius:999,background:"rgba(220,38,38,0.07)",color:C.danger,fontWeight:900,visibility:(r.entries||[]).length>1?"visible":"hidden"}}>×</button>
+          </div>;})}
+          <button onClick={function(){addEntry(r.id);}} style={{justifySelf:"start",border:"1px dashed rgba(37,99,235,0.32)",background:"rgba(37,99,235,0.06)",color:C.accent,borderRadius:8,padding:"7px 10px",fontSize:11,fontWeight:900,textTransform:"uppercase"}}>+ Measurement</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 34px",gap:8,alignItems:"end",marginTop:8}}>
           <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Sq Ft<input value={r.sqft} onChange={function(e){updateRow(r.id,{sqft:e.target.value});}} placeholder={sqft?String(sqft):"0"} inputMode="decimal" style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,textAlign:"right",fontWeight:900,color:C.accent}}/></label>

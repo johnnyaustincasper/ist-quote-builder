@@ -1290,6 +1290,7 @@ function measureModeSqft(row){
   return Math.round(total);
 }
 function MeasureMode(p){
+  var isFullScreen=!!p.fullScreen;
   var s1=useState([newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow()]),rows=s1[0],setRows=s1[1];
   var locationOptions=LOCATIONS.map(function(l){return{value:l.id,label:l.short||l.label};});
   var materialOptions=ALL_MATERIALS.concat(["Removal"]);
@@ -1317,12 +1318,15 @@ function MeasureMode(p){
   var totalPrice=rows.reduce(function(s,r){return s+(measureModeSqft(r)*measureModeNumber(r.rate));},0);
   var cell={border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.66)",padding:6,minWidth:0};
   var inputBase={width:"100%",border:"none",background:"transparent",outline:"none",fontFamily:"'Inter',sans-serif",fontSize:13,color:C.text,minWidth:0};
-  return(<div style={{margin:"0 16px 18px",padding:12,borderRadius:14,border:"1px solid rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.62)",boxShadow:C.shadow,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap"}}>
+  return(<div className={isFullScreen?"ist-measure-fullscreen":""} style={isFullScreen?{position:"fixed",inset:0,zIndex:9999,background:"linear-gradient(135deg,#e8eef8 0%,#dde6f5 45%,#cdd9f0 100%)",padding:"max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom))",overflow:"auto"}:{margin:"0 16px 18px",padding:12,borderRadius:14,border:"1px solid rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.62)",boxShadow:C.shadow,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap",position:isFullScreen?"sticky":"static",top:0,zIndex:3,background:isFullScreen?"rgba(232,238,248,0.92)":"transparent",backdropFilter:isFullScreen?"blur(14px)":"none",padding:isFullScreen?"8px 2px 10px":0}}>
       <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Use 12x10, 8x9 + 6x4, or type Sq Ft directly.</div></div>
-      <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}</div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
+        <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}</div>
+        {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}
+      </div>
     </div>
-    <div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(78px,0.72fr) minmax(96px,0.9fr) minmax(170px,1.7fr) minmax(58px,0.58fr) minmax(54px,0.52fr) minmax(64px,0.62fr) 34px",borderRadius:10,overflow:"hidden",border:"1px solid rgba(0,0,0,0.08)"}}>
+    <div style={{overflowX:"auto",borderRadius:10,border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.35)"}}><div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(78px,0.72fr) minmax(96px,0.9fr) minmax(170px,1.7fr) minmax(58px,0.58fr) minmax(54px,0.52fr) minmax(64px,0.62fr) 34px",minWidth:isFullScreen?760:0,borderRadius:10,overflow:"hidden"}}>
       {["Area","Material","Measurement / Notes","Sq Ft","Rate","Price",""] .map(function(h){return(<div key={h} style={Object.assign({},cell,{background:"rgba(37,99,235,0.09)",fontSize:10,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.06em"})}>{h}</div>);})}
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<React.Fragment key={r.id}>
         <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}</div>
@@ -1333,8 +1337,8 @@ function MeasureMode(p){
         <div style={Object.assign({},cell,{textAlign:"right",fontWeight:800,fontSize:13,color:C.text})}>{price>0?"$"+Math.ceil(price).toLocaleString():"—"}</div>
         <div style={Object.assign({},cell,{display:"flex",alignItems:"center",justifyContent:"center"})}><button onClick={function(){removeRow(r.id);}} style={{border:"none",background:"rgba(220,38,38,0.08)",color:C.danger,borderRadius:999,width:24,height:24,cursor:"pointer",fontWeight:900}}>×</button></div>
       </React.Fragment>);})}
-    </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}><button onClick={addRow} style={{padding:"11px",borderRadius:8,border:"1px solid "+C.border,background:"rgba(255,255,255,0.55)",color:C.textSec,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>+ Row</button><button onClick={saveRows} style={{padding:"11px",borderRadius:8,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.12)",color:C.accent,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>Save Rows to Take Off</button></div>
+    </div></div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10,position:isFullScreen?"sticky":"static",bottom:0,zIndex:3,background:isFullScreen?"rgba(232,238,248,0.94)":"transparent",padding:isFullScreen?"10px 0 0":0}}><button onClick={addRow} style={{padding:"11px",borderRadius:8,border:"1px solid "+C.border,background:"rgba(255,255,255,0.55)",color:C.textSec,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>+ Row</button><button onClick={saveRows} style={{padding:"11px",borderRadius:8,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.12)",color:C.accent,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>Save Rows to Take Off</button></div>
   </div>);
 }
 
@@ -1358,7 +1362,7 @@ function TakeOff(p){
     <div style={{padding:"0 16px 12px"}}>
       <button onClick={function(){setMeasureMode(!measureMode);}} style={{width:"100%",padding:"13px 16px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:measureMode?C.accent:"rgba(37,99,235,0.12)",color:measureMode?"#fff":C.accent,fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.08em",boxShadow:"0 3px 16px rgba(37,99,235,0.14)"}}>{measureMode?"Close Measure Mode":"Measure Mode"}</button>
     </div>
-    {measureMode&&(<MeasureMode setMeasurements={p.setMeasurements}/>)}
+    {measureMode&&(<MeasureMode fullScreen onClose={function(){setMeasureMode(false);}} setMeasurements={p.setMeasurements}/>)}
     {/* Row 1: Location (left) | Measurement inputs (right) */}
     <div className="ist-2col" style={{marginBottom:0}}>
       <div className="ist-col-form">

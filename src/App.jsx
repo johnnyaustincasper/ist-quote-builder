@@ -991,15 +991,14 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     if(quoteOpts&&quoteOpts.length>0&&quoteOpts.some(function(o){return o.items&&o.items.length>0;})){
       var optsWithItems=quoteOpts.filter(function(o){return o.items&&o.items.length>0;});
       // New page for this section
-      doc.addPage();y=40;
+      doc.addPage();y=70;
       // Section title bar
-      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,32,"F");
-      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,30,W,3,"F");
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,58,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,54,W,4,"F");
       doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(13);doc.setFont("helvetica","bold");
-      doc.text("PRICING BREAKDOWN",M,21);
+      doc.text("PRICING BREAKDOWN",M,38);
       doc.setFontSize(8.5);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
-      doc.text("MANAGER COPY — NOT FOR CUSTOMER",W-M,21,{align:"right"});
-      y=46;
+      doc.text("MANAGER COPY — NOT FOR CUSTOMER",W-M,38,{align:"right"});
 
       optsWithItems.forEach(function(opt,oi){
         if(oi>0){y+=10;}

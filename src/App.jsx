@@ -896,16 +896,16 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     var NAVY=[15,30,70],BLUE=[37,99,235],LIGHTBLUE=[219,234,254],GRAY=[100,116,139],WHITE=[255,255,255],BLACK=[15,23,42];
 
     // ── HEADER ──
-    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,56,"F");
-    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,52,W,4,"F");
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,64,"F");
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,60,W,4,"F");
     doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(16);doc.setFont("helvetica","bold");
-    doc.text("INSULATION SERVICES OF TULSA",M,30);
+    doc.text("INSULATION SERVICES OF TULSA",M,38);
     doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
-    doc.text((customer.name||"")+(customer.jobAddress||customer.address?" — "+(customer.jobAddress||customer.address):""),M,46);
+    doc.text((customer.name||"")+(customer.jobAddress||customer.address?" — "+(customer.jobAddress||customer.address):""),M,54);
     doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);doc.setFontSize(9);doc.setFont("helvetica","bold");
-    doc.text("TAKE OFF  •  "+today,W-M,38,{align:"right"});
+    doc.text("TAKE OFF  •  "+today,W-M,46,{align:"right"});
 
-    var y=72;
+    var y=82;
 
     // ── MEASUREMENTS TABLE ──
     var hasMeasurements=measurements&&measurements.some(function(r){return parseFloat(r.sqft)>0;});

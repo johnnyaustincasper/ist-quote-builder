@@ -2622,9 +2622,59 @@ export default function App() {
 
   function sendToWorkOrder() { setSec("workorder"); }
 
+  function buildQuoteImportItems(measurements) {
+    var grouped = {};
+    (measurements || []).forEach(function(m) {
+      var materialKey = (m.matNote || m.material || "").trim().toLowerCase();
+      var key = [
+        (m.locationId || "").trim().toLowerCase(),
+        (m.location || "").trim().toLowerCase(),
+        materialKey,
+        m.isRemoval ? "removal" : "install"
+      ].join("::");
+      if (!grouped[key]) {
+        grouped[key] = Object.assign({}, m, {
+          id: "quote-import-" + key,
+          sqft: 0,
+          total: 0,
+          priced: false,
+          sourceMeasurementIds: [],
+          combinedCount: 0,
+          dimStrs: []
+        });
+      }
+      grouped[key].sqft += parseFloat(m.sqft) || 0;
+      grouped[key].total += parseFloat(m.total) || 0;
+      grouped[key].combinedCount += 1;
+      grouped[key].sourceMeasurementIds.push(m.id);
+      if (m.dimStr && grouped[key].dimStrs.indexOf(m.dimStr) === -1) grouped[key].dimStrs.push(m.dimStr);
+    });
+    return Object.keys(grouped).map(function(k) {
+      var item = grouped[k];
+      return Object.assign({}, item, {
+        sqft: Math.round(item.sqft),
+        total: Math.ceil(item.total || 0),
+        description: item.combinedCount > 1
+          ? (item.location + " — combined " + item.combinedCount + " measurements")
+          : item.description
+      });
+    });
+  }
+
   function sendToQuote() {
     if (meas.length === 0) return;
-    setIi(function(prev) { return prev.concat(meas.map(function(m) { return Object.assign({}, m, { priced: false }); })); });
+    var combinedImports = buildQuoteImportItems(meas);
+    setIi(function(prev) {
+      var pricedBySource = {};
+      (prev || []).filter(function(i) { return i.priced; }).forEach(function(i) {
+        (i.sourceMeasurementIds || [i.id]).forEach(function(id) { pricedBySource[id] = true; });
+      });
+      var openPrev = (prev || []).filter(function(i) { return i.priced; });
+      var fresh = combinedImports.filter(function(i) {
+        return !(i.sourceMeasurementIds || []).some(function(id) { return pricedBySource[id]; });
+      });
+      return openPrev.concat(fresh);
+    });
     setSec("quote");
   }
 

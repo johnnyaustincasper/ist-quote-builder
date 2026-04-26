@@ -1581,7 +1581,7 @@ function QuoteBuilderSection(p){
     {/* ITEMS FOR ACTIVE OPTION */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 20px"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — priced line items ("+opt.items.length+")"}</div>
-      <div style={{background:C.card,borderRadius:14,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
+      <div className="ist-items-card" style={{background:C.card,borderRadius:14,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
         <div className="ist-items-hdr" style={{gap:12,padding:"0 0 10px",borderBottom:"1px solid "+C.borderLight,marginBottom:6,alignItems:"end"}}>
           <div style={{fontSize:10,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em"}}>{"Work item"}</div>
           <div style={{fontSize:10,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",textAlign:"right"}}>{"Quantity × rate"}</div>
@@ -1590,18 +1590,18 @@ function QuoteBuilderSection(p){
         </div>
         {opt.items.map(function(item,idx){var itemRate=parseFloat(item.pricePerUnit)||0;var itemTotal=Math.round(item.total||0);return(<div key={item.id} className="ist-items-row" style={{gap:12,alignItems:"center",padding:"14px 0",borderBottom:idx<opt.items.length-1?"1px solid "+C.border:"none"}}>
           <div className="ic-desc" style={{minWidth:0}}>
-            <div style={{fontSize:14,fontWeight:700,lineHeight:1.35,color:C.text}}>{item.location||item.description}</div>
-            <div style={{fontSize:12,color:C.textSec,marginTop:3,lineHeight:1.4}}>{item.material||"Material not set"}{item.pitch?" · "+item.pitch:""}{item.description&&item.location&&item.description!==item.location?" · "+item.description:""}</div>
+            <div className="ic-desc-title" style={{fontSize:14,fontWeight:700,lineHeight:1.35,color:C.text}}>{item.location||item.description}</div>
+            <div className="ic-desc-sub" style={{fontSize:12,color:C.textSec,marginTop:3,lineHeight:1.4}}>{item.material||"Material not set"}{item.pitch?" · "+item.pitch:""}{item.description&&item.location&&item.description!==item.location?" · "+item.description:""}</div>
           </div>
           <div className="ic-qty" style={{textAlign:"right"}}>
-            <div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf × $"+itemRate.toFixed(2)+"/sf"}</div>
-            <div style={{fontSize:11,color:C.dim,marginTop:3}}>{"Qty/rate for this line"}</div>
+            <div className="ic-qty-main" style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf × $"+itemRate.toFixed(2)+"/sf"}</div>
+            <div className="ic-qty-sub" style={{fontSize:11,color:C.dim,marginTop:3}}>{"Qty/rate"}</div>
           </div>
           <div className="ic-tot" style={{textAlign:"right"}}>
-            <div style={{fontSize:18,fontWeight:900,color:C.text,letterSpacing:"-0.02em"}}>{"$"+itemTotal.toLocaleString()}</div>
-            <div style={{fontSize:11,color:C.dim,marginTop:3}}>{"This line"}</div>
+            <div className="ic-total-main" style={{fontSize:18,fontWeight:900,color:C.text,letterSpacing:"-0.02em"}}>{"$"+itemTotal.toLocaleString()}</div>
+            <div className="ic-total-sub" style={{fontSize:11,color:C.dim,marginTop:3}}>{"This line"}</div>
           </div>
-          <div className="ic-rm" style={{marginLeft:"auto"}}><button onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,textTransform:"uppercase"}}>{"Remove"}</button></div>
+          <div className="ic-rm" style={{marginLeft:"auto"}}><button title="Remove" aria-label="Remove line item" onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,textTransform:"uppercase"}}><span className="ic-rm-label">{"Remove"}</span><span aria-hidden="true" style={{fontSize:14,lineHeight:1}}>×</span></button></div>
         </div>);})}
 
         {/* ADJUSTMENTS */}
@@ -2721,7 +2721,7 @@ export default function App() {
         input, textarea, select { color-scheme: light; }
         * { box-sizing: border-box; }
         .ist-items-hdr { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(150px,0.8fr) minmax(110px,0.6fr) 56px; }
-        .ist-items-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(150px,0.8fr) minmax(110px,0.6fr) 56px; }
+        .ist-items-row { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(160px,0.85fr) minmax(96px,0.45fr) 36px; }
         .ist-price-split { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,0.85fr); }
         @media (max-width:600px) {
           .ist-nav-tabs button { min-width:0; font-size:10px !important; padding-left:3px !important; padding-right:3px !important; letter-spacing:0.01em !important; }
@@ -2745,11 +2745,19 @@ export default function App() {
           .ist-pricing-hero-total { min-width:0 !important; width:100%; text-align:left !important; }
           .ist-pricing-hero-total > div:last-child { font-size:34px !important; overflow-wrap:anywhere; }
           .ist-items-hdr { display:none; }
-          .ist-items-row { grid-template-columns:1fr !important; grid-template-rows:auto !important; gap:8px !important; }
-          .ic-desc, .ic-qty, .ic-tot, .ic-rm { grid-column:1 !important; grid-row:auto !important; text-align:left !important; min-width:0; }
-          .ic-tot { display:block !important; }
-          .ic-rm { margin-left:0 !important; justify-content:stretch !important; }
-          .ic-rm button { width:100%; min-height:40px; border:1px solid rgba(220,38,38,0.22) !important; border-radius:8px; background:rgba(220,38,38,0.05) !important; }
+          .ist-items-card { padding:4px 10px !important; border-radius:12px !important; }
+          .ist-items-row { grid-template-columns:minmax(0,1fr) auto !important; grid-template-areas:"desc total" "qty remove" !important; gap:3px 10px !important; padding:9px 0 !important; align-items:center !important; }
+          .ic-desc { grid-area:desc !important; min-width:0; }
+          .ic-qty { grid-area:qty !important; text-align:left !important; min-width:0; }
+          .ic-tot { grid-area:total !important; text-align:right !important; min-width:max-content; }
+          .ic-rm { grid-area:remove !important; margin-left:0 !important; justify-self:end; }
+          .ic-desc-title { font-size:13px !important; line-height:1.15 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .ic-desc-sub { font-size:10.5px !important; line-height:1.2 !important; margin-top:1px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .ic-qty-main { font-size:12px !important; line-height:1.15 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .ic-qty-sub, .ic-total-sub { display:none !important; }
+          .ic-total-main { font-size:15px !important; line-height:1.1 !important; }
+          .ic-rm button { width:28px !important; height:24px !important; min-height:0 !important; padding:0 !important; border:none !important; border-radius:999px; background:rgba(220,38,38,0.08) !important; color:#b91c1c !important; font-size:14px !important; line-height:1 !important; }
+          .ic-rm-label { display:none !important; }
           .ist-adjust-row { flex-wrap:wrap; align-items:flex-start !important; }
           .ist-adjust-row input[type="checkbox"] { flex:0 0 auto; }
           .ist-adjust-row > span { min-width:0; overflow-wrap:anywhere; }

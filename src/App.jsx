@@ -1711,7 +1711,7 @@ function QuoteBuilderSection(p){
             <div className="ist-price-split" style={{gap:0}}>
               <div className="ist-price-split-left" style={{padding:"18px 18px 16px",borderRight:"1px solid "+C.borderLight}}>
                 <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:6}}>{opt.name+" pricing math"}</div>
-                <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>Each row keeps the label on the left and its dollar impact on the right.</div>
+                <div className="ist-price-split-title-copy" style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>Each row keeps the label on the left and its dollar impact on the right.</div>
 
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderTop:"1px solid "+C.borderLight,borderBottom:"1px solid "+C.borderLight}}>
                   <div>
@@ -1741,7 +1741,7 @@ function QuoteBuilderSection(p){
                 {psoCredit===0 && totalCharges===0 && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0 2px",borderBottom:"1px solid "+C.borderLight}}><span style={{fontSize:14,fontWeight:800,color:C.text}}>{"Calculated total"}</span><span style={{fontSize:18,fontWeight:900,color:C.text}}>{"$"+Math.round(subtotal).toLocaleString()}</span></div>}
               </div>
 
-              <div style={{padding:"18px",background:"linear-gradient(180deg, rgba(239,246,255,0.82) 0%, rgba(255,255,255,0.96) 100%)"}}>
+              <div className="ist-price-split-right" style={{padding:"18px",background:"linear-gradient(180deg, rgba(239,246,255,0.82) 0%, rgba(255,255,255,0.96) 100%)"}}>
                 <div style={{fontSize:11,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:6}}>{"Live sell price control"}</div>
                 <div style={{fontSize:13,color:C.textSec,marginBottom:14}}>Change the live price here. The calculated number stays visible right below it for comparison.</div>
 
@@ -1749,30 +1749,30 @@ function QuoteBuilderSection(p){
                   <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>{hasManualOverride?"Live sell price":"Sell price"}</div>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:18,fontWeight:900,color:C.text}}>{"$"}</span>
-                    <input type="number" value={hasManualOverride?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
-                      style={{flex:1,padding:"12px 14px",background:"#fff",border:"1px solid rgba(37,99,235,0.22)",borderRadius:12,color:C.text,fontSize:26,fontWeight:900,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8)"}} step="1"/>
+                    <input className="ist-live-price-input" type="number" value={hasManualOverride?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
+                      style={{flex:1,minWidth:0,width:"100%",padding:"12px 14px",background:"#fff",border:"1px solid rgba(37,99,235,0.22)",borderRadius:12,color:C.text,fontSize:26,fontWeight:900,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8)"}} step="1"/>
                   </div>
                 </div>
 
                 <div style={{display:"grid",gap:10,marginTop:14}}>
                   <div style={{padding:"12px 14px",background:"rgba(255,255,255,0.75)",border:"1px solid "+C.borderLight,borderRadius:14}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
+                    <div className="ist-price-value-row" style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
                       <span style={{fontSize:12,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em"}}>{"Calculated total"}</span>
-                      <span style={{fontSize:22,fontWeight:900,color:C.text}}>{"$"+Math.round(subtotal).toLocaleString()}</span>
+                      <span className="ist-price-main-value" style={{fontSize:22,fontWeight:900,color:C.text}}>{"$"+Math.round(subtotal).toLocaleString()}</span>
                     </div>
                   </div>
                   <div style={{padding:"12px 14px",background:"rgba(255,255,255,0.92)",border:"1px solid rgba(37,99,235,0.16)",borderRadius:14}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
+                    <div className="ist-price-value-row" style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
                       <span style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>{"Live total"}</span>
-                      <span style={{fontSize:24,fontWeight:900,color:C.accent}}>{"$"+Math.round(finalTotal).toLocaleString()}</span>
+                      <span className="ist-price-main-value" style={{fontSize:24,fontWeight:900,color:C.accent}}>{"$"+Math.round(finalTotal).toLocaleString()}</span>
                     </div>
                   </div>
                   <div style={{padding:"12px 14px",background:"rgba(255,255,255,0.75)",border:"1px solid "+C.borderLight,borderRadius:14}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
+                    <div className="ist-price-value-row" style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
                       <span style={{fontSize:12,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em"}}>{"Override difference"}</span>
-                      <span style={{fontSize:20,fontWeight:900,color:overrideDelta>0?"#b45309":overrideDelta<0?C.danger:C.text}}>{(overrideDelta>0?"+":overrideDelta<0?"-":"")+"$"+Math.round(Math.abs(overrideDelta)).toLocaleString()}</span>
+                      <span className="ist-price-main-value" style={{fontSize:20,fontWeight:900,color:overrideDelta>0?"#b45309":overrideDelta<0?C.danger:C.text}}>{(overrideDelta>0?"+":overrideDelta<0?"-":"")+"$"+Math.round(Math.abs(overrideDelta)).toLocaleString()}</span>
                     </div>
-                    <div style={{fontSize:12,fontWeight:700,color:overrideDelta>0?"#b45309":overrideDelta<0?C.danger:C.text,marginTop:4,textAlign:"right"}}>{subtotal===0?"0.0%":(overrideDelta>0?"+":"")+overridePct.toFixed(1)+"% vs calculated"}</div>
+                    <div className="ist-override-percent" style={{fontSize:12,fontWeight:700,color:overrideDelta>0?"#b45309":overrideDelta<0?C.danger:C.text,marginTop:4,textAlign:"right"}}>{subtotal===0?"0.0%":(overrideDelta>0?"+":"")+overridePct.toFixed(1)+"% vs calculated"}</div>
                   </div>
                 </div>
               </div>
@@ -2765,8 +2765,16 @@ export default function App() {
           .ist-adjust-row > div input { width:100% !important; max-width:180px; }
           .ist-custom-price-row { display:grid !important; grid-template-columns:1fr; }
           .ist-custom-price-row button { min-height:42px; }
-          .ist-price-split { grid-template-columns:1fr; }
-          .ist-price-split-left { border-right:none !important; border-bottom:1px solid rgba(0,0,0,0.06) !important; }
+          .ist-price-split { grid-template-columns:1fr; width:100%; overflow:hidden; }
+          .ist-price-split, .ist-price-split * { min-width:0; max-width:100%; }
+          .ist-price-split-left { border-right:none !important; border-bottom:1px solid rgba(0,0,0,0.06) !important; padding:12px !important; }
+          .ist-price-split-right { padding:12px !important; }
+          .ist-price-split-title-copy { display:none !important; }
+          .ist-live-price-input { min-width:0 !important; width:100% !important; max-width:100% !important; font-size:22px !important; padding:10px 10px !important; }
+          .ist-price-value-row { gap:8px !important; align-items:center !important; }
+          .ist-price-value-row > span:first-child { font-size:10px !important; letter-spacing:0.06em !important; line-height:1.15 !important; }
+          .ist-price-value-row > span:last-child, .ist-price-main-value { font-size:18px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .ist-override-percent { font-size:11px !important; white-space:normal !important; text-align:right !important; }
           .ist-print-actions { padding-bottom:max(8px, env(safe-area-inset-bottom)); }
         }
       `}</style>

@@ -1749,7 +1749,7 @@ function QuoteBuilderSection(p){
                   <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>{hasManualOverride?"Live sell price":"Sell price"}</div>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:18,fontWeight:900,color:C.text}}>{"$"}</span>
-                    <input className="ist-live-price-input" type="number" value={hasManualOverride?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
+                    <input className="ist-live-price-input" type="number" value={hasManualOverride?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value === "" ? " " : e.target.value});}} onBlur={function(){if(opt.overrideTotal === " ") updateOpt({overrideTotal:""});}}
                       style={{flex:1,minWidth:0,width:"100%",padding:"12px 14px",background:"#fff",border:"1px solid rgba(37,99,235,0.22)",borderRadius:12,color:C.text,fontSize:26,fontWeight:900,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8)"}} step="1"/>
                   </div>
                 </div>

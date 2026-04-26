@@ -1332,8 +1332,8 @@ function MeasureMode(p){
   }
   var totalSqft=rows.reduce(function(s,r){return s+measureModeSqft(r);},0);
   var totalPrice=rows.reduce(function(s,r){return s+(measureModeSqft(r)*measureModeNumber(r.rate));},0);
-  var cell={border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.66)",padding:6,minWidth:0};
-  var inputBase={width:"100%",border:"none",background:"transparent",outline:"none",fontFamily:"'Inter',sans-serif",fontSize:13,color:C.text,minWidth:0};
+  var cell={border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.66)",padding:6,minWidth:0,boxSizing:"border-box"};
+  var inputBase={width:"100%",border:"none",background:"transparent",outline:"none",fontFamily:"'Inter',sans-serif",fontSize:13,color:C.text,minWidth:0,boxSizing:"border-box"};
   return(<div className={isFullScreen?"ist-measure-fullscreen":""} style={isFullScreen?{position:"fixed",inset:0,zIndex:9999,background:"linear-gradient(135deg,#e8eef8 0%,#dde6f5 45%,#cdd9f0 100%)",padding:"max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom))",overflow:"auto"}:{margin:"0 16px 18px",padding:12,borderRadius:14,border:"1px solid rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.62)",boxShadow:C.shadow,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap",position:isFullScreen?"sticky":"static",top:0,zIndex:3,background:isFullScreen?"rgba(232,238,248,0.92)":"transparent",backdropFilter:isFullScreen?"blur(14px)":"none",padding:isFullScreen?"8px 2px 10px":0}}>
       <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Use 12x10, 8x9 + 6x4, 40@16, 40@24, or type Sq Ft directly.</div></div>
@@ -1342,7 +1342,7 @@ function MeasureMode(p){
         {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}
       </div>
     </div>
-    <div style={{overflowX:"auto",borderRadius:10,border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.35)"}}><div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(78px,0.72fr) minmax(96px,0.9fr) minmax(92px,0.72fr) minmax(170px,1.65fr) minmax(58px,0.55fr) minmax(54px,0.5fr) minmax(64px,0.6fr) 34px",minWidth:isFullScreen?760:0,borderRadius:10,overflow:"hidden"}}>
+    <div style={{overflowX:"auto",borderRadius:10,border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.35)"}}><div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"110px 136px 104px 220px 74px 70px 82px 40px",minWidth:836,borderRadius:10,overflow:"hidden"}}>
       {["Area","Material","Height / Centers","Measurement / Notes","Sq Ft","Rate","Price",""] .map(function(h){return(<div key={h} style={Object.assign({},cell,{background:"rgba(37,99,235,0.09)",fontSize:10,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.06em"})}>{h}</div>);})}
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<React.Fragment key={r.id}>
         <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}</div>
@@ -2869,6 +2869,9 @@ export default function App() {
           .ist-price-value-row > span:first-child { font-size:10px !important; letter-spacing:0.06em !important; line-height:1.15 !important; }
           .ist-price-value-row > span:last-child, .ist-price-main-value { font-size:18px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
           .ist-override-percent { font-size:11px !important; white-space:normal !important; text-align:right !important; }
+          .ist-measure-fullscreen { font-size:13px; }
+          .ist-measure-fullscreen .ist-measure-sheet select, .ist-measure-fullscreen .ist-measure-sheet input { font-size:12px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .ist-measure-fullscreen .ist-measure-sheet > div { min-height:46px; display:flex; flex-direction:column; justify-content:center; }
           .ist-print-actions { padding-bottom:max(8px, env(safe-area-inset-bottom)); }
           .ist-measure-sheet { grid-template-columns:62px 78px minmax(136px,1fr) 50px 48px 56px 30px !important; overflow-x:auto !important; }
           .ist-measure-sheet input, .ist-measure-sheet select { font-size:12px !important; }

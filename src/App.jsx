@@ -1274,9 +1274,74 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quote
 
 /* ══════════ TAKE OFF ══════════ */
 
+function newMeasureModeRow(){return{id:Date.now()+Math.random(),area:"flat_ceiling",customArea:"",material:"Blown Fiberglass",measure:"",notes:"",sqft:"",rate:""};}
+function measureModeNumber(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}
+function measureModeSqft(row){
+  var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
+  var text=String(row.measure||"").toLowerCase().replace(/×/g,"x").replace(/by/g,"x");
+  if(!text.trim())return 0;
+  var total=0;
+  text.split(/[\n,;+]+/).forEach(function(part){
+    var nums=part.match(/\d+(?:\.\d+)?/g);
+    if(!nums||nums.length===0)return;
+    if(nums.length>=2)total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);
+    else total+=parseFloat(nums[0])||0;
+  });
+  return Math.round(total);
+}
+function MeasureMode(p){
+  var s1=useState([newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow()]),rows=s1[0],setRows=s1[1];
+  var locationOptions=LOCATIONS.map(function(l){return{value:l.id,label:l.short||l.label};});
+  var materialOptions=ALL_MATERIALS.concat(["Removal"]);
+  function updateRow(id,changes){setRows(function(prev){return prev.map(function(r){return r.id===id?Object.assign({},r,changes):r;});});}
+  function addRow(){setRows(function(prev){return prev.concat([newMeasureModeRow()]);});}
+  function removeRow(id){setRows(function(prev){return prev.length<=1?prev:prev.filter(function(r){return r.id!==id;});});}
+  function clearSavedRows(savedIds){setRows(function(prev){var left=prev.filter(function(r){return savedIds.indexOf(r.id)<0;});return left.length?left:[newMeasureModeRow()];});}
+  function saveRows(){
+    var savedIds=[];var items=[];
+    rows.forEach(function(r){
+      var sqft=measureModeSqft(r);if(sqft<=0)return;
+      var loc=LOCATIONS.find(function(x){return x.id===r.area;})||LOCATIONS[0];
+      var locLabel=loc.id==="custom"?(r.customArea.trim()||"Custom"):loc.label;
+      var rate=measureModeNumber(r.rate);var isRemoval=r.material==="Removal";
+      var matNote=isRemoval?"Removal":(r.material||"Material TBD");
+      var measureLabel=(r.measure||r.sqft||"").trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
+      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measureNotes:noteLabel||null});
+      savedIds.push(r.id);
+    });
+    if(!items.length){alert("Add at least one row with square footage first.");return;}
+    p.setMeasurements(function(prev){return prev.concat(items.map(function(item){return Object.assign({},item,{id:Date.now()+Math.random()});}));});
+    clearSavedRows(savedIds);
+  }
+  var totalSqft=rows.reduce(function(s,r){return s+measureModeSqft(r);},0);
+  var totalPrice=rows.reduce(function(s,r){return s+(measureModeSqft(r)*measureModeNumber(r.rate));},0);
+  var cell={border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.66)",padding:6,minWidth:0};
+  var inputBase={width:"100%",border:"none",background:"transparent",outline:"none",fontFamily:"'Inter',sans-serif",fontSize:13,color:C.text,minWidth:0};
+  return(<div style={{margin:"0 16px 18px",padding:12,borderRadius:14,border:"1px solid rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.62)",boxShadow:C.shadow,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap"}}>
+      <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Use 12x10, 8x9 + 6x4, or type Sq Ft directly.</div></div>
+      <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}</div>
+    </div>
+    <div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(78px,0.72fr) minmax(96px,0.9fr) minmax(170px,1.7fr) minmax(58px,0.58fr) minmax(54px,0.52fr) minmax(64px,0.62fr) 34px",borderRadius:10,overflow:"hidden",border:"1px solid rgba(0,0,0,0.08)"}}>
+      {["Area","Material","Measurement / Notes","Sq Ft","Rate","Price",""] .map(function(h){return(<div key={h} style={Object.assign({},cell,{background:"rgba(37,99,235,0.09)",fontSize:10,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.06em"})}>{h}</div>);})}
+      {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<React.Fragment key={r.id}>
+        <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}</div>
+        <div style={cell}><select value={r.material} onChange={function(e){updateRow(r.id,{material:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12})}>{materialOptions.map(function(m){return <option key={m} value={m}>{m}</option>;})}</select></div>
+        <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="12x10 + 8x9" inputMode="decimal" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>
+        <div style={cell}><input value={r.sqft} onChange={function(e){updateRow(r.id,{sqft:e.target.value});}} placeholder={sqft?String(sqft):"0"} inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right",fontWeight:800,color:C.accent})}/></div>
+        <div style={cell}><input value={r.rate} onChange={function(e){updateRow(r.id,{rate:e.target.value});}} placeholder="0" inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right"})}/></div>
+        <div style={Object.assign({},cell,{textAlign:"right",fontWeight:800,fontSize:13,color:C.text})}>{price>0?"$"+Math.ceil(price).toLocaleString():"—"}</div>
+        <div style={Object.assign({},cell,{display:"flex",alignItems:"center",justifyContent:"center"})}><button onClick={function(){removeRow(r.id);}} style={{border:"none",background:"rgba(220,38,38,0.08)",color:C.danger,borderRadius:999,width:24,height:24,cursor:"pointer",fontWeight:900}}>×</button></div>
+      </React.Fragment>);})}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}><button onClick={addRow} style={{padding:"11px",borderRadius:8,border:"1px solid "+C.border,background:"rgba(255,255,255,0.55)",color:C.textSec,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>+ Row</button><button onClick={saveRows} style={{padding:"11px",borderRadius:8,border:"1px solid rgba(37,99,235,0.3)",background:"rgba(37,99,235,0.12)",color:C.accent,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>Save Rows to Take Off</button></div>
+  </div>);
+}
+
 function TakeOff(p){
   var ls=useState(""),lid=ls[0],setLid=ls[1];
   var cs=useState(""),cl=cs[0],setCl=cs[1];
+  var ms=useState(false),measureMode=ms[0],setMeasureMode=ms[1];
   function addM(item){
     p.setMeasurements(function(prev){
       return prev.concat([Object.assign({},item,{id:Date.now()+Math.random()})]);
@@ -1290,6 +1355,10 @@ function TakeOff(p){
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
     <CustomerInfo custName={p.custName} setCustName={p.setCustName} custAddr={p.custAddr} setCustAddr={p.setCustAddr} custPhone={p.custPhone} setCustPhone={p.setCustPhone} custEmail={p.custEmail} setCustEmail={p.setCustEmail} jobAddr={p.jobAddr} setJobAddr={p.setJobAddr} currentUser={p.currentUser}/>
+    <div style={{padding:"0 16px 12px"}}>
+      <button onClick={function(){setMeasureMode(!measureMode);}} style={{width:"100%",padding:"13px 16px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:measureMode?C.accent:"rgba(37,99,235,0.12)",color:measureMode?"#fff":C.accent,fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.08em",boxShadow:"0 3px 16px rgba(37,99,235,0.14)"}}>{measureMode?"Close Measure Mode":"Measure Mode"}</button>
+    </div>
+    {measureMode&&(<MeasureMode setMeasurements={p.setMeasurements}/>)}
     {/* Row 1: Location (left) | Measurement inputs (right) */}
     <div className="ist-2col" style={{marginBottom:0}}>
       <div className="ist-col-form">
@@ -2775,6 +2844,8 @@ export default function App() {
           .ist-price-value-row > span:last-child, .ist-price-main-value { font-size:18px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
           .ist-override-percent { font-size:11px !important; white-space:normal !important; text-align:right !important; }
           .ist-print-actions { padding-bottom:max(8px, env(safe-area-inset-bottom)); }
+          .ist-measure-sheet { grid-template-columns:62px 78px minmax(136px,1fr) 50px 48px 56px 30px !important; overflow-x:auto !important; }
+          .ist-measure-sheet input, .ist-measure-sheet select { font-size:12px !important; }
         }
       `}</style>
 

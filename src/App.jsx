@@ -26,6 +26,7 @@ var LOCATIONS = [
   { id: "attic_slopes",     label: "Open Attic Slopes",             short: "Attic Slopes",      type: "area",    group: "Attic" },
   { id: "attic_kneewall",   label: "Open Attic Kneewall",           short: "Attic Kneewall",    type: "wall",    group: "Attic" },
   { id: "flat_ceiling",     label: "Flat Ceiling",                  short: "Flat Ceiling",      type: "area",    group: "Attic" },
+  { id: "flat_areas_no_blow", label: "Flat Areas That Can’t Be Blown", short: "No-Blow Flats",     type: "area",    group: "Attic" },
   { id: "attic_area_house", label: "Open Attic Area of House",      short: "Attic House",       type: "area",    group: "Attic" },
   { id: "attic_area_garage",label: "Open Attic Area of Garage",     short: "Attic Garage",      type: "area",    group: "Attic" },
   { id: "gable_end",        label: "Gable End",                     short: "Gable End",         type: "area",    group: "Roofline" },
@@ -52,6 +53,10 @@ var CLOSED_CELL_MATERIALS = [];
 var ALL_MATERIALS = FIBERGLASS_MATERIALS.concat(OPEN_CELL_MATERIALS).concat(CLOSED_CELL_MATERIALS);
 
 var PITCH_FACTORS = {"Flat (0/12)":1.0,"1/12":1.003,"2/12":1.014,"3/12":1.031,"4/12":1.054,"5/12":1.083,"6/12":1.118,"7/12":1.158,"8/12":1.202,"9/12":1.25,"10/12":1.302,"11/12":1.357,"12/12":1.414};
+var MEASURE_PRESETS = {
+  fiberglass: ["ext_walls_house","garage_common","ext_kneewall","attic_kneewall","ext_slopes","attic_slopes","flat_ceiling","flat_areas_no_blow","attic_area_house","ext_walls_garage","attic_area_garage"],
+  foam: ["ext_walls_house","garage_common","ext_kneewall","ext_slopes","attic_area_house","attic_area_garage"]
+};
 
 var WALL_HEIGHTS = [
   {label:"8' walls (10.00 sq ft each)",sqftPer:10},{label:"9' walls (11.25 sq ft each)",sqftPer:11.25},
@@ -1275,7 +1280,7 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quote
 /* ══════════ TAKE OFF ══════════ */
 
 function newMeasureModeEntry(){return{id:Date.now()+Math.random(),height:"",centers:"",measure:""};}
-function newMeasureModeRow(){var entry=newMeasureModeEntry();return{id:Date.now()+Math.random(),area:"flat_ceiling",customArea:"",material:"Blown Fiberglass",height:"",centers:"",measure:"",entries:[entry],notes:"",sqft:"",rate:""};}
+function newMeasureModeRow(area,material){var entry=newMeasureModeEntry();return{id:Date.now()+Math.random(),area:area||"flat_ceiling",customArea:"",material:material||"Blown Fiberglass",pitch:"Flat (0/12)",height:"",centers:"",measure:"",entries:[entry],notes:"",sqft:"",rate:""};}
 function measureModeNumber(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}
 function measureModeEntrySqft(row,entry){
   var text=String((entry&&entry.measure)!=null?entry.measure:row.measure||"").toLowerCase().replace(/×/g,"x").replace(/by/g,"x");
@@ -1308,7 +1313,11 @@ function measureModeEntrySqft(row,entry){
 function measureModeSqft(row){
   var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
   var entries=row.entries&&row.entries.length?row.entries:[row];
-  return entries.reduce(function(sum,e){return sum+measureModeEntrySqft(row,e);},0);
+  var base=entries.reduce(function(sum,e){return sum+measureModeEntrySqft(row,e);},0);
+  var loc=LOCATIONS.find(function(l){return l.id===row.area;});
+  var isFoam=/foam|open cell|closed cell/i.test(row.material||"");
+  var needsPitch=isFoam&&loc&&(loc.id==="attic_area_house"||loc.id==="attic_area_garage");
+  return Math.round(base*(needsPitch?(PITCH_FACTORS[row.pitch]||1):1));
 }
 function MeasureMode(p){
   var isFullScreen=!!p.fullScreen;
@@ -1321,6 +1330,7 @@ function MeasureMode(p){
   function updateEntry(rowId,entryId,changes){setRows(function(prev){return prev.map(function(r){return r.id===rowId?Object.assign({},r,{entries:(r.entries||[]).map(function(e){return e.id===entryId?Object.assign({},e,changes):e;})}):r;});});}
   function addEntry(rowId){setRows(function(prev){return prev.map(function(r){return r.id===rowId?Object.assign({},r,{entries:(r.entries&&r.entries.length?r.entries:[]).concat([newMeasureModeEntry()])}):r;});});}
   function removeEntry(rowId,entryId){setRows(function(prev){return prev.map(function(r){if(r.id!==rowId)return r;var entries=(r.entries||[]).filter(function(e){return e.id!==entryId;});return Object.assign({},r,{entries:entries.length?entries:[newMeasureModeEntry()]});});});}
+  function loadPreset(kind){var mat=kind==="foam"?'2" Open Cell Foam':"Blown Fiberglass";setRows((MEASURE_PRESETS[kind]||[]).map(function(id){return newMeasureModeRow(id,mat);}));}
   function clearSavedRows(savedIds){setRows(function(prev){var left=prev.filter(function(r){return savedIds.indexOf(r.id)<0;});return left.length?left:[newMeasureModeRow()];});}
   function saveRows(){
     var savedIds=[];var items=[];
@@ -1331,7 +1341,7 @@ function MeasureMode(p){
       var rate=measureModeNumber(r.rate);var isRemoval=r.material==="Removal";
       var matNote=isRemoval?"Removal":(r.material||"Material TBD");
       var measureLabel=((r.entries&&r.entries.length)?r.entries.map(function(e){return [e.height,e.centers,e.measure].filter(Boolean).join("/");}).filter(Boolean).join(" + "):(r.measure||r.sqft||"")).trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
-      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measureNotes:noteLabel||null});
+      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:r.pitch||null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measureNotes:noteLabel||null});
       savedIds.push(r.id);
     });
     if(!items.length){alert("Add at least one row with square footage first.");return;}
@@ -1351,12 +1361,17 @@ function MeasureMode(p){
         {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}
       </div>
     </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+      <button onClick={function(){loadPreset("fiberglass");}} style={{padding:"10px",borderRadius:10,border:"1px solid rgba(37,99,235,0.28)",background:"rgba(37,99,235,0.10)",color:C.accent,fontSize:12,fontWeight:900,textTransform:"uppercase"}}>Fiberglass Preset</button>
+      <button onClick={function(){loadPreset("foam");}} style={{padding:"10px",borderRadius:10,border:"1px solid rgba(15,23,42,0.18)",background:"rgba(15,23,42,0.08)",color:C.text,fontSize:12,fontWeight:900,textTransform:"uppercase"}}>Foam Preset</button>
+    </div>
     {phoneCard?(<div style={{display:"grid",gap:10}}>
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<div key={r.id} style={{background:"rgba(255,255,255,0.78)",border:"1px solid rgba(148,163,184,0.28)",borderRadius:14,padding:12,boxShadow:"0 8px 24px rgba(15,23,42,0.05)"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           <label style={{fontSize:10,fontWeight:900,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em"}}>Area<select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:800}}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select></label>
           <label style={{fontSize:10,fontWeight:900,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em"}}>Material<select value={r.material} onChange={function(e){updateRow(r.id,{material:e.target.value});}} style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8}}>{materialOptions.map(function(m){return <option key={m} value={m}>{m}</option>;})}</select></label>
         </div>
+        {/foam|open cell|closed cell/i.test(r.material||"")&&(r.area==="attic_area_house"||r.area==="attic_area_garage")&&(<label style={{display:"block",fontSize:10,fontWeight:900,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Pitch Factor<select value={r.pitch||"Flat (0/12)"} onChange={function(e){updateRow(r.id,{pitch:e.target.value});}} style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8}}>{Object.keys(PITCH_FACTORS).map(function(p){return <option key={p} value={p}>{p}</option>;})}</select></label>)}
         <div style={{display:"grid",gap:6}}>
           {(r.entries&&r.entries.length?r.entries:[newMeasureModeEntry()]).map(function(e,ei){return <div key={e.id} style={{display:"grid",gridTemplateColumns:"64px 82px 1fr 28px",gap:7,alignItems:"end"}}>
             <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>{ei===0?"Height":""}<input value={e.height} onChange={function(ev){updateEntry(r.id,e.id,{height:ev.target.value});}} placeholder="Ht" inputMode="decimal" style={{...inputBase,marginTop:4,padding:"10px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,fontWeight:800}}/></label>
@@ -1378,7 +1393,7 @@ function MeasureMode(p){
     </div>):(<div style={{overflowX:"auto",borderRadius:10,border:"1px solid rgba(0,0,0,0.08)",background:"rgba(255,255,255,0.35)"}}><div className="ist-measure-sheet" style={{display:"grid",gridTemplateColumns:"minmax(110px,0.9fr) minmax(136px,1.05fr) minmax(104px,0.85fr) minmax(220px,2fr) minmax(74px,0.6fr) minmax(70px,0.55fr) minmax(82px,0.65fr) 40px",minWidth:"100%",borderRadius:10,overflow:"hidden"}}>
       {["Area","Material","Height / Centers","Measurement / Notes","Sq Ft","Rate","Price",""] .map(function(h){return(<div key={h} style={Object.assign({},cell,{background:"rgba(37,99,235,0.09)",fontSize:10,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.06em"})}>{h}</div>);})}
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<React.Fragment key={r.id}>
-        <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}</div>
+        <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}{/foam|open cell|closed cell/i.test(r.material||"")&&(r.area==="attic_area_house"||r.area==="attic_area_garage")&&(<select value={r.pitch||"Flat (0/12)"} onChange={function(e){updateRow(r.id,{pitch:e.target.value});}} style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}>{Object.keys(PITCH_FACTORS).map(function(p){return <option key={p} value={p}>{p}</option>;})}</select>)}</div>
         <div style={cell}><select value={r.material} onChange={function(e){updateRow(r.id,{material:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12})}>{materialOptions.map(function(m){return <option key={m} value={m}>{m}</option>;})}</select></div>
         <div style={cell}>
           <input value={r.height} onChange={function(e){updateRow(r.id,{height:e.target.value});}} placeholder="Ht" inputMode="decimal" style={Object.assign({},inputBase,{fontSize:12,fontWeight:800})}/>

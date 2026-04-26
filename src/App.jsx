@@ -1282,9 +1282,18 @@ function measureModeSqft(row){
   if(!text.trim())return 0;
   var total=0;
   text.split(/[\n,;+]+/).forEach(function(part){
+    part=String(part||"").trim();if(!part)return;
     var nums=part.match(/\d+(?:\.\d+)?/g);
     if(!nums||nums.length===0)return;
-    if(nums.length>=2)total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);
+    var cavityMatch=part.match(/@\s*(16|24)\b|\b(16|24)\s*(?:\"|in|oc|c|cav|cavity)\b/);
+    if(cavityMatch && part.indexOf("x")<0){
+      var cavity=parseFloat(cavityMatch[1]||cavityMatch[2]);
+      var linear=0;
+      nums.some(function(n){var v=parseFloat(n)||0;if(v!==cavity){linear=v;return true;}return false;});
+      if(!linear&&nums.length===1)linear=parseFloat(nums[0])||0;
+      total+=linear*(cavity===24?2:1.25);
+    }
+    else if(nums.length>=2)total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);
     else total+=parseFloat(nums[0])||0;
   });
   return Math.round(total);
@@ -1320,7 +1329,7 @@ function MeasureMode(p){
   var inputBase={width:"100%",border:"none",background:"transparent",outline:"none",fontFamily:"'Inter',sans-serif",fontSize:13,color:C.text,minWidth:0};
   return(<div className={isFullScreen?"ist-measure-fullscreen":""} style={isFullScreen?{position:"fixed",inset:0,zIndex:9999,background:"linear-gradient(135deg,#e8eef8 0%,#dde6f5 45%,#cdd9f0 100%)",padding:"max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom))",overflow:"auto"}:{margin:"0 16px 18px",padding:12,borderRadius:14,border:"1px solid rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.62)",boxShadow:C.shadow,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap",position:isFullScreen?"sticky":"static",top:0,zIndex:3,background:isFullScreen?"rgba(232,238,248,0.92)":"transparent",backdropFilter:isFullScreen?"blur(14px)":"none",padding:isFullScreen?"8px 2px 10px":0}}>
-      <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Use 12x10, 8x9 + 6x4, or type Sq Ft directly.</div></div>
+      <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Use 12x10, 8x9 + 6x4, 40@16, 40@24, or type Sq Ft directly.</div></div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
         <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}</div>
         {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}
@@ -1331,7 +1340,7 @@ function MeasureMode(p){
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<React.Fragment key={r.id}>
         <div style={cell}><select value={r.area} onChange={function(e){updateRow(r.id,{area:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12,fontWeight:700})}>{locationOptions.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}</select>{r.area==="custom"&&(<input value={r.customArea} onChange={function(e){updateRow(r.id,{customArea:e.target.value});}} placeholder="Name" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:5})}/>)}</div>
         <div style={cell}><select value={r.material} onChange={function(e){updateRow(r.id,{material:e.target.value});}} style={Object.assign({},inputBase,{fontSize:12})}>{materialOptions.map(function(m){return <option key={m} value={m}>{m}</option>;})}</select></div>
-        <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="12x10 + 8x9" inputMode="decimal" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>
+        <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="12x10 + 8x9 or 40@16" inputMode="decimal" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>
         <div style={cell}><input value={r.sqft} onChange={function(e){updateRow(r.id,{sqft:e.target.value});}} placeholder={sqft?String(sqft):"0"} inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right",fontWeight:800,color:C.accent})}/></div>
         <div style={cell}><input value={r.rate} onChange={function(e){updateRow(r.id,{rate:e.target.value});}} placeholder="0" inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right"})}/></div>
         <div style={Object.assign({},cell,{textAlign:"right",fontWeight:800,fontSize:13,color:C.text})}>{price>0?"$"+Math.ceil(price).toLocaleString():"—"}</div>

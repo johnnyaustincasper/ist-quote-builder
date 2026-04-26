@@ -1298,8 +1298,8 @@ function measureModeSqft(row){
       var linearOnly=parseFloat(nums[0])||0;
       var rowCenters=parseFloat(row.centers)||0;
       var rowHeight=measureModeNumber(row.height);
-      if(rowCenters===16)total+=linearOnly*(rowHeight>0?rowHeight:1.25);
-      else if(rowCenters===24)total+=linearOnly*(rowHeight>0?rowHeight:2);
+      if(rowCenters===16)total+=linearOnly*(rowHeight>0?rowHeight*1.25:1.25);
+      else if(rowCenters===24)total+=linearOnly*(rowHeight>0?rowHeight*2:2);
       else total+=linearOnly;
     }
   });
@@ -1337,7 +1337,7 @@ function MeasureMode(p){
   var phoneCard=typeof window!=="undefined"&&window.innerWidth<700;
   return(<div className={isFullScreen?"ist-measure-fullscreen":""} style={isFullScreen?{position:"fixed",inset:0,zIndex:9999,background:"linear-gradient(135deg,#e8eef8 0%,#dde6f5 45%,#cdd9f0 100%)",padding:"max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom))",overflow:"auto"}:{margin:"0 16px 18px",padding:12,borderRadius:14,border:"1px solid rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.62)",boxShadow:C.shadow,backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap",position:isFullScreen?"sticky":"static",top:0,zIndex:3,background:isFullScreen?"rgba(232,238,248,0.92)":"transparent",backdropFilter:isFullScreen?"blur(14px)":"none",padding:isFullScreen?"8px 2px 10px":0}}>
-      <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Use 12x10, 8x9 + 6x4, 40@16, 40@24, or type Sq Ft directly.</div></div>
+      <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Height + centers multiply linear feet. Example: height 8, centers 16, measurement 40 = 400 sqft.</div></div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
         <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}</div>
         {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}

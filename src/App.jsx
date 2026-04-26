@@ -1350,7 +1350,7 @@ function MeasureMode(p){
         <div style={cell}>
           <input value={r.height} onChange={function(e){updateRow(r.id,{height:e.target.value});}} placeholder="Ht" inputMode="decimal" style={Object.assign({},inputBase,{fontSize:12,fontWeight:800})}/>
           <select value={r.centers} onChange={function(e){updateRow(r.id,{centers:e.target.value});}} style={Object.assign({},inputBase,{marginTop:5,fontSize:12,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}>
-            <option value="">Sq Ft</option><option value="16">16" OC</option><option value="24">24" OC</option>
+            <option value="">Centers</option><option value="16">16"</option><option value="24">24"</option>
           </select>
         </div>
         <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="40 or 12x10 + 8x9" inputMode="decimal" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>

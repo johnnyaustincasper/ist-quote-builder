@@ -641,27 +641,27 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
 
     // ── HEADER BAND ──
     doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);
-    doc.rect(0,0,W,72,"F");
+    doc.rect(0,0,W,82,"F");
     // Accent stripe
     doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);
-    doc.rect(0,68,W,4,"F");
+    doc.rect(0,78,W,4,"F");
     // Company name
     doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);
     doc.setFontSize(20);doc.setFont("helvetica","bold");
-    doc.text("INSULATION SERVICES OF TULSA",M,30);
+    doc.text("INSULATION SERVICES OF TULSA",M,40);
     // Tagline
     doc.setFontSize(9);doc.setFont("helvetica","normal");
     doc.setTextColor(180,200,240);
-    doc.text("Serving Northeastern Oklahoma  •  1 (918) 232-9055",M,46);
+    doc.text("Serving Northeastern Oklahoma  •  1 (918) 232-9055",M,56);
     // QUOTE label top right
     doc.setTextColor(LIGHTBLUE[0],LIGHTBLUE[1],LIGHTBLUE[2]);
     doc.setFontSize(11);doc.setFont("helvetica","bold");
-    doc.text("QUOTE",W-M,24,{align:"right"});
+    doc.text("QUOTE",W-M,34,{align:"right"});
     doc.setFontSize(8);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
-    doc.text(qn,W-M,36,{align:"right"});
-    doc.text(today,W-M,48,{align:"right"});
+    doc.text(qn,W-M,46,{align:"right"});
+    doc.text(today,W-M,58,{align:"right"});
 
-    var y=90;
+    var y=102;
 
     // ── INFO CARDS ──
     var cardH=80;var col=RW/3+4;

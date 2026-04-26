@@ -180,7 +180,7 @@ function Input(p){
       onChange={isNum?function(){}:function(e){p.onChange(e.target.value);}}
       placeholder={p.placeholder} step={p.step}/>
     {isNum&&showPad&&ReactDOM.createPortal(
-      (<div onMouseDown={function(e){e.preventDefault();}} style={{position:"fixed",zIndex:9999,bottom:0,left:0,right:0,background:"#f1f5f9",boxShadow:"0 -2px 16px rgba(0,0,0,0.18)",borderTop:"2px solid #2563eb",padding:"10px 16px 24px"}}>
+      (<div onMouseDown={function(e){e.preventDefault();}} style={{position:"fixed",zIndex:9999,bottom:0,left:0,right:0,background:"#f1f5f9",boxShadow:"0 -2px 16px rgba(0,0,0,0.18)",borderTop:"2px solid #2563eb",padding:"10px 16px",paddingBottom:"max(24px, env(safe-area-inset-bottom))"}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8,maxWidth:400,margin:"0 auto 8px"}}>
           {padNums.map(function(v){return(<button key={v} onMouseDown={function(e){e.preventDefault();padPress(v);}} style={{padding:"14px 0",borderRadius:10,border:"1px solid #cbd5e1",background:v==="⌫"?"#fee2e2":"#fff",color:v==="⌫"?"#dc2626":"#0f172a",fontSize:18,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",boxShadow:"0 1px 3px rgba(0,0,0,0.1)"}}>{v}</button>);})}
         </div>
@@ -712,10 +712,23 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
 
     // ── OPTIONS ──
     optsWithItems.forEach(function(opt,oi){
+      function itemSortKey(item){
+        var mat=item.material||item.description||"";
+        // 0 = spray foam (open/closed cell), 1 = batts/other fiberglass, 2 = blown, 3 = energy seal
+        if(/blown/i.test(mat))return 2;
+        if(/open cell|closed cell/i.test(mat))return 0;
+        return 1;
+      }
       var sortedItems=opt.items.slice().sort(function(a,b){
-        var aFoam=a.type==="Foam"||/foam/i.test(a.material||"");
-        var bFoam=b.type==="Foam"||/foam/i.test(b.material||"");
-        if(aFoam&&!bFoam)return -1;if(!aFoam&&bFoam)return 1;
+        var ak=itemSortKey(a),bk=itemSortKey(b);
+        if(ak!==bk)return ak-bk;
+        // Within spray foam: sort by thickness
+        if(ak===0){
+          var aIn=parseFloat((a.material||"").match(/^([\d.]+)/)||[0,0])||0;
+          var bIn=parseFloat((b.material||"").match(/^([\d.]+)/)||[0,0])||0;
+          return aIn-bIn;
+        }
+        // Within batts: sort by R-value
         var aR=parseInt((a.material||"").match(/R(\d+)/i)||[0,0])||0;
         var bR=parseInt((b.material||"").match(/R(\d+)/i)||[0,0])||0;
         return aR-bR;
@@ -974,6 +987,180 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
       y+=noteBlockH+6;
     }
 
+    // ── PRICING BREAKDOWN (manager section) ──
+    if(quoteOpts&&quoteOpts.length>0&&quoteOpts.some(function(o){return o.items&&o.items.length>0;})){
+      var optsWithItems=quoteOpts.filter(function(o){return o.items&&o.items.length>0;});
+      // New page for this section
+      doc.addPage();y=40;
+      // Section title bar
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]);doc.rect(0,0,W,32,"F");
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(0,30,W,3,"F");
+      doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(13);doc.setFont("helvetica","bold");
+      doc.text("PRICING BREAKDOWN",M,21);
+      doc.setFontSize(8.5);doc.setFont("helvetica","normal");doc.setTextColor(180,200,240);
+      doc.text("MANAGER COPY — NOT FOR CUSTOMER",W-M,21,{align:"right"});
+      y=46;
+
+      optsWithItems.forEach(function(opt,oi){
+        if(oi>0){y+=10;}
+        // Option header
+        if(optsWithItems.length>1){
+          if(y+20>720){doc.addPage();y=40;}
+          doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,RW,18,"F");
+          doc.setTextColor(WHITE[0],WHITE[1],WHITE[2]);doc.setFontSize(9);doc.setFont("helvetica","bold");
+          doc.text(opt.name.toUpperCase(),x+8,y+12);
+          y+=18;
+        }
+
+        // Column headers
+        if(y+16>720){doc.addPage();y=40;}
+        var bC1=x+8,bC2=x+180,bC3=x+310,bC4=x+375,bC5=x+445;
+        doc.setFillColor(230,236,248);doc.rect(x,y,RW,16,"F");
+        doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);doc.setFontSize(7.5);doc.setFont("helvetica","bold");
+        doc.text("LOCATION / ITEM",bC1,y+11);
+        doc.text("MATERIAL",bC2,y+11);
+        doc.text("SQ FT",bC3,y+11);
+        doc.text("$/SF",bC4,y+11);
+        doc.text("SUBTOTAL",bC5,y+11);
+        y+=16;
+
+        // Line items
+        var lineTotal=0;
+        var installItems=opt.items.filter(function(i){return !i.isRemoval;});
+        var removalItems=opt.items.filter(function(i){return i.isRemoval;});
+        var allRows=installItems.concat(removalItems);
+        allRows.forEach(function(item,ri){
+          if(y+20>720){doc.addPage();y=40;}
+          var isRem=item.isRemoval;
+          doc.setFillColor(ri%2===0?248:255,ri%2===0?250:255,ri%2===0?255:255);
+          doc.rect(x,y,RW,20,"F");
+          if(isRem){doc.setFillColor(220,38,38);doc.rect(x,y,3,20,"F");}
+          else{doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]);doc.rect(x,y,3,20,"F");}
+          doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica",isRem?"italic":"normal");doc.setFontSize(9);
+          doc.text(item.location||"",bC1,y+13,{maxWidth:166});
+          doc.setFont("helvetica","normal");
+          doc.text(isRem?"Removal":(item.material||""),bC2,y+13,{maxWidth:124});
+          if(item.sqft){doc.text((item.sqft||0).toLocaleString(),bC3,y+13);}
+          var ppu3=parseFloat(item.pricePerUnit)||0;
+          if(ppu3){doc.text("$"+ppu3.toFixed(2),bC4,y+13);}
+          var rowTotal=Math.ceil((item.sqft||0)*ppu3);
+          lineTotal+=rowTotal;
+          doc.setFont("helvetica","bold");
+          doc.text("$"+rowTotal.toLocaleString(),bC5,y+13);
+          doc.setDrawColor(220,228,245);doc.setLineWidth(0.3);doc.line(x,y+20,x+RW,y+20);
+          y+=20;
+        });
+
+        // Custom items
+        (opt.customItems||[]).forEach(function(ci,cii){
+          if(y+20>720){doc.addPage();y=40;}
+          doc.setFillColor(cii%2===0?248:255,cii%2===0?250:255,cii%2===0?255:255);
+          doc.rect(x,y,RW,20,"F");
+          doc.setFillColor(GRAY[0],GRAY[1],GRAY[2]);doc.rect(x,y,3,20,"F");
+          doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
+          doc.text(ci.description||"",bC1,y+13,{maxWidth:296});
+          doc.setFont("helvetica","bold");
+          var ciAmt=parseFloat(ci.price)||0;lineTotal+=ciAmt;
+          doc.text("$"+Math.ceil(ciAmt).toLocaleString(),bC5,y+13);
+          doc.setDrawColor(220,228,245);doc.setLineWidth(0.3);doc.line(x,y+20,x+RW,y+20);
+          y+=20;
+        });
+
+        // Misc charges block
+        var charges=[];
+        if(opt.dumpster&&parseFloat(opt.dumpsterAmt)>0)charges.push({label:"Dumpster",amount:parseFloat(opt.dumpsterAmt)});
+        if(opt.tripCharge&&parseFloat(opt.tripChargeAmt)>0)charges.push({label:"Trip Charge",amount:parseFloat(opt.tripChargeAmt)});
+        if(opt.extraLabor&&parseFloat(opt.extraLaborAmt)>0)charges.push({label:"Extra Labor",amount:parseFloat(opt.extraLaborAmt)});
+        if(opt.energySeal&&parseFloat(opt.energySealAmt)>0)charges.push({label:"Energy Seal",amount:parseFloat(opt.energySealAmt)});
+        (opt.customItems||[]).forEach(function(ci){ var amt=parseFloat(ci.price)||0; if(amt>0) charges.push({label:ci.description||"Custom Item",amount:amt}); });
+        charges.forEach(function(ch,chi){
+          if(y+18>720){doc.addPage();y=40;}
+          doc.setFillColor(245,245,250);doc.rect(x,y,RW,18,"F");
+          doc.setFillColor(GRAY[0],GRAY[1],GRAY[2]);doc.rect(x,y,3,18,"F");
+          doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);doc.setFont("helvetica","normal");doc.setFontSize(9);
+          doc.text(ch.label,bC1,y+12);
+          doc.setFont("helvetica","bold");doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+          doc.text("$"+Math.ceil(ch.amount).toLocaleString(),bC5,y+12);
+          lineTotal+=ch.amount;
+          doc.setDrawColor(220,228,245);doc.setLineWidth(0.3);doc.line(x,y+18,x+RW,y+18);
+          y+=18;
+        });
+
+        // PSO credits
+        var credits=[];
+        if(opt.pso)credits.push({label:"PSO Credit — Attic",amount:600});
+        if(opt.psoKw)credits.push({label:"PSO Credit — Kneewall",amount:525});
+        credits.forEach(function(cr){
+          if(y+18>720){doc.addPage();y=40;}
+          doc.setFillColor(240,253,244);doc.rect(x,y,RW,18,"F");
+          doc.setFillColor(22,163,74);doc.rect(x,y,3,18,"F");
+          doc.setTextColor(22,163,74);doc.setFont("helvetica","bold");doc.setFontSize(9);
+          doc.text(cr.label,bC1,y+12);
+          doc.text("-$"+cr.amount.toLocaleString(),bC5,y+12);
+          lineTotal-=cr.amount;
+          doc.setDrawColor(220,228,245);doc.setLineWidth(0.3);doc.line(x,y+18,x+RW,y+18);
+          y+=18;
+        });
+
+        // Receipt-style pricing summary card
+        var basePrice=opt.items.reduce(function(s,i){return s+i.total;},0);
+        var totalCharges=charges.reduce(function(s,ch){return s+ch.amount;},0);
+        var priceAfterCharges=basePrice+totalCharges;
+        var totalCredits=credits.reduce(function(s,cr){return s+cr.amount;},0);
+        var baseTotal=priceAfterCharges-totalCredits;
+        var hasOverride=opt.overrideTotal!=="";
+        var displayTotal=hasOverride?(parseFloat(opt.overrideTotal)||0):baseTotal;
+        var overrideDelta=displayTotal-baseTotal;
+        var overridePct=baseTotal!==0?(overrideDelta/baseTotal)*100:0;
+        var receiptRows=[{label:"Base price",value:"$"+Math.ceil(basePrice).toLocaleString(),kind:"base"}];
+        if(charges.length>0){
+          receiptRows.push({label:"Adders",value:"",kind:"section"});
+          charges.forEach(function(ch){receiptRows.push({label:ch.label,value:"+$"+Math.ceil(ch.amount).toLocaleString(),kind:"charge"});});
+          receiptRows.push({label:"After adders",value:"$"+Math.ceil(priceAfterCharges).toLocaleString(),kind:"subtotal"});
+        }
+        if(credits.length>0){
+          receiptRows.push({label:"Credits",value:"",kind:"section"});
+          credits.forEach(function(cr){receiptRows.push({label:cr.label,value:"-$"+Math.ceil(cr.amount).toLocaleString(),kind:"credit"});});
+        }
+        receiptRows.push({label:"Calculated total",value:"$"+Math.ceil(baseTotal).toLocaleString(),kind:"subtotal"});
+        if(hasOverride){
+          receiptRows.push({label:"Salesman price",value:"$"+Math.ceil(displayTotal).toLocaleString(),kind:"override"});
+          receiptRows.push({label:overrideDelta<0?"Decrease":overrideDelta>0?"Increase":"Price change",value:(overrideDelta>0?"+":"")+overridePct.toFixed(1)+"%",kind:"meta"});
+        }
+        var totalBoxHeight=66+receiptRows.length*14;
+        if(y+totalBoxHeight+12>720){doc.addPage();y=40;}
+        y+=4;
+        var bx=x,bw=RW;
+        doc.setFillColor(255,255,255);doc.roundedRect(bx,y,bw,totalBoxHeight,10,10,"F");
+        doc.setDrawColor(214,223,235);doc.setLineWidth(0.8);doc.roundedRect(bx,y,bw,totalBoxHeight,10,10,"S");
+        doc.setFillColor(248,250,252);doc.roundedRect(bx+8,y+8,bw-16,totalBoxHeight-16,8,8,"F");
+        doc.setTextColor(NAVY[0],NAVY[1],NAVY[2]);doc.setFont("helvetica","bold");doc.setFontSize(9.5);
+        doc.text(optsWithItems.length>1?opt.name+" Pricing":"Pricing Breakdown",bx+18,y+21);
+        doc.setFontSize(20);
+        doc.text("$"+Math.ceil(displayTotal).toLocaleString(),bx+bw-18,y+24,{align:"right"});
+        doc.setDrawColor(226,232,240);doc.setLineWidth(0.5);doc.line(bx+18,y+32,bx+bw-18,y+32);
+
+        var labelX=bx+18;
+        var valueX=bx+bw-18;
+        var cy=y+47;
+        receiptRows.forEach(function(row){
+          if(row.kind==="section"){
+            doc.setTextColor(100,116,139);doc.setFont("helvetica","bold");doc.setFontSize(7.5);
+            doc.text(row.label.toUpperCase(),labelX,cy);
+            cy+=11;
+            return;
+          }
+          var color=row.kind==="credit"?[22,163,74]:row.kind==="charge"?[15,23,42]:row.kind==="override"?NAVY:row.kind==="meta"?(overrideDelta<0?[220,38,38]:overrideDelta>0?[180,83,9]:GRAY):BLACK;
+          doc.setTextColor(color[0],color[1],color[2]);doc.setFont("helvetica",row.kind==="base"||row.kind==="subtotal"||row.kind==="override"?"bold":"normal");doc.setFontSize(row.kind==="base"||row.kind==="subtotal"||row.kind==="override"?9.5:9);
+          doc.text(row.label,labelX,cy);
+          doc.setFont("helvetica","bold");
+          doc.text(row.value,valueX,cy,{align:"right"});
+          cy+=14;
+        });
+        y+=totalBoxHeight+8;
+      });
+    }
+
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
     if(outputMode==="save"){doc.save(filename);return null;}
     return doc.output("blob");
@@ -1001,11 +1188,15 @@ function _buildQuoteHtml(customer,opts,salesman){
   var optsWithItems=opts.filter(function(o){return o.items.length>0;});
   var optSections=optsWithItems.map(function(opt,oi){
     var sortedItems=opt.items.slice().sort(function(a,b){
-      var aFoam=a.type==="Foam"||/foam/i.test(a.material||"");
-      var bFoam=b.type==="Foam"||/foam/i.test(b.material||"");
-      if(aFoam&&!bFoam)return -1;
-      if(!aFoam&&bFoam)return 1;
-      if(aFoam&&bFoam){
+      function htmlSortKey(item){
+        var mat=item.material||item.description||"";
+        if(/blown/i.test(mat))return 2;
+        if(/open cell|closed cell/i.test(mat))return 0;
+        return 1;
+      }
+      var ak=htmlSortKey(a),bk=htmlSortKey(b);
+      if(ak!==bk)return ak-bk;
+      if(ak===0){
         var aIn=parseFloat((a.material||"").match(/^([\d.]+)/)||[0,0])||0;
         var bIn=parseFloat((b.material||"").match(/^([\d.]+)/)||[0,0])||0;
         return aIn-bIn;
@@ -1026,16 +1217,22 @@ function _buildQuoteHtml(customer,opts,salesman){
     var ciTotal=(opt.customItems||[]).reduce(function(s,x){return s+(parseFloat(x.price)||0);},0);
     var sub=lineTotal+el+tc+es+du+ciTotal;
     var total=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):(sub-psoCredit);
+    var hasOverride=opt.overrideTotal!=="";
+    var overrideDelta=total-(sub-psoCredit);
+    var overridePct=(sub-psoCredit)!==0?(overrideDelta/(sub-psoCredit))*100:0;
     var header=optsWithItems.length>1?'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #111">'+opt.name+'</div>':"";
     var totalLabel=optsWithItems.length>1?opt.name+" Total":"Total";
     var totalHtml="";
     var creditRows="";
     if(opt.psoKw)creditRows+='<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit KW</span><span>-$525</span></div>';
     if(opt.pso)creditRows+='<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#dc2626;border-bottom:1px solid #ddd"><span>Less PSO Credit Attic</span><span>-$600</span></div>';
-    if(opt.pso||opt.psoKw){
+    if(opt.pso||opt.psoKw||hasOverride){
       totalHtml='<div style="display:flex;justify-content:flex-end;margin-bottom:'+(oi<optsWithItems.length-1?"20":"0")+'px"><div style="width:260px">'+
         '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:14px;font-weight:600;color:#333"><span>Price</span><span>$'+Math.ceil(sub).toLocaleString()+'</span></div>'+
         creditRows+
+        (hasOverride?'<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #ddd"><span>Before Override</span><span>$'+Math.ceil(sub-psoCredit).toLocaleString()+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;font-weight:600;color:'+(overrideDelta>0?'#b45309':overrideDelta<0?'#dc2626':'#6b7280')+';border-bottom:1px solid #ddd"><span>$ Change</span><span>'+(overrideDelta>0?'+':'-')+'$'+Math.ceil(Math.abs(overrideDelta)).toLocaleString()+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;font-weight:600;color:'+(overrideDelta>0?'#b45309':overrideDelta<0?'#dc2626':'#6b7280')+';border-bottom:1px solid #ddd"><span>% Change</span><span>'+(overrideDelta>0?'+':'')+overridePct.toFixed(1)+'%</span></div>':'' )+
         '<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:800;color:#111"><span>'+totalLabel+'</span><span>$'+Math.ceil(total).toLocaleString()+'</span></div>'+
         '</div></div>';
     }else{
@@ -1060,7 +1257,6 @@ function printQuoteAndTakeOff(customer,opts,salesman,jobNotes,measurements,quote
     buildQuotePdf(customer,opts,salesman,"blob",showProductInfo),
     buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,"blob")
   ]).then(function(blobs){
-    // Open quote PDF first, then takeoff as separate share — or just share both
     var quoteName="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
     var takeoffName="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
     var files=[];
@@ -1210,8 +1406,15 @@ function QuoteBuilderSection(p){
   var energySeal=opt.energySeal?(parseFloat(opt.energySealAmt)||0):0;
   var dumpster=opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0;
   var customItemsTotal=(opt.customItems||[]).reduce(function(s,ci){return s+(parseFloat(ci.price)||0);},0);
-  var subtotal=lineItemsTotal-psoCredit+extraLabor+tripCharge+energySeal+dumpster+customItemsTotal;
-  var finalTotal=opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0):subtotal;
+  var totalCharges=extraLabor+tripCharge+energySeal+dumpster+customItemsTotal;
+  var priceAfterCharges=lineItemsTotal+totalCharges;
+  var priceAfterRebates=priceAfterCharges-psoCredit;
+  var subtotal=priceAfterRebates;
+  var hasManualOverride=opt.overrideTotal!=="";
+  var overrideValue=hasManualOverride?(parseFloat(opt.overrideTotal)||0):subtotal;
+  var finalTotal=overrideValue;
+  var overrideDelta=overrideValue-subtotal;
+  var overridePct=subtotal!==0?(overrideDelta/subtotal)*100:0;
   var matSs={width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box",WebkitAppearance:"none",marginBottom:8};
 
   function handlePriceImport(item){var pr=parseFloat(pricingPrice)||0;if(pr<=0||!pricingMat)return;
@@ -1265,7 +1468,7 @@ function QuoteBuilderSection(p){
 
     {/* OPTION TABS */}
     <div style={{marginBottom:12}}>
-      <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+      <div className="ist-option-tabs" style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
         {opts.map(function(o,idx){return(
           <button key={idx} onClick={function(){setActiveIdx(idx);setPricingId(null);}}
             style={{padding:"8px 14px",borderRadius:6,border:activeIdx===idx?"2px solid "+C.accent:"1px solid "+C.border,background:activeIdx===idx?C.accentBg:C.card,color:activeIdx===idx?C.accent:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
@@ -1273,8 +1476,8 @@ function QuoteBuilderSection(p){
           </button>
         );})}
         <button onClick={addOption} style={{padding:"8px 12px",borderRadius:6,border:"1px dashed "+C.dim,background:"transparent",color:C.dim,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"+"}</button>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:8}}>
-          {editingName?(<div style={{display:"flex",gap:6}}>
+        <div className="ist-option-actions" style={{display:"flex",alignItems:"center",gap:8,marginLeft:8}}>
+          {editingName?(<div className="ist-option-rename" style={{display:"flex",gap:6}}>
             <input style={{padding:"6px 10px",background:C.input,border:"1px solid "+C.accent,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}
               type="text" value={opt.name} onChange={function(e){updateOpt({name:e.target.value});}} autoFocus
               onKeyDown={function(e){if(e.key==="Enter")setEditingName(false);}}/>
@@ -1292,9 +1495,9 @@ function QuoteBuilderSection(p){
       <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{"From Take Off — Price These ("+unpriced.length+")"}</div>
       <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.border,overflow:"hidden"}}>
         {unpriced.map(function(item,idx){return(<div key={item.id} style={{padding:"12px 14px",borderBottom:idx<unpriced.length-1?"1px solid "+C.border:"none"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div className="ist-price-import-row" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.isRemoval?(<span><span style={{fontSize:10,fontWeight:700,color:C.danger,background:C.dangerBg,padding:"2px 6px",borderRadius:4,marginRight:6}}>{"REMOVAL"}</span>{item.location}</span>):item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:12}}>
+            <div className="ist-price-import-actions" style={{display:"flex",alignItems:"center",gap:6,marginLeft:12}}>
               {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat(item.matNote||"");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.accent,borderRadius:6,color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
               <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button>
             </div>
@@ -1317,19 +1520,19 @@ function QuoteBuilderSection(p){
             return(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
               <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:8}}>{"Adding to: "+opt.name}</div>
               <div style={{fontSize:10,fontWeight:700,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{"Material"}{!pricingMat&&<span style={{color:C.danger,marginLeft:4}}>{"*"}</span>}</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
+              <div className="ist-material-btns" style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
                 {PMBTNS.map(function(b){
                   var active=activePrimaryId===b.id;
                   return(<button key={b.id} onClick={function(){if(b.value){setPricingMat(b.value);}else{setPricingMat("");}}} style={bs(active)}>{b.label}</button>);
                 })}
               </div>
-              {activePrimary&&activePrimary.sub&&(<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8,paddingLeft:8,borderLeft:"3px solid "+C.accent}}>
+              {activePrimary&&activePrimary.sub&&(<div className="ist-material-btns" style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8,paddingLeft:8,borderLeft:"3px solid "+C.accent}}>
                 {activePrimary.sub.map(function(s){
                   return(<button key={s.id} onClick={function(){setPricingMat(s.value);}} style={bs(pricingMat===s.value)}>{s.label}</button>);
                 })}
               </div>)}
               {pricingMat&&<div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:8}}>{"✓ "+pricingMat}</div>}
-              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <div className="ist-price-entry-row" style={{display:"flex",gap:6,alignItems:"center"}}>
                 <div style={{flex:1}}><Input label="$/sf" value={pricingPrice} onChange={setPricingPrice} placeholder="0.00" step="0.01"/></div>
                 <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
                 <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Cancel"}</button>
@@ -1342,42 +1545,80 @@ function QuoteBuilderSection(p){
     </div>)}
 
     {/* ADD MANUALLY */}
-    {/* QUOTE TOTAL — pinned card */}
+    {/* LIVE PRICING SNAPSHOT */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 16px"}}>
-      <div style={{background:C.accent,borderRadius:10,padding:"18px 22px",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:"0 4px 16px rgba(37,99,235,0.18)"}}>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.75)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{opt.name+" · "+opt.items.length+" item"+(opt.items.length!==1?"s":"")}</div>
-          <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.85)"}}>{"Estimated Total"}</div>
+      <div style={{background:"linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)",borderRadius:18,padding:"18px",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 18px 40px rgba(15,23,42,0.22)"}}>
+        <div className="ist-pricing-hero-top" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.68)",textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:6}}>{opt.name+" live pricing"}</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#fff",lineHeight:1.35}}>The number on the right is the active sell price. The cards below show exactly what feeds it.</div>
+          </div>
+          <div className="ist-pricing-hero-total" style={{textAlign:"right",minWidth:180}}>
+            <div style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.68)",textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:6}}>{hasManualOverride?"Live sell price":"Calculated sell price"}</div>
+            <div style={{fontSize:40,fontWeight:900,color:"#fff",letterSpacing:"-0.04em",lineHeight:1}}>{"$"+Math.round(finalTotal).toLocaleString()}</div>
+          </div>
         </div>
-        <div style={{fontSize:38,fontWeight:900,color:"#fff",letterSpacing:"-0.02em"}}>
-          {"$"+(opt.overrideTotal!==""?(parseFloat(opt.overrideTotal)||0).toLocaleString():((opt.items.reduce(function(s,i){return s+i.total;},0)-((opt.pso||false)?600:0)-((opt.psoKw||false)?525:0)+(opt.extraLabor?(parseFloat(opt.extraLaborAmt)||0):0)+(opt.tripCharge?(parseFloat(opt.tripChargeAmt)||0):0)+(opt.energySeal?(parseFloat(opt.energySealAmt)||0):0)+(opt.dumpster?(parseFloat(opt.dumpsterAmt)||0):0))).toLocaleString())}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginTop:14}}>
+          <div style={{padding:"12px 14px",borderRadius:14,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.12)"}}>
+            <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>{"Line items"}</div>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff"}}>{"$"+Math.round(lineItemsTotal).toLocaleString()}</div>
+          </div>
+          <div style={{padding:"12px 14px",borderRadius:14,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.12)"}}>
+            <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>{"Adders / extras"}</div>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff"}}>{(totalCharges>0?"+":"")+"$"+Math.round(totalCharges).toLocaleString()}</div>
+          </div>
+          <div style={{padding:"12px 14px",borderRadius:14,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.12)"}}>
+            <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>{"Credits"}</div>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff"}}>{(psoCredit>0?"-":"")+"$"+Math.round(psoCredit).toLocaleString()}</div>
+          </div>
+          <div style={{padding:"12px 14px",borderRadius:14,background:hasManualOverride?"rgba(251,191,36,0.18)":"rgba(255,255,255,0.1)",border:"1px solid "+(hasManualOverride?"rgba(251,191,36,0.35)":"rgba(255,255,255,0.12)")}}>
+            <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.65)",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}}>{"Manual override"}</div>
+            <div style={{fontSize:24,fontWeight:800,color:"#fff"}}>{(overrideDelta>0?"+":overrideDelta<0?"-":"")+"$"+Math.round(Math.abs(overrideDelta)).toLocaleString()}</div>
+          </div>
         </div>
       </div>
     </div>)}
     {/* ITEMS FOR ACTIVE OPTION */}
     {opt.items.length>0&&(<div style={{padding:"0 16px 20px"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — Items ("+opt.items.length+")"}</div>
-      <div style={{background:C.card,borderRadius:6,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
-        {opt.items.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:idx<opt.items.length-1?"1px solid "+C.border:"none"}}>
-          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.description}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
-          <div style={{marginLeft:12}}><button onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"REMOVE"}</button></div>
+      <div style={{fontSize:12,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>{opt.name+" — priced line items ("+opt.items.length+")"}</div>
+      <div style={{background:C.card,borderRadius:14,padding:16,border:"1px solid "+C.border,boxShadow:C.shadow}}>
+        <div className="ist-items-hdr" style={{gap:12,padding:"0 0 10px",borderBottom:"1px solid "+C.borderLight,marginBottom:6,alignItems:"end"}}>
+          <div style={{fontSize:10,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em"}}>{"Work item"}</div>
+          <div style={{fontSize:10,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",textAlign:"right"}}>{"Quantity × rate"}</div>
+          <div style={{fontSize:10,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",textAlign:"right"}}>{"Line total"}</div>
+          <div></div>
+        </div>
+        {opt.items.map(function(item,idx){var itemRate=parseFloat(item.pricePerUnit)||0;var itemTotal=Math.round(item.total||0);return(<div key={item.id} className="ist-items-row" style={{gap:12,alignItems:"center",padding:"14px 0",borderBottom:idx<opt.items.length-1?"1px solid "+C.border:"none"}}>
+          <div className="ic-desc" style={{minWidth:0}}>
+            <div style={{fontSize:14,fontWeight:700,lineHeight:1.35,color:C.text}}>{item.location||item.description}</div>
+            <div style={{fontSize:12,color:C.textSec,marginTop:3,lineHeight:1.4}}>{item.material||"Material not set"}{item.pitch?" · "+item.pitch:""}{item.description&&item.location&&item.description!==item.location?" · "+item.description:""}</div>
+          </div>
+          <div className="ic-qty" style={{textAlign:"right"}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf × $"+itemRate.toFixed(2)+"/sf"}</div>
+            <div style={{fontSize:11,color:C.dim,marginTop:3}}>{"Qty/rate for this line"}</div>
+          </div>
+          <div className="ic-tot" style={{textAlign:"right"}}>
+            <div style={{fontSize:18,fontWeight:900,color:C.text,letterSpacing:"-0.02em"}}>{"$"+itemTotal.toLocaleString()}</div>
+            <div style={{fontSize:11,color:C.dim,marginTop:3}}>{"This line"}</div>
+          </div>
+          <div className="ic-rm" style={{marginLeft:"auto"}}><button onClick={function(){removeItem(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:700,textTransform:"uppercase"}}>{"Remove"}</button></div>
         </div>);})}
 
         {/* ADJUSTMENTS */}
         <div style={{paddingTop:12,marginTop:8,borderTop:"1px solid "+C.borderLight}}>
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.pso} onChange={function(e){updateOpt({pso:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit Attic"}</span>
             {opt.pso&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$600"}</span>)}
           </label>
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.psoKw||false} onChange={function(e){updateOpt({psoKw:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"PSO Credit KW"}</span>
             {opt.psoKw&&(<span style={{fontSize:13,fontWeight:700,color:C.danger,marginLeft:"auto"}}>{"-$525"}</span>)}
           </label>
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.extraLabor} onChange={function(e){updateOpt({extraLabor:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Extra Labor"}</span>
@@ -1390,7 +1631,7 @@ function QuoteBuilderSection(p){
               </div>
             )}
           </label>
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.tripCharge} onChange={function(e){updateOpt({tripCharge:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Trip Charge"}</span>
@@ -1403,7 +1644,7 @@ function QuoteBuilderSection(p){
               </div>
             )}
           </label>
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:"pointer"}}>
             <input type="checkbox" checked={opt.energySeal||false} onChange={function(e){updateOpt({energySeal:e.target.checked,overrideTotal:""});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Energy Seal & Plates"}</span>
@@ -1416,7 +1657,7 @@ function QuoteBuilderSection(p){
             )}
           </label>
           {/* Dumpster — internal only, never on quote */}
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
             <input type="checkbox" checked={opt.dumpster||false} onChange={function(e){updateOpt({dumpster:e.target.checked});}}
               style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Dumpster"}</span>
@@ -1445,7 +1686,7 @@ function QuoteBuilderSection(p){
               <input type="text" value={customDesc} onChange={function(e){setCustomDesc(e.target.value);}} placeholder="e.g. Treat top of sheetrock with Sterifab"
                 onKeyDown={function(e){if(e.key==="Enter"&&customPrice){var d=customDesc.trim();var pr=parseFloat(customPrice)||0;if(d&&pr>0){updateOpt({customItems:(opt.customItems||[]).concat([{id:Date.now()+Math.random(),description:d,price:pr}]),overrideTotal:""});setCustomDesc("");setCustomPrice("");}}} }
                 style={{width:"100%",padding:"8px 10px",background:C.input,border:"1px solid "+C.inputBorder,borderRadius:6,color:C.text,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none",boxSizing:"border-box"}}/>
-              <div style={{display:"flex",gap:6}}>
+              <div className="ist-custom-price-row" style={{display:"flex",gap:6}}>
                 <div style={{display:"flex",alignItems:"center",gap:4,flex:1}}>
                   <span style={{fontSize:13,color:C.text,fontWeight:600}}>{"$"}</span>
                   <input type="number" value={customPrice} onChange={function(e){setCustomPrice(e.target.value);}} placeholder="Price"
@@ -1457,7 +1698,7 @@ function QuoteBuilderSection(p){
             </div>
           </div>
 
-          <label style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
+          <label className="ist-adjust-row" style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderTop:"1px solid "+C.borderLight,cursor:"pointer"}}>
             <input type="checkbox" checked={p.showProductInfo||false} onChange={function(e){p.setShowProductInfo(e.target.checked);}} style={{width:18,height:18,accentColor:C.accent,cursor:"pointer"}}/>
             <span style={{fontSize:13,fontWeight:600,color:C.text}}>{"Product Information"}</span>
             <span style={{fontSize:11,color:C.dim,marginLeft:2}}>{"(adds spec sheet to PDF)"}</span>
@@ -1466,22 +1707,84 @@ function QuoteBuilderSection(p){
 
         {/* TOTAL */}
         <div style={{paddingTop:12,marginTop:4,borderTop:"1px solid "+C.borderLight}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0 0"}}>
-            <span style={{fontSize:18,fontWeight:800,color:C.text}}>{"TOTAL"}</span>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:16,fontWeight:800,color:C.text}}>{"$"}</span>
-              <input type="number" value={opt.overrideTotal!==""?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
-                style={{width:110,padding:"6px 10px",background:C.bg,border:"1px solid "+C.borderLight,borderRadius:6,color:C.text,fontSize:18,fontWeight:800,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right"}} step="1"/>
+          <div style={{background:"rgba(255,255,255,0.88)",border:"1px solid "+C.border,borderRadius:18,padding:0,overflow:"hidden",boxShadow:"0 14px 34px rgba(15,23,42,0.09)"}}>
+            <div className="ist-price-split" style={{gap:0}}>
+              <div className="ist-price-split-left" style={{padding:"18px 18px 16px",borderRight:"1px solid "+C.borderLight}}>
+                <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:6}}>{opt.name+" pricing math"}</div>
+                <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:14}}>Each row keeps the label on the left and its dollar impact on the right.</div>
+
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderTop:"1px solid "+C.borderLight,borderBottom:"1px solid "+C.borderLight}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:800,color:C.text}}>{"Line item total"}</div>
+                    <div style={{fontSize:12,color:C.textSec}}>{opt.items.length+" priced item"+(opt.items.length!==1?"s":"")}</div>
+                  </div>
+                  <div style={{fontSize:22,fontWeight:900,color:C.text,letterSpacing:"-0.02em"}}>{"$"+Math.round(lineItemsTotal).toLocaleString()}</div>
+                </div>
+
+                {totalCharges > 0 && <div style={{padding:"14px 0 2px",borderBottom:"1px solid "+C.borderLight}}>
+                  <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:8}}>{"Adders and extras"}</div>
+                  {extraLabor > 0 && <div style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.text,marginBottom:8}}><span>Extra labor</span><strong>{"+$"+Math.round(extraLabor).toLocaleString()}</strong></div>}
+                  {tripCharge > 0 && <div style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.text,marginBottom:8}}><span>Trip charge</span><strong>{"+$"+Math.round(tripCharge).toLocaleString()}</strong></div>}
+                  {energySeal > 0 && <div style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.text,marginBottom:8}}><span>Energy seal & plates</span><strong>{"+$"+Math.round(energySeal).toLocaleString()}</strong></div>}
+                  {dumpster > 0 && <div style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.text,marginBottom:8}}><span>Dumpster</span><strong>{"+$"+Math.round(dumpster).toLocaleString()}</strong></div>}
+                  {(opt.customItems||[]).map(function(ci){return <div key={ci.id} style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.text,marginBottom:8}}><span>{ci.description}</span><strong>{"+$"+Math.round(parseFloat(ci.price)||0).toLocaleString()}</strong></div>;})}
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:14,fontWeight:800,color:C.text,paddingTop:10,marginTop:2,borderTop:"1px dashed "+C.border}}><span>Subtotal after adders</span><span>{"$"+Math.round(priceAfterCharges).toLocaleString()}</span></div>
+                </div>}
+
+                {psoCredit > 0 && <div style={{padding:"14px 0 2px",borderBottom:"1px solid "+C.borderLight}}>
+                  <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:8}}>{"Credits and rebates"}</div>
+                  {opt.pso && <div style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.green,marginBottom:8}}><span>PSO attic</span><strong>{"-$600"}</strong></div>}
+                  {opt.psoKw && <div style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:14,color:C.green,marginBottom:8}}><span>PSO kneewall</span><strong>{"-$525"}</strong></div>}
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:14,fontWeight:800,color:C.text,paddingTop:10,marginTop:2,borderTop:"1px dashed "+C.border}}><span>Calculated total</span><span>{"$"+Math.round(subtotal).toLocaleString()}</span></div>
+                </div>}
+
+                {psoCredit===0 && totalCharges===0 && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0 2px",borderBottom:"1px solid "+C.borderLight}}><span style={{fontSize:14,fontWeight:800,color:C.text}}>{"Calculated total"}</span><span style={{fontSize:18,fontWeight:900,color:C.text}}>{"$"+Math.round(subtotal).toLocaleString()}</span></div>}
+              </div>
+
+              <div style={{padding:"18px",background:"linear-gradient(180deg, rgba(239,246,255,0.82) 0%, rgba(255,255,255,0.96) 100%)"}}>
+                <div style={{fontSize:11,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:6}}>{"Live sell price control"}</div>
+                <div style={{fontSize:13,color:C.textSec,marginBottom:14}}>Change the live price here. The calculated number stays visible right below it for comparison.</div>
+
+                <div style={{padding:"14px",background:"#fff",border:"1px solid rgba(37,99,235,0.16)",borderRadius:16,boxShadow:"0 8px 20px rgba(37,99,235,0.08)"}}>
+                  <div style={{fontSize:11,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:6}}>{hasManualOverride?"Live sell price":"Sell price"}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:18,fontWeight:900,color:C.text}}>{"$"}</span>
+                    <input type="number" value={hasManualOverride?opt.overrideTotal:subtotal.toFixed(0)} onChange={function(e){updateOpt({overrideTotal:e.target.value});}}
+                      style={{flex:1,padding:"12px 14px",background:"#fff",border:"1px solid rgba(37,99,235,0.22)",borderRadius:12,color:C.text,fontSize:26,fontWeight:900,fontFamily:"'Inter',sans-serif",outline:"none",textAlign:"right",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.8)"}} step="1"/>
+                  </div>
+                </div>
+
+                <div style={{display:"grid",gap:10,marginTop:14}}>
+                  <div style={{padding:"12px 14px",background:"rgba(255,255,255,0.75)",border:"1px solid "+C.borderLight,borderRadius:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
+                      <span style={{fontSize:12,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em"}}>{"Calculated total"}</span>
+                      <span style={{fontSize:22,fontWeight:900,color:C.text}}>{"$"+Math.round(subtotal).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div style={{padding:"12px 14px",background:"rgba(255,255,255,0.92)",border:"1px solid rgba(37,99,235,0.16)",borderRadius:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
+                      <span style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>{"Live total"}</span>
+                      <span style={{fontSize:24,fontWeight:900,color:C.accent}}>{"$"+Math.round(finalTotal).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div style={{padding:"12px 14px",background:"rgba(255,255,255,0.75)",border:"1px solid "+C.borderLight,borderRadius:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:12}}>
+                      <span style={{fontSize:12,fontWeight:800,color:C.dim,textTransform:"uppercase",letterSpacing:"0.1em"}}>{"Override difference"}</span>
+                      <span style={{fontSize:20,fontWeight:900,color:overrideDelta>0?"#b45309":overrideDelta<0?C.danger:C.text}}>{(overrideDelta>0?"+":overrideDelta<0?"-":"")+"$"+Math.round(Math.abs(overrideDelta)).toLocaleString()}</span>
+                    </div>
+                    <div style={{fontSize:12,fontWeight:700,color:overrideDelta>0?"#b45309":overrideDelta<0?C.danger:C.text,marginTop:4,textAlign:"right"}}>{subtotal===0?"0.0%":(overrideDelta>0?"+":"")+overridePct.toFixed(1)+"% vs calculated"}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          {opt.overrideTotal!==""&&parseFloat(opt.overrideTotal)!==subtotal&&(<div style={{fontSize:11,color:C.dim,textAlign:"right",marginTop:4}}>{"Calculated: $"+subtotal.toFixed(0)}</div>)}
         </div>
       </div>
       <button onClick={function(){if(confirm("Clear items from "+opt.name+"?"))updateOpt({items:[]});}} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:6,border:"1px solid "+C.danger,background:"transparent",color:C.danger,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Clear "+opt.name}</button>
     </div>)}
 
     {/* PRINT/SHARE */}
-    {opts.some(function(o){return o.items.length>0;})&&(<div style={{marginBottom:16}}>
+    {opts.some(function(o){return o.items.length>0;})&&(<div className="ist-print-actions" style={{marginBottom:16}}>
       <GreenBtn onClick={function(){generatePDF({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser,p.showProductInfo||false);}}>{"Print Quote"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){shareQuote({name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr},opts,p.currentUser,p.showProductInfo||false);}}>{"Share Quote"}</GreenBtn>
       <GreenBtn mt={8} onClick={function(){var cust={name:p.custName,address:p.custAddr,phone:p.custPhone,email:p.custEmail,jobAddress:p.jobAddr};printQuoteAndTakeOff(cust,opts,p.currentUser,p.jobNotes,p.measurements,opts,p.showProductInfo||false);}}>{"Print Quote and Take Off"}</GreenBtn>
@@ -2349,10 +2652,11 @@ export default function App() {
     <div className="ist-app" style={{ fontFamily: "'Inter', sans-serif", color: C.text, paddingBottom: 32 }}><div style={{ maxWidth: 1140, margin: "0 auto" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        html, body { background: linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%); margin: 0; min-height: 100vh; background-attachment: fixed; }
-        .ist-app { background: transparent; min-height: 100vh; }
+        html, body { background: linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%); margin: 0; min-height: 100vh; background-attachment: fixed; width: 100%; overflow-x: hidden; }
+        #root { width: 100%; overflow-x: hidden; }
+        .ist-app { background: transparent; min-height: 100vh; overflow-x: hidden; }
         .ist-app::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.5) 0%, transparent 70%); pointer-events: none; z-index: 0; }
-        .ist-app > * { position: relative; z-index: 1; }
+        .ist-app > * { position: relative; z-index: 1; min-width: 0; }
         .ist-2col { display: flex; flex-direction: column; }
         .ist-col-form { min-width: 0; }
         .ist-col-results { min-width: 0; }
@@ -2366,6 +2670,47 @@ export default function App() {
         input::placeholder, textarea::placeholder { color: rgba(100,116,139,0.5) !important; }
         input, textarea, select { color-scheme: light; }
         * { box-sizing: border-box; }
+        .ist-items-hdr { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(150px,0.8fr) minmax(110px,0.6fr) 56px; }
+        .ist-items-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(150px,0.8fr) minmax(110px,0.6fr) 56px; }
+        .ist-price-split { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,0.85fr); }
+        @media (max-width:600px) {
+          .ist-nav-tabs button { min-width:0; font-size:10px !important; padding-left:3px !important; padding-right:3px !important; letter-spacing:0.01em !important; }
+          .ist-nav-tabs span { margin-left:2px !important; padding-left:4px !important; padding-right:4px !important; }
+          .ist-option-tabs { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px !important; align-items:stretch !important; }
+          .ist-option-tabs > button { min-height:42px; padding:10px 8px !important; white-space:normal; overflow-wrap:anywhere; }
+          .ist-option-actions { grid-column:1 / -1; margin-left:0 !important; width:100%; justify-content:stretch; }
+          .ist-option-actions > div { width:100%; }
+          .ist-option-actions button { min-height:40px; flex:1; border-radius:8px !important; background:rgba(255,255,255,0.55) !important; }
+          .ist-option-rename { width:100%; }
+          .ist-option-rename input { min-width:0; flex:1; width:100%; }
+          .ist-price-import-row { flex-direction:column; align-items:stretch !important; gap:10px; }
+          .ist-price-import-actions { margin-left:0 !important; width:100%; display:grid !important; grid-template-columns:1fr 1fr; }
+          .ist-price-import-actions button { min-height:40px; }
+          .ist-material-btns { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); padding-left:0 !important; border-left:none !important; }
+          .ist-material-btns button { min-height:40px; padding:9px 8px !important; white-space:normal; }
+          .ist-price-entry-row { display:grid !important; grid-template-columns:1fr 1fr; align-items:end !important; }
+          .ist-price-entry-row > div { grid-column:1 / -1; min-width:0; }
+          .ist-price-entry-row button { min-height:42px; }
+          .ist-pricing-hero-top { flex-direction:column; gap:12px !important; }
+          .ist-pricing-hero-total { min-width:0 !important; width:100%; text-align:left !important; }
+          .ist-pricing-hero-total > div:last-child { font-size:34px !important; overflow-wrap:anywhere; }
+          .ist-items-hdr { display:none; }
+          .ist-items-row { grid-template-columns:1fr !important; grid-template-rows:auto !important; gap:8px !important; }
+          .ic-desc, .ic-qty, .ic-tot, .ic-rm { grid-column:1 !important; grid-row:auto !important; text-align:left !important; min-width:0; }
+          .ic-tot { display:block !important; }
+          .ic-rm { margin-left:0 !important; justify-content:stretch !important; }
+          .ic-rm button { width:100%; min-height:40px; border:1px solid rgba(220,38,38,0.22) !important; border-radius:8px; background:rgba(220,38,38,0.05) !important; }
+          .ist-adjust-row { flex-wrap:wrap; align-items:flex-start !important; }
+          .ist-adjust-row input[type="checkbox"] { flex:0 0 auto; }
+          .ist-adjust-row > span { min-width:0; overflow-wrap:anywhere; }
+          .ist-adjust-row > div { margin-left:28px !important; width:calc(100% - 28px); justify-content:flex-start; }
+          .ist-adjust-row > div input { width:100% !important; max-width:180px; }
+          .ist-custom-price-row { display:grid !important; grid-template-columns:1fr; }
+          .ist-custom-price-row button { min-height:42px; }
+          .ist-price-split { grid-template-columns:1fr; }
+          .ist-price-split-left { border-right:none !important; border-bottom:1px solid rgba(0,0,0,0.06) !important; }
+          .ist-print-actions { padding-bottom:max(8px, env(safe-area-inset-bottom)); }
+        }
       `}</style>
 
       {/* HEADER */}

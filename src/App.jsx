@@ -1285,28 +1285,34 @@ function measureModeNumber(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/
 function measureModeEntrySqft(row,entry){
   var text=String((entry&&entry.measure)!=null?entry.measure:row.measure||"").toLowerCase().replace(/×/g,"x").replace(/by/g,"x");
   if(!text.trim())return 0;
+  var rowCenters=parseFloat((entry&&entry.centers)!=null?entry.centers:row.centers)||0;
+  var rowHeight=measureModeNumber((entry&&entry.height)!=null?entry.height:row.height);
+  function linearToSqft(linear){
+    if(rowCenters===16)return linear*(rowHeight>0?rowHeight*1.25:1.25);
+    if(rowCenters===24)return linear*(rowHeight>0?rowHeight*2:2);
+    return linear;
+  }
   var total=0;
   text.split(/[\n,;+]+/).forEach(function(part){
     part=String(part||"").trim();if(!part)return;
-    var nums=part.match(/\d+(?:\.\d+)?/g);
-    if(!nums||nums.length===0)return;
     var cavityMatch=part.match(/@\s*(16|24)\b|\b(16|24)\s*(?:\"|in|oc|c|cav|cavity)\b/);
     if(cavityMatch && part.indexOf("x")<0){
       var cavity=parseFloat(cavityMatch[1]||cavityMatch[2]);
+      var numsForCavity=part.match(/\d+(?:\.\d+)?/g)||[];
       var linear=0;
-      nums.some(function(n){var v=parseFloat(n)||0;if(v!==cavity){linear=v;return true;}return false;});
-      if(!linear&&nums.length===1)linear=parseFloat(nums[0])||0;
+      numsForCavity.some(function(n){var v=parseFloat(n)||0;if(v!==cavity){linear=v;return true;}return false;});
+      if(!linear&&numsForCavity.length===1)linear=parseFloat(numsForCavity[0])||0;
       total+=linear*(cavity===24?2:1.25);
+      return;
     }
-    else if(nums.length>=2)total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);
-    else {
-      var linearOnly=parseFloat(nums[0])||0;
-      var rowCenters=parseFloat((entry&&entry.centers)!=null?entry.centers:row.centers)||0;
-      var rowHeight=measureModeNumber((entry&&entry.height)!=null?entry.height:row.height);
-      if(rowCenters===16)total+=linearOnly*(rowHeight>0?rowHeight*1.25:1.25);
-      else if(rowCenters===24)total+=linearOnly*(rowHeight>0?rowHeight*2:2);
-      else total+=linearOnly;
+    var dimMatches=part.match(/\d+(?:\.\d+)?\s*x\s*\d+(?:\.\d+)?/g);
+    if(dimMatches&&dimMatches.length){
+      dimMatches.forEach(function(dim){var nums=dim.match(/\d+(?:\.\d+)?/g)||[];total+=(parseFloat(nums[0])||0)*(parseFloat(nums[1])||0);});
+      var leftover=part.replace(/\d+(?:\.\d+)?\s*x\s*\d+(?:\.\d+)?/g," ");
+      (leftover.match(/\d+(?:\.\d+)?/g)||[]).forEach(function(n){total+=linearToSqft(parseFloat(n)||0);});
+      return;
     }
+    (part.match(/\d+(?:\.\d+)?/g)||[]).forEach(function(n){total+=linearToSqft(parseFloat(n)||0);});
   });
   return Math.round(total);
 }

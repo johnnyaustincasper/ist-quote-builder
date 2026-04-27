@@ -967,7 +967,7 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         // Individual dim entries
         g.entries.forEach(function(r){
           doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-          var detailLines=(r.measurementDetails||r.measureDetails||[]).map(function(d){var l=d.label||d.measure||"";var sf=parseFloat(d.sqft)||0;return l?(l+(sf?" = "+sf.toLocaleString()+" sf":"")):"";}).filter(Boolean);
+          var detailLines=(r.measurementDetails||r.measureDetails||[]).map(function(d){return measureModeDetailDisplay(d);}).filter(Boolean);
           if(!detailLines.length){var dimLabel=r.dimStr||(r.wallHeightLabel)||"";var sqftLabel=(parseFloat(r.sqft)||0).toLocaleString()+" sf";detailLines=[dimLabel?dimLabel+" = "+sqftLabel:sqftLabel];}
           detailLines.forEach(function(line){if(y+DIM_H>720){doc.addPage();y=40;}doc.text(line,c1+12,y+10,{maxWidth:RW-36});y+=DIM_H;});
         });
@@ -1318,7 +1318,25 @@ function measureModeEntrySqft(row,entry){
 }
 function measureModeHasRowLevelInput(row){return !!(String(row.measure||"").trim()||String(row.height||"").trim()||String(row.centers||"").trim());}
 function measureModeActiveEntries(row){return measureModeHasRowLevelInput(row)?[row]:(row.entries&&row.entries.length?row.entries:[row]);}
-function measureModeEntryLabel(row,entry){return [entry&&entry.height,entry&&entry.centers,entry&&entry.measure].filter(function(v){return String(v||"").trim();}).join("/");}
+function measureModePrettyMeasure(v){
+  var text=String(v||"").trim().replace(/×/g,"x").replace(/\s+/g," ");
+  if(!text)return "";
+  var dimMatches=text.match(/\d+(?:\.\d+)?\s*x\s*\d+(?:\.\d+)?/gi);
+  if(dimMatches&&dimMatches.length){return dimMatches.map(function(dim){return dim.replace(/\s*x\s*/i,"×");}).join(" + ");}
+  var nums=text.match(/\d+(?:\.\d+)?/g);
+  if(nums&&nums.length>1&&text.indexOf("+")<0&&text.indexOf(",")<0&&text.indexOf(";")<0){return nums.join(" + ");}
+  return text.replace(/\s*\+\s*/g," + ");
+}
+function measureModeEntryLabel(row,entry){
+  var height=measureModeNumber(entry&&entry.height);
+  var centers=String((entry&&entry.centers)||"").trim();
+  var measure=measureModePrettyMeasure(entry&&entry.measure);
+  var parts=[];
+  if(height>0)parts.push(height+"' walls");
+  if(centers)parts.push(centers+'" centers');
+  if(measure)parts.push(measure);
+  return parts.join(" · ");
+}
 function measureModeMeasurementDetails(row){
   var activeEntries=measureModeActiveEntries(row);
   var details=[];
@@ -1335,12 +1353,13 @@ function measureModeMeasurementDetails(row){
   if(!details.length&&measureModeNumber(row.sqft)>0){details.push({id:"manual",height:"",centers:"",measure:String(row.sqft||""),label:"Manual sqft",sqft:Math.round(measureModeNumber(row.sqft))});}
   return details;
 }
-function measureModeDetailsLabel(details){return (details||[]).map(function(d){var l=d.label||d.measure||"";var sf=parseFloat(d.sqft)||0;return l?(l+(sf?" = "+sf.toLocaleString()+" sf":"")):"";}).filter(Boolean).join(" + ");}
+function measureModeDetailDisplay(d){var l=measureModeEntryLabel(null,d)||d.label||measureModePrettyMeasure(d&&d.measure)||"Measurement";var sf=parseFloat(d&&d.sqft)||0;return l+(sf?" = "+sf.toLocaleString()+" sf":"");}
+function measureModeDetailsLabel(details){return (details||[]).map(function(d){return measureModeDetailDisplay(d);}).filter(Boolean).join(" + ");}
 function measureModeCloneRows(rows){return (rows&&rows.length?rows:[]).map(function(r){return Object.assign({},r,{entries:(r.entries&&r.entries.length?r.entries:[newMeasureModeEntry()]).map(function(e){return Object.assign({},e);})});});}
 function measureModeDefaultRows(){return [newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow()];}
 function MeasureDetailLines({details}){
   if(!details||!details.length)return null;
-  return <div style={{fontSize:11,color:C.textSec,marginTop:4,lineHeight:1.35}}>{details.map(function(d,i){return <div key={d.id||i}>{"↳ "+(d.label||d.measure||"Measurement")+(d.sqft?" = "+Number(d.sqft).toLocaleString()+" sf":"")}</div>;})}</div>;
+  return <div style={{fontSize:11,color:C.textSec,marginTop:4,lineHeight:1.35}}>{details.map(function(d,i){return <div key={d.id||i}>{"↳ "+measureModeDetailDisplay(d)}</div>;})}</div>;
 }
 function measureModeSqft(row){
   var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);

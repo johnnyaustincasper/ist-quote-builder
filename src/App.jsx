@@ -1332,8 +1332,8 @@ function measureModeEntryLabel(row,entry){
   var centers=String((entry&&entry.centers)||"").trim();
   var measure=measureModePrettyMeasure(entry&&entry.measure);
   var parts=[];
-  if(height>0)parts.push(height+"' walls");
-  if(centers)parts.push(centers+'" centers');
+  if(height>0)parts.push(height+"'");
+  if(centers)parts.push(centers+'"');
   if(measure)parts.push(measure);
   return parts.join(" · ");
 }

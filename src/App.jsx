@@ -1310,9 +1310,11 @@ function measureModeEntrySqft(row,entry){
   });
   return Math.round(total);
 }
+function measureModeHasRowLevelInput(row){return !!(String(row.measure||"").trim()||String(row.height||"").trim()||String(row.centers||"").trim());}
+function measureModeActiveEntries(row){return measureModeHasRowLevelInput(row)?[row]:(row.entries&&row.entries.length?row.entries:[row]);}
 function measureModeSqft(row){
   var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
-  var entries=row.entries&&row.entries.length?row.entries:[row];
+  var entries=measureModeActiveEntries(row);
   var base=entries.reduce(function(sum,e){return sum+measureModeEntrySqft(row,e);},0);
   var loc=LOCATIONS.find(function(l){return l.id===row.area;});
   var isFoam=/foam|open cell|closed cell/i.test(row.material||"");
@@ -1340,7 +1342,8 @@ function MeasureMode(p){
       var locLabel=loc.id==="custom"?(r.customArea.trim()||"Custom"):loc.label;
       var rate=measureModeNumber(r.rate);var isRemoval=r.material==="Removal";
       var matNote=isRemoval?"Removal":(r.material||"Material TBD");
-      var measureLabel=((r.entries&&r.entries.length)?r.entries.map(function(e){return [e.height,e.centers,e.measure].filter(Boolean).join("/");}).filter(Boolean).join(" + "):(r.measure||r.sqft||"")).trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
+      var activeEntries=measureModeActiveEntries(r);
+      var measureLabel=(measureModeHasRowLevelInput(r)?[r.height,r.centers,r.measure].filter(Boolean).join("/"):activeEntries.map(function(e){return [e.height,e.centers,e.measure].filter(Boolean).join("/");}).filter(Boolean).join(" + ")||r.sqft||"").trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
       items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:r.pitch||null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measureNotes:noteLabel||null});
       savedIds.push(r.id);
     });
@@ -1382,7 +1385,7 @@ function MeasureMode(p){
           <button onClick={function(){addEntry(r.id);}} style={{justifySelf:"start",border:"1px dashed rgba(37,99,235,0.32)",background:"rgba(37,99,235,0.06)",color:C.accent,borderRadius:8,padding:"7px 10px",fontSize:11,fontWeight:900,textTransform:"uppercase"}}>+ Measurement</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 34px",gap:8,alignItems:"end",marginTop:8}}>
-          <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Sq Ft<input value={r.sqft} onChange={function(e){updateRow(r.id,{sqft:e.target.value});}} placeholder={sqft?String(sqft):"0"} inputMode="decimal" style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,textAlign:"right",fontWeight:900,color:C.accent}}/></label>
+          <div style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Sq Ft<div aria-live="polite" style={{marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,textAlign:"right",fontWeight:950,color:sqft?C.accent:C.dim,fontFamily:"'Inter',sans-serif",fontSize:13}}>{sqft?String(sqft):"0"}</div></div>
           <label style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Rate<input value={r.rate} onChange={function(e){updateRow(r.id,{rate:e.target.value});}} placeholder="0" inputMode="decimal" style={{...inputBase,marginTop:4,padding:"9px 8px",background:"#fff",border:"1px solid rgba(15,23,42,0.10)",borderRadius:8,textAlign:"right"}}/></label>
           <div style={{fontSize:10,fontWeight:900,color:C.dim,textTransform:"uppercase",letterSpacing:"0.08em"}}>Price<div style={{marginTop:4,padding:"10px 8px",background:"rgba(37,99,235,0.08)",border:"1px solid rgba(37,99,235,0.16)",borderRadius:8,textAlign:"right",fontWeight:950,color:C.text}}>{price>0?"$"+Math.ceil(price).toLocaleString():"—"}</div></div>
           <button onClick={function(){removeRow(r.id);}} style={{width:34,height:34,border:"none",borderRadius:999,background:"rgba(220,38,38,0.08)",color:C.danger,fontWeight:900,fontSize:16}}>×</button>
@@ -1402,7 +1405,7 @@ function MeasureMode(p){
           </select>
         </div>
         <div style={cell}><input value={r.measure} onChange={function(e){updateRow(r.id,{measure:e.target.value});}} placeholder="40 + 22 + 18 or 12x10 + 8x9" inputMode="text" style={Object.assign({},inputBase,{fontWeight:700})}/><input value={r.notes} onChange={function(e){updateRow(r.id,{notes:e.target.value});}} placeholder="Notes" style={Object.assign({},inputBase,{marginTop:5,fontSize:12,color:C.textSec,borderTop:"1px solid rgba(0,0,0,0.06)",paddingTop:5})}/></div>
-        <div style={cell}><input value={r.sqft} onChange={function(e){updateRow(r.id,{sqft:e.target.value});}} placeholder={sqft?String(sqft):"0"} inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right",fontWeight:800,color:C.accent})}/></div>
+        <div style={Object.assign({},cell,{textAlign:"right",fontWeight:900,color:sqft?C.accent:C.dim,fontSize:13,justifyContent:"center"})}><span aria-live="polite">{sqft?String(sqft):"0"}</span></div>
         <div style={cell}><input value={r.rate} onChange={function(e){updateRow(r.id,{rate:e.target.value});}} placeholder="0" inputMode="decimal" style={Object.assign({},inputBase,{textAlign:"right"})}/></div>
         <div style={Object.assign({},cell,{textAlign:"right",fontWeight:800,fontSize:13,color:C.text})}>{price>0?"$"+Math.ceil(price).toLocaleString():"—"}</div>
         <div style={Object.assign({},cell,{display:"flex",alignItems:"center",justifyContent:"center"})}><button onClick={function(){removeRow(r.id);}} style={{border:"none",background:"rgba(220,38,38,0.08)",color:C.danger,borderRadius:999,width:24,height:24,cursor:"pointer",fontWeight:900}}>×</button></div>

@@ -177,7 +177,7 @@ function Input(p){
   var padNums=["7","8","9","4","5","6","1","2","3",".","0","⌫"];
   return(<div style={{position:"relative"}}>
     <label style={{fontSize:11,fontWeight:600,color:C.textSec,marginBottom:5,display:"block",textTransform:"uppercase",letterSpacing:"0.08em"}}>{p.label}</label>
-    <input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{caretColor:isNum?"transparent":"auto"})}
+    <input className={p.pulse?"ist-pulse":""} style={Object.assign({},glassInput,{caretColor:isNum?"transparent":"auto"},p.style||{})}
       onFocus={function(e){e.target.style.borderColor=C.accent;e.target.style.boxShadow="0 0 0 3px rgba(37,99,235,0.15)";if(isNum)_numpadOpen(setShowPad);}}
       onBlur={function(e){e.target.style.borderColor="rgba(0,0,0,0.1)";e.target.style.boxShadow="none";if(isNum)_numpadClose(setShowPad);}}
       readOnly={isNum} inputMode={isNum?"none":undefined}
@@ -297,7 +297,7 @@ function StepBar(p){
 
 function MeasurementForm(p){
   var mats=p.tab==="opencell"?OPEN_CELL_MATERIALS:p.tab==="closedcell"?CLOSED_CELL_MATERIALS:FIBERGLASS_MATERIALS;
-  var isFoam=p.tab==="opencell"||p.tab==="closedcell";
+  var tabIsFoam=p.tab==="opencell"||p.tab==="closedcell";
   var hp=p.hasPrice;
   // Allow external lid/cl state (for split layout)
   var s1=useState(""),_lid=s1[0],_setLid=s1[1];
@@ -320,7 +320,8 @@ function MeasurementForm(p){
   var loc=LOCATIONS.find(function(x){return x.id===lid;});
   var locLabel=loc?(loc.id==="custom"?cl:loc.label):"";
   var locGroup=loc?(loc.id==="custom"?"Other":loc.group):"Other";
-  var needsPitch=loc&&loc.type==="roofline"&&(!hp||isFoam);
+  var selectedIsFoam=tabIsFoam||/foam|open cell|closed cell/i.test(mat||matNote||"");
+  var needsPitch=loc&&loc.type==="roofline"&&(!hp||selectedIsFoam);
   var measType=loc?(loc.type==="wall"?"wall":loc.type==="slope"?"slope":"area"):null;
   var pf=needsPitch?(PITCH_FACTORS[pitch]||1):1;
   var adj=sqft*pf;var fin=Math.round(adj);
@@ -328,7 +329,7 @@ function MeasurementForm(p){
   var tabLabel=p.tab==="opencell"?"Open Cell":p.tab==="closedcell"?"Closed Cell":"Fiberglass";
   // Step tracking
   var stepLabels = hp ? ["Location","Material","Measure","Price"] : ["Location","Measure","Material","Add"];
-  var stepCurrent = !lid ? 0 : (fin<=0) ? 1 : (!hp&&!matNote.trim()) ? 2 : 3;
+  var stepCurrent = !lid ? 0 : (hp&&!mat) ? 1 : (fin<=0) ? (hp?2:1) : (!hp&&!matNote.trim()) ? 2 : 3;
   React.useEffect(function(){
     setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setMk(function(k){return k+1;});setMatNote("");setTmpMat("");
   },[lid]);
@@ -339,10 +340,10 @@ function MeasurementForm(p){
     document.head.appendChild(s);
   },[]);
   function handleAdd(){
-    var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&pr<=0)return;if(!hp&&!matNote.trim()){alert("Please select a material first.");return;}
+    var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&!mat){alert("Please choose a material thickness first.");return;}if(hp&&pr<=0)return;if(!hp&&!matNote.trim()){alert("Please select a material first.");return;}
     var useMat=hp?mat:"(material TBD)";
     var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
-    p.onAdd({type:isFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null,dimStr:dimStr||null});
+    p.onAdd({type:selectedIsFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null,dimStr:dimStr||null});
     setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");setTmpMat("");
   }
   return(<div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)"}}>
@@ -362,13 +363,13 @@ function MeasurementForm(p){
             {id:"R13",label:"R13",value:null,sub:[{id:"x15",label:"x15",value:"R13 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R13 x24 Fiberglass Batts"}]},
             {id:"R19",label:"R19",value:null,sub:[{id:"x15",label:"x15",value:"R19 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R19 x24 Fiberglass Batts"}]},
             {id:"R30",label:"R30",value:null,sub:[{id:"x15",label:"x15",value:"R30 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R30 x24 Fiberglass Batts"}]},
-            {id:"opencell",label:"Open Cell",value:null,sub:["2\"","3\"","4\"","5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
-            {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","2\"","3\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
+            {id:"opencell",label:"Open Cell",value:null,sub:["1\"","2\"","3\"","4\"","5\"","6\"","7\"","8\"","9\"","10\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
+            {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","1.5\"","2\"","2.5\"","3\"","3.5\"","4\"","4.5\"","5\"","5.5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
             {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
             {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
           ];
           var hpBtnStyle=function(active){return{padding:"8px 13px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:13,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s",backdropFilter:"blur(8px)",boxShadow:active?"0 0 0 3px rgba(37,99,235,0.1)":"0 1px 3px rgba(0,0,0,0.06)"};};
-          var activePrimary=HPBTNS.find(function(b){return mat&&(b.value===mat||b.sub&&b.sub.some(function(s){return s.value===mat;}));});
+          var activePrimary=HPBTNS.find(function(b){return (tmpMat&&b.id===tmpMat)||(mat&&(b.value===mat||b.sub&&b.sub.some(function(s){return s.value===mat;})));});
           var activePrimaryId=activePrimary?activePrimary.id:"";
           return React.createElement("div",null,
             React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}},
@@ -380,7 +381,7 @@ function MeasurementForm(p){
             activePrimary&&activePrimary.sub&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:4,paddingLeft:8,borderLeft:"3px solid "+C.accent}},
               activePrimary.sub.map(function(s){
                 var subActive=mat===s.value;
-                return React.createElement("button",{key:s.id,onClick:function(){setMat(s.value);},style:hpBtnStyle(subActive)},s.label);
+                return React.createElement("button",{key:s.id,onClick:function(){setMat(s.value);setTmpMat(activePrimary.id);},style:hpBtnStyle(subActive)},s.label);
               })
             )
           );
@@ -425,7 +426,7 @@ function MeasurementForm(p){
             activeBtn&&activeBtn.sub&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:4,paddingLeft:8,borderLeft:"3px solid "+C.accent}},
               activeBtn.sub.map(function(s){
                 var subActive=matNote===s.value;
-                return React.createElement("button",{key:s.id,className:subPulse||subActive?"ist-pulse":"",onClick:function(){setMatNote(s.value);},style:btnStyle(subActive)},s.label);
+                return React.createElement("button",{key:s.id,className:subPulse||subActive?"ist-pulse":"",onClick:function(){setMatNote(s.value);setTmpMat(activeBtn.id);},style:btnStyle(subActive)},s.label);
               })
             )
           );
@@ -1581,6 +1582,7 @@ function QuoteBuilderSection(p){
   var s2=useState(null),pricingId=s2[0],setPricingId=s2[1];
   var s3=useState(""),pricingPrice=s3[0],setPricingPrice=s3[1];
   var s12=useState(""),pricingMat=s12[0],setPricingMat=s12[1];
+  var s12b=useState(""),pricingMenu=s12b[0],setPricingMenu=s12b[1];
   var s13=useState(0),activeIdx=s13[0],setActiveIdx=s13[1];
   var s14=useState(false),editingName=s14[0],setEditingName=s14[1];
   var ls=useState(""),lid=ls[0],setLid=ls[1];
@@ -1596,7 +1598,7 @@ function QuoteBuilderSection(p){
     if(existing){
       var newSqft=existing.sqft+item.sqft;
       var newTotal=Math.ceil(newSqft*existing.pricePerUnit);
-      updateOpt({items:opt.items.map(function(i){return i.id===existing.id?Object.assign({},i,{sqft:newSqft,total:newTotal}):i;}),overrideTotal:""});
+      updateOpt({items:opt.items.map(function(i){return i.id===existing.id?Object.assign({},i,{sqft:newSqft,total:newTotal,sourceMeasurementIds:(i.sourceMeasurementIds||[]).concat(item.sourceMeasurementIds||[]),measurementDetails:(i.measurementDetails||i.measureDetails||[]).concat(item.measurementDetails||item.measureDetails||[])}):i;}),overrideTotal:""});
     }else{
       updateOpt({items:opt.items.concat([Object.assign({},item,{id:Date.now()+Math.random()})]),overrideTotal:""});
     }
@@ -1625,9 +1627,9 @@ function QuoteBuilderSection(p){
   function handlePriceImport(item){var pr=parseFloat(pricingPrice)||0;if(pr<=0||!pricingMat)return;
     var isRem=pricingMat==="Removal";
     var desc=isRem?("Remove existing insulation from "+item.location.toLowerCase()+"."):("Install "+pricingMat.toLowerCase()+" in "+item.location.toLowerCase());
-    addItem(Object.assign({},item,{material:pricingMat,pricePerUnit:pr,total:Math.ceil(item.sqft*pr),description:desc}));
-    p.setImportedItems(function(prev){return prev.map(function(i){return i.id===item.id?Object.assign({},i,{priced:true}):i;});});
-    setPricingId(null);setPricingPrice("");setPricingMat("");}
+    addItem(Object.assign({},item,{material:pricingMat,type:/foam|open cell|closed cell/i.test(pricingMat)?"Foam":(isRem?item.type:"Fiberglass"),pricePerUnit:pr,total:Math.ceil(item.sqft*pr),description:desc}));
+    p.setImportedItems(function(prev){return prev.map(function(i){return i.id===item.id?Object.assign({},i,{priced:true,sourceMeasurementIds:item.sourceMeasurementIds||i.sourceMeasurementIds||[item.id]}):i;});});
+    setPricingId(null);setPricingPrice("");setPricingMat("");setPricingMenu("");}
 
   function addOption(){setOpts(function(prev){return prev.concat([newOption("Option "+(prev.length+1))]);});setActiveIdx(opts.length);}
   function removeOption(idx){if(opts.length<=1)return;setOpts(function(prev){return prev.filter(function(_,i){return i!==idx;});});if(activeIdx>=opts.length-1)setActiveIdx(Math.max(0,opts.length-2));}
@@ -1675,7 +1677,7 @@ function QuoteBuilderSection(p){
     <div style={{marginBottom:12}}>
       <div className="ist-option-tabs" style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
         {opts.map(function(o,idx){return(
-          <button key={idx} onClick={function(){setActiveIdx(idx);setPricingId(null);}}
+          <button key={idx} onClick={function(){setActiveIdx(idx);setPricingId(null);setPricingMenu("");}}
             style={{padding:"8px 14px",borderRadius:6,border:activeIdx===idx?"2px solid "+C.accent:"1px solid "+C.border,background:activeIdx===idx?C.accentBg:C.card,color:activeIdx===idx?C.accent:C.dim,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
             {o.name}{o.items.length>0?" ("+o.items.length+")":""}
           </button>
@@ -1703,7 +1705,7 @@ function QuoteBuilderSection(p){
           <div className="ist-price-import-row" style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.text}}>{item.isRemoval?(<span><span style={{fontSize:10,fontWeight:700,color:C.danger,background:C.dangerBg,padding:"2px 6px",borderRadius:4,marginRight:6}}>{"REMOVAL"}</span>{item.location}</span>):item.location}</div><div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.sqft.toLocaleString()+" sq ft"}{item.pitch?" · "+item.pitch:""}</div></div>
             <div className="ist-price-import-actions" style={{display:"flex",alignItems:"center",gap:6,marginLeft:12}}>
-              {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat(item.matNote||"");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.accent,borderRadius:6,color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
+              {pricingId!==item.id&&(<button onClick={function(){setPricingId(item.id);setPricingMat(item.matNote||"");setPricingMenu("");setPricingPrice("");}} style={{padding:"6px 14px",background:"transparent",border:"1px solid "+C.accent,borderRadius:6,color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>{"Price"}</button>)}
               <button onClick={function(){p.setImportedItems(function(prev){return prev.filter(function(i){return i.id!==item.id;});});}} style={{padding:"4px 6px",background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button>
             </div>
           </div>
@@ -1713,14 +1715,14 @@ function QuoteBuilderSection(p){
               {id:"R13",label:"R13",value:null,sub:[{id:"x15",label:"x15",value:"R13 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R13 x24 Fiberglass Batts"}]},
               {id:"R19",label:"R19",value:null,sub:[{id:"x15",label:"x15",value:"R19 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R19 x24 Fiberglass Batts"}]},
               {id:"R30",label:"R30",value:null,sub:[{id:"x15",label:"x15",value:"R30 x15 Fiberglass Batts"},{id:"x24",label:"x24",value:"R30 x24 Fiberglass Batts"}]},
-              {id:"opencell",label:"Open Cell",value:null,sub:["2\"","3\"","4\"","5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
-              {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","2\"","3\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
+              {id:"opencell",label:"Open Cell",value:null,sub:["1\"","2\"","3\"","4\"","5\"","6\"","7\"","8\"","9\"","10\""].map(function(v){return{id:v,label:v,value:v+' Open Cell Foam'};})},
+              {id:"closedcell",label:"Closed Cell",value:null,sub:["1\"","1.5\"","2\"","2.5\"","3\"","3.5\"","4\"","4.5\"","5\"","5.5\"","6\""].map(function(v){return{id:v,label:v,value:v+' Closed Cell Foam'};})},
               {id:"blownfg",label:"Blown Fiberglass",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Fiberglass "+r};})},
               {id:"blowncel",label:"Blown Cellulose",value:null,sub:["R13","R15","R19","R22","R26","R30","R38","R44","R49","R60"].map(function(r){return{id:r,label:r,value:"Blown Cellulose "+r};})},
               {id:"removal",label:"Removal",value:"Removal",sub:null},
             ];
             var bs=function(active){return{padding:"7px 11px",borderRadius:8,border:active?"2px solid "+C.accent:"1px solid rgba(0,0,0,0.08)",background:active?"rgba(37,99,235,0.1)":"rgba(255,255,255,0.6)",color:active?C.accent:C.text,fontSize:12,fontWeight:active?700:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.12s"};};
-            var activePrimary=PMBTNS.find(function(b){return pricingMat&&(b.value===pricingMat||(b.sub&&b.sub.some(function(s){return s.value===pricingMat;})));});
+            var activePrimary=PMBTNS.find(function(b){return (pricingMenu&&b.id===pricingMenu)||(pricingMat&&(b.value===pricingMat||(b.sub&&b.sub.some(function(s){return s.value===pricingMat;}))));});
             var activePrimaryId=activePrimary?activePrimary.id:"";
             return(<div style={{marginTop:10,padding:12,background:C.bg,borderRadius:8,border:"1px solid "+C.border}}>
               <div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:8}}>{"Adding to: "+opt.name}</div>
@@ -1728,19 +1730,19 @@ function QuoteBuilderSection(p){
               <div className="ist-material-btns" style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:6}}>
                 {PMBTNS.map(function(b){
                   var active=activePrimaryId===b.id;
-                  return(<button key={b.id} onClick={function(){if(b.value){setPricingMat(b.value);}else{setPricingMat("");}}} style={bs(active)}>{b.label}</button>);
+                  return(<button key={b.id} onClick={function(){setPricingMenu(b.id);if(b.value){setPricingMat(b.value);}else{setPricingMat("");}}} style={bs(active)}>{b.label}</button>);
                 })}
               </div>
               {activePrimary&&activePrimary.sub&&(<div className="ist-material-btns" style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8,paddingLeft:8,borderLeft:"3px solid "+C.accent}}>
                 {activePrimary.sub.map(function(s){
-                  return(<button key={s.id} onClick={function(){setPricingMat(s.value);}} style={bs(pricingMat===s.value)}>{s.label}</button>);
+                  return(<button key={s.id} onClick={function(){setPricingMat(s.value);setPricingMenu(activePrimary.id);}} style={bs(pricingMat===s.value)}>{s.label}</button>);
                 })}
               </div>)}
               {pricingMat&&<div style={{fontSize:11,color:C.accent,fontWeight:600,marginBottom:8}}>{"✓ "+pricingMat}</div>}
               <div className="ist-price-entry-row" style={{display:"flex",gap:6,alignItems:"center"}}>
-                <div style={{flex:1}}><Input label="$/sf" value={pricingPrice} onChange={setPricingPrice} placeholder="0.00" step="0.01"/></div>
+                <div style={{flex:1}}><Input label="$/sf" value={pricingPrice} onChange={setPricingPrice} placeholder="0.00" step="0.01" style={{caretColor:"auto"}}/></div>
                 <button onClick={function(){handlePriceImport(item);}} style={{padding:"8px 14px",background:C.accent,border:"none",borderRadius:6,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Add"}</button>
-                <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Cancel"}</button>
+                <button onClick={function(){setPricingId(null);setPricingPrice("");setPricingMat("");setPricingMenu("");}} style={{padding:"8px 10px",background:"none",border:"1px solid "+C.dim,borderRadius:6,color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{"Cancel"}</button>
               </div>
             </div>);
           })()}
@@ -2859,7 +2861,7 @@ export default function App() {
       grouped[key].sqft += parseFloat(m.sqft) || 0;
       grouped[key].total += parseFloat(m.total) || 0;
       grouped[key].combinedCount += 1;
-      grouped[key].sourceMeasurementIds.push(m.id);
+      grouped[key].sourceMeasurementIds.push(m.id || (key+"::"+grouped[key].combinedCount));
       if (m.dimStr && grouped[key].dimStrs.indexOf(m.dimStr) === -1) grouped[key].dimStrs.push(m.dimStr);
       grouped[key].measurementDetails = grouped[key].measurementDetails.concat(m.measurementDetails || m.measureDetails || []);
     });
@@ -2877,17 +2879,15 @@ export default function App() {
 
   function sendToQuote() {
     if (meas.length === 0) return;
-    var combinedImports = buildQuoteImportItems(meas);
     setIi(function(prev) {
       var pricedBySource = {};
       (prev || []).filter(function(i) { return i.priced; }).forEach(function(i) {
         (i.sourceMeasurementIds || [i.id]).forEach(function(id) { pricedBySource[id] = true; });
       });
-      var openPrev = (prev || []).filter(function(i) { return i.priced; });
-      var fresh = combinedImports.filter(function(i) {
-        return !(i.sourceMeasurementIds || []).some(function(id) { return pricedBySource[id]; });
-      });
-      return openPrev.concat(fresh);
+      var unpricedMeasurements = meas.filter(function(m) { return !pricedBySource[m.id || ""]; });
+      var combinedImports = buildQuoteImportItems(unpricedMeasurements);
+      var pricedPrev = (prev || []).filter(function(i) { return i.priced; });
+      return pricedPrev.concat(combinedImports);
     });
     setSec("quote");
   }

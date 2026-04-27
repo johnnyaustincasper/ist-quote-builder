@@ -2879,16 +2879,25 @@ export default function App() {
 
   function sendToQuote() {
     if (meas.length === 0) return;
-    setIi(function(prev) {
-      var pricedBySource = {};
-      (prev || []).filter(function(i) { return i.priced; }).forEach(function(i) {
-        (i.sourceMeasurementIds || [i.id]).forEach(function(id) { pricedBySource[id] = true; });
+
+    // Treat the actual quote line items as the source of truth. The old import
+    // tray kept "priced" items around forever, so if a takeoff item (band joist
+    // was the obvious one) got priced/removed/re-sent, the button could think it
+    // was already handled and skip sending it back into Quote Builder.
+    var quotedSourceIds = {};
+    (qOpts || []).forEach(function(opt) {
+      (opt.items || []).forEach(function(item) {
+        (item.sourceMeasurementIds || []).forEach(function(id) {
+          quotedSourceIds[id] = true;
+        });
       });
-      var unpricedMeasurements = meas.filter(function(m) { return !pricedBySource[m.id || ""]; });
-      var combinedImports = buildQuoteImportItems(unpricedMeasurements);
-      var pricedPrev = (prev || []).filter(function(i) { return i.priced; });
-      return pricedPrev.concat(combinedImports);
     });
+
+    var unquotedMeasurements = meas.filter(function(m) {
+      var id = m.id || "";
+      return !id || !quotedSourceIds[id];
+    });
+    setIi(buildQuoteImportItems(unquotedMeasurements));
     setSec("quote");
   }
 

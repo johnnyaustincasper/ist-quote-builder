@@ -2880,24 +2880,10 @@ export default function App() {
   function sendToQuote() {
     if (meas.length === 0) return;
 
-    // Treat the actual quote line items as the source of truth. The old import
-    // tray kept "priced" items around forever, so if a takeoff item (band joist
-    // was the obvious one) got priced/removed/re-sent, the button could think it
-    // was already handled and skip sending it back into Quote Builder.
-    var quotedSourceIds = {};
-    (qOpts || []).forEach(function(opt) {
-      (opt.items || []).forEach(function(item) {
-        (item.sourceMeasurementIds || []).forEach(function(id) {
-          quotedSourceIds[id] = true;
-        });
-      });
-    });
-
-    var unquotedMeasurements = meas.filter(function(m) {
-      var id = m.id || "";
-      return !id || !quotedSourceIds[id];
-    });
-    setIi(buildQuoteImportItems(unquotedMeasurements));
+    // Always reload every takeoff measurement into the Quote Builder import tray.
+    // A takeoff measurement is reusable scope, not a one-time consumed item: the
+    // same measured area may need to be priced into multiple options/materials.
+    setIi(buildQuoteImportItems(meas));
     setSec("quote");
   }
 

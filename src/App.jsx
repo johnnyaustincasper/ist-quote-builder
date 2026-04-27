@@ -950,7 +950,8 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         doc.setFont("helvetica","bold");doc.setFontSize(9.5);
         var locLines=doc.splitTextToSize(g.location,164).length;
         var ROW_H=Math.max(20,locLines*12+8);
-        var groupH=ROW_H+g.entries.length*DIM_H+4;
+        var detailCount=g.entries.reduce(function(sum,r){var lines=(r.measurementDetails||r.measureDetails||[]).filter(function(d){return d.label||d.measure||d.sqft;}).length;return sum+(lines||1);},0);
+        var groupH=ROW_H+detailCount*DIM_H+4;
         if(y+groupH>720){doc.addPage();y=40;}
         doc.setFillColor(gi%2===0?242:250,gi%2===0?246:252,gi%2===0?255:255);
         doc.rect(x,y,RW,groupH,"F");
@@ -966,10 +967,9 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         // Individual dim entries
         g.entries.forEach(function(r){
           doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-          var dimLabel=r.dimStr||(r.wallHeightLabel)||"";
-          var sqftLabel=(parseFloat(r.sqft)||0).toLocaleString()+" sf";
-          doc.text(dimLabel?dimLabel+" = "+sqftLabel:sqftLabel,c1+12,y+10);
-          y+=DIM_H;
+          var detailLines=(r.measurementDetails||r.measureDetails||[]).map(function(d){var l=d.label||d.measure||"";var sf=parseFloat(d.sqft)||0;return l?(l+(sf?" = "+sf.toLocaleString()+" sf":"")):"";}).filter(Boolean);
+          if(!detailLines.length){var dimLabel=r.dimStr||(r.wallHeightLabel)||"";var sqftLabel=(parseFloat(r.sqft)||0).toLocaleString()+" sf";detailLines=[dimLabel?dimLabel+" = "+sqftLabel:sqftLabel];}
+          detailLines.forEach(function(line){if(y+DIM_H>720){doc.addPage();y=40;}doc.text(line,c1+12,y+10,{maxWidth:RW-36});y+=DIM_H;});
         });
         doc.setDrawColor(210,220,240);doc.setLineWidth(0.5);doc.line(x,y+2,x+RW,y+2);
         y+=6;
@@ -1318,6 +1318,30 @@ function measureModeEntrySqft(row,entry){
 }
 function measureModeHasRowLevelInput(row){return !!(String(row.measure||"").trim()||String(row.height||"").trim()||String(row.centers||"").trim());}
 function measureModeActiveEntries(row){return measureModeHasRowLevelInput(row)?[row]:(row.entries&&row.entries.length?row.entries:[row]);}
+function measureModeEntryLabel(row,entry){return [entry&&entry.height,entry&&entry.centers,entry&&entry.measure].filter(function(v){return String(v||"").trim();}).join("/");}
+function measureModeMeasurementDetails(row){
+  var activeEntries=measureModeActiveEntries(row);
+  var details=[];
+  activeEntries.forEach(function(e,idx){
+    var raw=String((e&&e.measure)||"").trim();
+    var parts=raw?raw.split(/[\n,;+]+/).map(function(part){return part.trim();}).filter(Boolean):[""];
+    parts.forEach(function(part,pi){
+      var entry=Object.assign({},e,{measure:part});
+      var sqft=measureModeEntrySqft(row,entry);
+      var label=measureModeEntryLabel(row,entry);
+      if(label||sqft>0)details.push({id:(e.id||idx)+"-"+pi,height:e.height||"",centers:e.centers||"",measure:part,label:label,sqft:sqft});
+    });
+  });
+  if(!details.length&&measureModeNumber(row.sqft)>0){details.push({id:"manual",height:"",centers:"",measure:String(row.sqft||""),label:"Manual sqft",sqft:Math.round(measureModeNumber(row.sqft))});}
+  return details;
+}
+function measureModeDetailsLabel(details){return (details||[]).map(function(d){var l=d.label||d.measure||"";var sf=parseFloat(d.sqft)||0;return l?(l+(sf?" = "+sf.toLocaleString()+" sf":"")):"";}).filter(Boolean).join(" + ");}
+function measureModeCloneRows(rows){return (rows&&rows.length?rows:[]).map(function(r){return Object.assign({},r,{entries:(r.entries&&r.entries.length?r.entries:[newMeasureModeEntry()]).map(function(e){return Object.assign({},e);})});});}
+function measureModeDefaultRows(){return [newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow()];}
+function MeasureDetailLines({details}){
+  if(!details||!details.length)return null;
+  return <div style={{fontSize:11,color:C.textSec,marginTop:4,lineHeight:1.35}}>{details.map(function(d,i){return <div key={d.id||i}>{"↳ "+(d.label||d.measure||"Measurement")+(d.sqft?" = "+Number(d.sqft).toLocaleString()+" sf":"")}</div>;})}</div>;
+}
 function measureModeSqft(row){
   var direct=measureModeNumber(row.sqft);if(direct>0)return Math.round(direct);
   var entries=measureModeActiveEntries(row);
@@ -1329,7 +1353,10 @@ function measureModeSqft(row){
 }
 function MeasureMode(p){
   var isFullScreen=!!p.fullScreen;
-  var s1=useState([newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow(),newMeasureModeRow()]),rows=s1[0],setRows=s1[1];
+  var rows=p.rows&&p.rows.length?p.rows:measureModeDefaultRows();
+  var setRows=p.setRows||function(){};
+  var draftRows=p.measureModeDraftRows&&p.measureModeDraftRows.length?p.measureModeDraftRows:null;
+  var s1=useState(""),draftStatus=s1[0],setDraftStatus=s1[1];
   var locationOptions=LOCATIONS.map(function(l){return{value:l.id,label:l.short||l.label};});
   var materialOptions=ALL_MATERIALS.concat(["Removal"]);
   function updateRow(id,changes){setRows(function(prev){return prev.map(function(r){return r.id===id?Object.assign({},r,changes):r;});});}
@@ -1339,7 +1366,9 @@ function MeasureMode(p){
   function addEntry(rowId){setRows(function(prev){return prev.map(function(r){return r.id===rowId?Object.assign({},r,{entries:(r.entries&&r.entries.length?r.entries:[]).concat([newMeasureModeEntry()])}):r;});});}
   function removeEntry(rowId,entryId){setRows(function(prev){return prev.map(function(r){if(r.id!==rowId)return r;var entries=(r.entries||[]).filter(function(e){return e.id!==entryId;});return Object.assign({},r,{entries:entries.length?entries:[newMeasureModeEntry()]});});});}
   function loadPreset(kind){var mat=kind==="foam"?'2" Open Cell Foam':"Blown Fiberglass";setRows((MEASURE_PRESETS[kind]||[]).map(function(id){return newMeasureModeRow(id,mat);}));}
-  function clearSavedRows(savedIds){setRows(function(prev){var left=prev.filter(function(r){return savedIds.indexOf(r.id)<0;});return left.length?left:[newMeasureModeRow()];});}
+  function saveDraftRows(){if(p.setMeasureModeDraftRows)p.setMeasureModeDraftRows(measureModeCloneRows(rows));setDraftStatus("Draft saved");setTimeout(function(){setDraftStatus("");},1800);}
+  function reloadDraftRows(){if(!draftRows){setDraftStatus("No saved draft yet");setTimeout(function(){setDraftStatus("");},1800);return;}setRows(measureModeCloneRows(draftRows));setDraftStatus("Draft loaded");setTimeout(function(){setDraftStatus("");},1800);}
+  function clearSavedRows(savedIds){setRows(function(prev){var left=prev.filter(function(r){return savedIds.indexOf(r.id)<0;});var next=left.length?left:[newMeasureModeRow()];if(p.setMeasureModeDraftRows)p.setMeasureModeDraftRows(measureModeCloneRows(next));return next;});}
   function saveRows(){
     var savedIds=[];var items=[];
     rows.forEach(function(r){
@@ -1348,9 +1377,9 @@ function MeasureMode(p){
       var locLabel=loc.id==="custom"?(r.customArea.trim()||"Custom"):loc.label;
       var rate=measureModeNumber(r.rate);var isRemoval=r.material==="Removal";
       var matNote=isRemoval?"Removal":(r.material||"Material TBD");
-      var activeEntries=measureModeActiveEntries(r);
-      var measureLabel=(measureModeHasRowLevelInput(r)?[r.height,r.centers,r.measure].filter(Boolean).join("/"):activeEntries.map(function(e){return [e.height,e.centers,e.measure].filter(Boolean).join("/");}).filter(Boolean).join(" + ")||r.sqft||"").trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
-      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:r.pitch||null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measureNotes:noteLabel||null});
+      var details=measureModeMeasurementDetails(r);
+      var measureLabel=(measureModeDetailsLabel(details)||r.sqft||"").trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
+      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:r.pitch||null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measurementDetails:details,measureDetails:details,measureModeRow:Object.assign({},r,{entries:(r.entries||[]).map(function(e){return Object.assign({},e);})}),measureNotes:noteLabel||null});
       savedIds.push(r.id);
     });
     if(!items.length){alert("Add at least one row with square footage first.");return;}
@@ -1366,13 +1395,17 @@ function MeasureMode(p){
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10,flexWrap:"wrap",position:isFullScreen?"sticky":"static",top:0,zIndex:3,background:isFullScreen?"rgba(232,238,248,0.92)":"transparent",backdropFilter:isFullScreen?"blur(14px)":"none",padding:isFullScreen?"8px 2px 10px":0}}>
       <div><div style={{fontSize:12,fontWeight:800,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em"}}>Measure Mode</div><div style={{fontSize:12,color:C.textSec,marginTop:3}}>Fast phone-entry sheet. Same row can hold multiple measurements: 40 + 22 + 18. Height + centers multiply the total linear feet.</div></div>
       <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
-        <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}</div>
+        <div style={{fontSize:12,fontWeight:800,color:C.text,textAlign:"right"}}>{totalSqft.toLocaleString()+" sf"}{totalPrice>0&&(<div style={{color:C.accent}}>{"$"+Math.ceil(totalPrice).toLocaleString()+" est."}</div>)}{draftStatus&&(<div style={{color:C.dim,fontWeight:700,marginTop:2}}>{draftStatus}</div>)}</div>
         {p.onClose&&(<button onClick={p.onClose} style={{width:34,height:34,borderRadius:999,border:"1px solid rgba(15,23,42,0.12)",background:"rgba(255,255,255,0.78)",color:C.text,fontSize:18,fontWeight:900,cursor:"pointer"}}>×</button>)}
       </div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
       <button onClick={function(){loadPreset("fiberglass");}} style={{padding:"10px",borderRadius:10,border:"1px solid rgba(37,99,235,0.28)",background:"rgba(37,99,235,0.10)",color:C.accent,fontSize:12,fontWeight:900,textTransform:"uppercase"}}>Fiberglass Preset</button>
       <button onClick={function(){loadPreset("foam");}} style={{padding:"10px",borderRadius:10,border:"1px solid rgba(15,23,42,0.18)",background:"rgba(15,23,42,0.08)",color:C.text,fontSize:12,fontWeight:900,textTransform:"uppercase"}}>Foam Preset</button>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+      <button onClick={saveDraftRows} style={{padding:"9px",borderRadius:10,border:"1px solid rgba(37,99,235,0.22)",background:"rgba(255,255,255,0.62)",color:C.accent,fontSize:11,fontWeight:900,textTransform:"uppercase"}}>Save Draft</button>
+      <button onClick={reloadDraftRows} disabled={!draftRows} style={{padding:"9px",borderRadius:10,border:"1px solid rgba(15,23,42,0.14)",background:draftRows?"rgba(255,255,255,0.62)":"rgba(148,163,184,0.12)",color:draftRows?C.textSec:C.dim,fontSize:11,fontWeight:900,textTransform:"uppercase",cursor:draftRows?"pointer":"not-allowed"}}>Reload Draft</button>
     </div>
     {phoneCard?(<div style={{display:"grid",gap:10}}>
       {rows.map(function(r){var sqft=measureModeSqft(r);var price=sqft*measureModeNumber(r.rate);return(<div key={r.id} style={{background:"rgba(255,255,255,0.78)",border:"1px solid rgba(148,163,184,0.28)",borderRadius:14,padding:12,boxShadow:"0 8px 24px rgba(15,23,42,0.05)"}}>
@@ -1441,7 +1474,7 @@ function TakeOff(p){
     <div style={{padding:"0 16px 12px"}}>
       <button onClick={function(){setMeasureMode(!measureMode);}} style={{width:"100%",padding:"13px 16px",borderRadius:10,border:"1px solid rgba(37,99,235,0.3)",background:measureMode?C.accent:"rgba(37,99,235,0.12)",color:measureMode?"#fff":C.accent,fontSize:13,fontWeight:900,cursor:"pointer",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",letterSpacing:"0.08em",boxShadow:"0 3px 16px rgba(37,99,235,0.14)"}}>{measureMode?"Close Measure Mode":"Measure Mode"}</button>
     </div>
-    {measureMode&&(<MeasureMode fullScreen onClose={function(){setMeasureMode(false);}} setMeasurements={p.setMeasurements}/>)}
+    {measureMode&&(<MeasureMode fullScreen onClose={function(){setMeasureMode(false);}} setMeasurements={p.setMeasurements} rows={p.measureModeRows} setRows={p.setMeasureModeRows} measureModeDraftRows={p.measureModeDraftRows} setMeasureModeDraftRows={p.setMeasureModeDraftRows}/>)}
     {/* Row 1: Location (left) | Measurement inputs (right) */}
     <div className="ist-2col" style={{marginBottom:0}}>
       <div className="ist-col-form">
@@ -1495,6 +1528,8 @@ function TakeOff(p){
                     {item.cavityWidth&&(<div style={{fontSize:12,color:C.textSec,marginTop:2,fontWeight:500}}>{"↳ "+item.cavityWidth+" cavity"}</div>)}
                     {item.matNote&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{"📋 "+item.matNote}</div>)}
                     {item.pitch&&(<div style={{fontSize:12,color:C.dim,marginTop:2}}>{item.pitch}</div>)}
+                    <MeasureDetailLines details={item.measurementDetails||item.measureDetails}/>
+                    {!(item.measurementDetails||item.measureDetails)&&item.dimStr&&(<div style={{fontSize:12,color:C.textSec,marginTop:4}}>{"↳ "+item.dimStr}</div>)}
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
                 </div>);})}
@@ -1505,7 +1540,7 @@ function TakeOff(p){
             <div style={{fontSize:11,fontWeight:700,color:C.danger,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,paddingBottom:6,borderBottom:"1px solid "+C.danger}}>{"Removal"}<span style={{color:C.danger,marginLeft:8}}>{removalTotal.toLocaleString()+" sq ft"}</span></div>
             <div style={{background:C.card,borderRadius:6,border:"1px solid "+C.danger,overflow:"hidden",boxShadow:C.shadow}}>
               {removalItems.map(function(item,idx){return(<div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:idx<removalItems.length-1?"1px solid "+C.borderLight:"none"}}>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div></div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,lineHeight:1.3,color:C.text}}>{item.location}</div><MeasureDetailLines details={item.measurementDetails||item.measureDetails}/></div>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:12}}><div style={{fontSize:14,fontWeight:700,color:C.text}}>{item.sqft.toLocaleString()+" sf"}</div><button onClick={function(){removeM(item.id);}} style={{background:"none",border:"none",color:C.danger,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>{"Remove"}</button></div>
               </div>);})}
             </div>
@@ -1976,7 +2011,7 @@ function SavedJobsPanel(p) {
     setStatus("Saving...");
     var jobData = {
       custName: p.custName, custAddr: p.custAddr, custPhone: p.custPhone, custEmail: p.custEmail, jobAddr: p.jobAddr, jobNotes: p.jobNotes,
-      measurements: p.measurements, quoteOpts: p.quoteOpts, importedItems: p.importedItems, section: p.section,
+      measurements: p.measurements, measureModeRows: p.measureModeRows, measureModeDraftRows: p.measureModeDraftRows, quoteOpts: p.quoteOpts, importedItems: p.importedItems, section: p.section,
     };
     saveJob(name, p.currentUser, jobData).then(function(ok) {
       if (ok) {
@@ -2005,6 +2040,8 @@ function SavedJobsPanel(p) {
     p.setJobAddr(d.jobAddr || "");
     p.setJobNotes(d.jobNotes || "");
     p.setMeasurements(d.measurements || []);
+    if (p.setMeasureModeRows) p.setMeasureModeRows(d.measureModeRows ? measureModeCloneRows(d.measureModeRows) : measureModeDefaultRows());
+    if (p.setMeasureModeDraftRows) p.setMeasureModeDraftRows(d.measureModeDraftRows ? measureModeCloneRows(d.measureModeDraftRows) : []);
     if (d.quoteOpts) p.setQuoteOpts(d.quoteOpts);
     else if (d.quoteItems && d.quoteItems.length > 0) p.setQuoteOpts([Object.assign(newOption("Option 1"),{items:d.quoteItems})]);
     else p.setQuoteOpts([newOption("Option 1")]);
@@ -2018,7 +2055,8 @@ function SavedJobsPanel(p) {
     deleteJob(job.id).then(function() { refreshJobs(); });
   }
 
-  var hasWork = p.measurements.length > 0 || p.quoteOpts.some(function(o){return o.items.length>0;}) || (p.custName && p.custName.trim().length > 0) || (p.importedItems && p.importedItems.length > 0);
+  var hasDraftRows = (p.measureModeRows||[]).some(function(r){return measureModeSqft(r)>0||String(r.notes||"").trim()||String(r.customArea||"").trim();});
+  var hasWork = p.measurements.length > 0 || hasDraftRows || (p.measureModeDraftRows||[]).length > 0 || p.quoteOpts.some(function(o){return o.items.length>0;}) || (p.custName && p.custName.trim().length > 0) || (p.importedItems && p.importedItems.length > 0);
 
   return (
     <div style={{ padding: "0 16px 16px" }}>
@@ -2718,6 +2756,8 @@ export default function App() {
   var s1 = useState("takeoff"), sec = s1[0], setSec = s1[1];
   var s2 = useState([]), meas = s2[0], setMeas = s2[1];
   var s3 = useState([newOption("Option 1")]), qOpts = s3[0], setQOpts = s3[1];
+  var smm = useState(function(){return measureModeDefaultRows();}), measureModeRows = smm[0], setMeasureModeRows = smm[1];
+  var smd = useState([]), measureModeDraftRows = smd[0], setMeasureModeDraftRows = smd[1];
   var s4 = useState([]), ii = s4[0], setIi = s4[1];
   var spi = useState(false), showProductInfo = spi[0], setShowProductInfo = spi[1];
   var s5 = useState(""), cn = s5[0], setCn = s5[1];
@@ -2731,9 +2771,9 @@ export default function App() {
   // Auto-save current session to Supabase
   var autoSave = useCallback(function() {
     if (!currentUser) return;
-    var data = { measurements: meas, quoteOpts: qOpts, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec };
+    var data = { measurements: meas, measureModeRows: measureModeRows, measureModeDraftRows: measureModeDraftRows, quoteOpts: qOpts, importedItems: ii, custName: cn, custAddr: ca, custPhone: cph, custEmail: ce, jobAddr: ja, jobNotes: jn, section: sec };
     saveAutosave(currentUser, data);
-  }, [meas, qOpts, ii, cn, ca, cph, ce, ja, jn, sec, currentUser]);
+  }, [meas, measureModeRows, measureModeDraftRows, qOpts, ii, cn, ca, cph, ce, ja, jn, sec, currentUser]);
 
   useEffect(function() {
     if (initialLoad || !currentUser) return;
@@ -2747,6 +2787,8 @@ export default function App() {
     loadAutosave(currentUser).then(function(data) {
       if (data) {
         if (data.measurements) setMeas(data.measurements);
+        if (data.measureModeRows) setMeasureModeRows(measureModeCloneRows(data.measureModeRows));
+        if (data.measureModeDraftRows) setMeasureModeDraftRows(measureModeCloneRows(data.measureModeDraftRows));
         if (data.quoteOpts) setQOpts(data.quoteOpts);
         else if (data.quoteItems && data.quoteItems.length > 0) setQOpts([Object.assign(newOption("Option 1"),{items:data.quoteItems})]);
         if (data.importedItems) setIi(data.importedItems);
@@ -2791,7 +2833,8 @@ export default function App() {
           priced: false,
           sourceMeasurementIds: [],
           combinedCount: 0,
-          dimStrs: []
+          dimStrs: [],
+          measurementDetails: []
         });
       }
       grouped[key].sqft += parseFloat(m.sqft) || 0;
@@ -2799,6 +2842,7 @@ export default function App() {
       grouped[key].combinedCount += 1;
       grouped[key].sourceMeasurementIds.push(m.id);
       if (m.dimStr && grouped[key].dimStrs.indexOf(m.dimStr) === -1) grouped[key].dimStrs.push(m.dimStr);
+      grouped[key].measurementDetails = grouped[key].measurementDetails.concat(m.measurementDetails || m.measureDetails || []);
     });
     return Object.keys(grouped).map(function(k) {
       var item = grouped[k];
@@ -2830,9 +2874,10 @@ export default function App() {
   }
 
   function handleNewJob() {
-    var hasWork = meas.length > 0 || qOpts.some(function(o){return o.items.length>0;});
+    var hasDraftRows = (measureModeRows||[]).some(function(r){return measureModeSqft(r)>0||String(r.notes||"").trim()||String(r.customArea||"").trim();});
+    var hasWork = meas.length > 0 || hasDraftRows || (measureModeDraftRows||[]).length > 0 || qOpts.some(function(o){return o.items.length>0;});
     if (hasWork && !confirm("Start a new job? Make sure you've saved first.")) return;
-    setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
+    setMeas([]); setMeasureModeRows(measureModeDefaultRows()); setMeasureModeDraftRows([]); setQOpts([newOption("Option 1")]); setIi([]);
     setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
     setSec("takeoff");
   }
@@ -2841,7 +2886,7 @@ export default function App() {
     localStorage.removeItem("ist-user");
     localStorage.removeItem("ist-session");
     setCurrentUser("");
-    setMeas([]); setQOpts([newOption("Option 1")]); setIi([]);
+    setMeas([]); setMeasureModeRows(measureModeDefaultRows()); setMeasureModeDraftRows([]); setQOpts([newOption("Option 1")]); setIi([]);
     setCn(""); setCa(""); setCph(""); setCe(""); setJa(""); setJn("");
     setSec("takeoff");
     setInitialLoad(true);
@@ -2940,7 +2985,7 @@ export default function App() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>👤 {currentUser}</div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button onClick={function(){if(window.confirm("Clear everything?")){setMeas([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
+            <button onClick={function(){if(window.confirm("Clear everything?")){setMeas([]);setMeasureModeRows(measureModeDefaultRows());setMeasureModeDraftRows([]);setQOpts([newOption("Option 1")]);setIi([]);setCn("");setCa("");setCph("");setCe("");setJa("");setJn("");setSec("takeoff");}}} style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6, color: C.danger, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 700, textTransform: "uppercase", padding: "5px 10px", letterSpacing: "0.04em" }}>{"🗑 Clear"}</button>
             <button onClick={handleLogout} style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, color: C.textSec, fontSize: 10, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontWeight: 600, textTransform: "uppercase", padding: "5px 10px" }}>{"Switch User"}</button>
           </div>
         </div>
@@ -2967,14 +3012,14 @@ export default function App() {
       </div>
 
       <div>
-        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} onSendToQuote={sendToQuote} onSendToWorkOrder={sendToWorkOrder} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
+        {sec === "takeoff" && (<TakeOff measurements={meas} setMeasurements={setMeas} measureModeRows={measureModeRows} setMeasureModeRows={setMeasureModeRows} measureModeDraftRows={measureModeDraftRows} setMeasureModeDraftRows={setMeasureModeDraftRows} onSendToQuote={sendToQuote} onSendToWorkOrder={sendToWorkOrder} currentUser={currentUser} quoteOpts={qOpts} {...cp2} />)}
         {sec === "quote" && (<QuoteBuilderSection quoteOpts={qOpts} setQuoteOpts={setQOpts} importedItems={ii} setImportedItems={setIi} currentUser={currentUser} measurements={meas} showProductInfo={showProductInfo} setShowProductInfo={setShowProductInfo} {...cp2} />)}
         {sec === "workorder" && (<WorkOrderSection measurements={meas} quoteOpts={qOpts} custName={cn} custAddr={ca} currentUser={currentUser} jobAddr={ja} />)}
         {sec === "jobs" && (
           <div>
             <SavedJobsPanel
-              measurements={meas} quoteOpts={qOpts} importedItems={ii}
-              setMeasurements={setMeas} setQuoteOpts={setQOpts} setImportedItems={setIi}
+              measurements={meas} measureModeRows={measureModeRows} measureModeDraftRows={measureModeDraftRows} quoteOpts={qOpts} importedItems={ii}
+              setMeasurements={setMeas} setMeasureModeRows={setMeasureModeRows} setMeasureModeDraftRows={setMeasureModeDraftRows} setQuoteOpts={setQOpts} setImportedItems={setIi}
               section={sec} setSection={setSec}
               currentUser={currentUser}
               {...cp2}

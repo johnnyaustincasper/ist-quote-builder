@@ -64,7 +64,26 @@ var WALL_HEIGHTS = [
   {label:"12' walls (15.00 sq ft each)",sqftPer:15},
 ];
 
-var GROUP_ORDER = ["Walls","Attic","Porch / Blocking","Roofline","Other"];
+var GROUP_ORDER = ["Walls","Attic","Garage Ceiling","Porch / Blocking","Roofline","Other"];
+
+function isGarageCeilingMeasurement(m){
+  var name=String((m&&m.location)||(m&&m.customLocation)||"").trim().toLowerCase();
+  return name==="garage ceiling";
+}
+
+function getMeasurementGroup(m){
+  if(isGarageCeilingMeasurement(m))return "Garage Ceiling";
+  var loc=LOCATIONS.find(function(l){return l.id===(m&&m.locationId);});
+  if(loc&&loc.id!=="custom")return loc.group;
+  var group=(m&&m.group)||"Other";
+  return GROUP_ORDER.indexOf(group)>=0?group:"Other";
+}
+
+function measurementLocationKey(m){
+  var id=String((m&&m.locationId)||"").trim();
+  var loc=String((m&&m.location)||"").trim();
+  return (id&&id!=="custom")?id:(loc||id||"custom");
+}
 
 var C = {
   bg:"linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%)",
@@ -343,7 +362,7 @@ function MeasurementForm(p){
     var pr=hp?(parseFloat(price)||0):0;if(fin<=0||!locLabel)return;if(hp&&!mat){alert("Please choose a material thickness first.");return;}if(hp&&pr<=0)return;if(!hp&&!matNote.trim()){alert("Please select a material first.");return;}
     var useMat=hp?mat:"(material TBD)";
     var desc=hp?("Install "+mat.toLowerCase()+" in "+locLabel.toLowerCase()):(locLabel+" — "+fin.toLocaleString()+" sq ft");
-    p.onAdd({type:selectedIsFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:locGroup,sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null,dimStr:dimStr||null});
+    p.onAdd({type:selectedIsFoam?"Foam":"Fiberglass",material:useMat,location:locLabel,locationId:loc?loc.id:"custom",group:getMeasurementGroup({location:locLabel,locationId:loc?loc.id:"custom",group:locGroup}),sqft:fin,pitch:needsPitch?pitch:null,pricePerUnit:pr,total:hp?Math.ceil(fin*pr):0,description:desc,isRemoval:!hp&&isRemoval,wallHeightLabel:(!hp&&wallHeightLabel)||null,cavityWidth:(!hp&&cavityWidth)||null,matNote:(!hp&&matNote.trim())||null,dimStr:dimStr||null});
     setSqft(0);setWallHeightLabel(null);setCavityWidth(null);setDimStr(null);setPrice("");setPitch("Flat (0/12)");setMk(function(k){return k+1;});setIsRemoval(false);setMatNote("");setTmpMat("");
   }
   return(<div style={{background:"rgba(255,255,255,0.65)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:12,padding:18,border:"1px solid rgba(255,255,255,0.8)",boxShadow:"0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)"}}>
@@ -567,7 +586,7 @@ function CustomerInfo(p){
   </div>);
 }
 
-function groupMeasurements(items){var g={};items.forEach(function(m){var k=m.group||"Other";if(!g[k])g[k]=[];g[k].push(m);});return g;}
+function groupMeasurements(items){var g={};items.forEach(function(m){var k=getMeasurementGroup(m);if(!g[k])g[k]=[];g[k].push(m);});return g;}
 
 /* ──────── PRINT / DOWNLOAD FUNCTIONS ──────── */
 
@@ -577,7 +596,7 @@ function buildSalesmanBlock(salesman){
 }
 
 function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
-  var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
+  var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];}).concat(Object.keys(groups).filter(function(g){return GROUP_ORDER.indexOf(g)<0;}));
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   var notesHtml=jobNotes?'<div style="margin-bottom:20px;padding:12px 14px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Job Notes</div><div style="font-size:13px;color:#333;white-space:pre-wrap;line-height:1.5">'+jobNotes.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div></div>':"";
@@ -927,7 +946,7 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
       measurements.forEach(function(r){
         var sqft=parseFloat(r.sqft)||0;if(!sqft)return;
         var matLabel=(r.matNote&&r.matNote.trim())||r.material||"";
-        var key=(r.locationId||r.location)+"|"+matLabel+"|"+(r.cavityWidth||"");
+        var key=measurementLocationKey(r)+"|"+matLabel+"|"+(r.cavityWidth||"");
         var g=groups2.find(function(gg){return gg.key===key;});
         if(g){g.entries.push(r);g.totalSqft+=sqft;}
         else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:matLabel,pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
@@ -1399,7 +1418,7 @@ function MeasureMode(p){
       var matNote=isRemoval?"Removal":(r.material||"Material TBD");
       var details=measureModeMeasurementDetails(r);
       var measureLabel=(measureModeDetailsLabel(details)||r.sqft||"").trim();var noteLabel=(r.notes||"").trim();var dimLabel=(measureLabel+(measureLabel&&noteLabel?" — ":"")+noteLabel)||null;
-      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group,sqft:sqft,pitch:r.pitch||null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measurementDetails:details,measureDetails:details,measureModeRow:Object.assign({},r,{entries:(r.entries||[]).map(function(e){return Object.assign({},e);})}),measureNotes:noteLabel||null});
+      items.push({type:(matNote.indexOf("Foam")>=0?"Foam":"Fiberglass"),material:"(material TBD)",location:locLabel,locationId:loc.id,group:getMeasurementGroup({location:locLabel,locationId:loc.id,group:loc.id==="custom"?"Other":loc.group}),sqft:sqft,pitch:r.pitch||null,pricePerUnit:rate,total:rate>0?Math.ceil(sqft*rate):0,description:locLabel+" — "+sqft.toLocaleString()+" sq ft",isRemoval:isRemoval,wallHeightLabel:null,cavityWidth:null,matNote:matNote,dimStr:dimLabel,measurementDetails:details,measureDetails:details,measureModeRow:Object.assign({},r,{entries:(r.entries||[]).map(function(e){return Object.assign({},e);})}),measureNotes:noteLabel||null});
       savedIds.push(r.id);
     });
     if(!items.length){alert("Add at least one row with square footage first.");return;}
@@ -1486,7 +1505,7 @@ function TakeOff(p){
   function removeM(id){p.setMeasurements(function(prev){return prev.filter(function(m){return m.id!==id;});});}
   var regularItems=p.measurements.filter(function(m){return !m.isRemoval;});
   var removalItems=p.measurements.filter(function(m){return m.isRemoval;});
-  var groups=groupMeasurements(regularItems);var sorted=GROUP_ORDER.filter(function(g){return groups[g];});
+  var groups=groupMeasurements(regularItems);var sorted=GROUP_ORDER.filter(function(g){return groups[g];}).concat(Object.keys(groups).filter(function(g){return GROUP_ORDER.indexOf(g)<0;}));
   var total=p.measurements.reduce(function(s,m){return s+m.sqft;},0);
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { supabase } from "./supabase";
+import { GROUP_ORDER, getMeasurementGroup, measurementLocationKey, sortMeasurementsForTakeoff, compareTakeoffGroups, takeoffLocationRank } from "./takeoffOrdering";
 
 
 var COMPANY = {
@@ -63,103 +64,6 @@ var WALL_HEIGHTS = [
   {label:"10' walls (12.50 sq ft each)",sqftPer:12.5},{label:"11' walls (13.75 sq ft each)",sqftPer:13.75},
   {label:"12' walls (15.00 sq ft each)",sqftPer:15},
 ];
-
-var GROUP_ORDER = ["Walls","Attic","Garage Ceiling","Porch / Blocking","Roofline","Other"];
-
-function isGarageCeilingMeasurement(m){
-  var name=String((m&&m.location)||(m&&m.customLocation)||"").trim().toLowerCase();
-  return name==="garage ceiling";
-}
-
-function getMeasurementGroup(m){
-  if(isGarageCeilingMeasurement(m))return "Garage Ceiling";
-  var loc=LOCATIONS.find(function(l){return l.id===(m&&m.locationId);});
-  if(loc&&loc.id!=="custom")return loc.group;
-  var group=(m&&m.group)||"Other";
-  return GROUP_ORDER.indexOf(group)>=0?group:"Other";
-}
-
-function measurementLocationKey(m){
-  var id=String((m&&m.locationId)||"").trim();
-  var loc=String((m&&m.location)||"").trim();
-  return (id&&id!=="custom")?id:(loc||id||"custom");
-}
-
-function takeoffNormalize(v){
-  return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," " ).trim();
-}
-
-function takeoffLocationInfo(m){
-  var loc=LOCATIONS.find(function(l){return l.id===((m&&m.locationId)||"");});
-  var name=(m&&m.location)||((loc&&loc.label)||"");
-  var id=String((m&&m.locationId)||((loc&&loc.id)||""));
-  var group=getMeasurementGroup(m);
-  var hay=takeoffNormalize([id,name,(m&&m.customLocation)||"",group,(loc&&loc.short)||"",(loc&&loc.label)||""].join(" "));
-  return {id:id,name:name,group:group,hay:hay};
-}
-
-function takeoffLocationRank(m){
-  var info=takeoffLocationInfo(m),h=info.hay,id=info.id;
-  var isGarageCeiling=isGarageCeilingMeasurement(m)||/\bgarage ceiling\b/.test(h);
-  var isWall=/\bwall(s)?\b|kneewall|knee wall|ext walls/.test(h)||info.group==="Walls";
-  var isGarage=/\bgarage\b/.test(h);
-  var isRoofline=/\broofline\b/.test(h);
-  var isAtticArea=/\battic\b/.test(h)&&(/\barea\b|slope|flat|ceiling|blown|blow/.test(h));
-
-  if(id==="ext_walls_house"||(/\bexterior wall(s)?\b/.test(h)&&!isGarage))return 0;
-  if(id==="garage_common"||/\bcommon wall\b/.test(h))return 1;
-  if(id==="attic_kneewall"||id==="ext_kneewall"||id==="open_attic_walls"||(/\battic\b/.test(h)&&(/kneewall|knee wall|\bwall(s)?\b/.test(h))))return 2;
-  if(isWall&&!(id==="ext_walls_garage")&&!(/\bgarage exterior wall(s)?\b|exterior walls of garage|ext walls garage/.test(h)))return 3;
-  if(id==="ext_walls_garage"||/\bgarage exterior wall(s)?\b|exterior walls of garage|ext walls garage/.test(h))return 4;
-  if(isGarageCeiling||(isGarage&&!isRoofline))return 5;
-  if(id==="band_joist"||id==="porch_blocking"||/blocking|block out|blockout|band joist|porch/.test(h)||info.group==="Porch / Blocking")return 6;
-  if(id==="gable_end"||/gable/.test(h))return 7;
-  if(isRoofline||isAtticArea||info.group==="Roofline"||info.group==="Attic")return 8;
-  return 9;
-}
-
-function takeoffLocationTie(m){
-  var id=String((m&&m.locationId)||"");
-  var order=["ext_walls_house","garage_common","open_attic_walls","ext_kneewall","attic_kneewall","ext_walls_garage","attic_area_garage","band_joist","porch_blocking","porch","gable_end","roofline_house","roofline_garage","roofline","ext_slopes","attic_slopes","flat_ceiling","flat_areas_no_blow","attic_area_house"];
-  var idx=order.indexOf(id);
-  return idx>=0?idx:999;
-}
-
-function takeoffMaterialRank(v){
-  var m=String(v||"");
-  if(/foam|open cell|closed cell/i.test(m))return -1;
-  var n=m.match(/(\d+(?:\.\d+)?)/);
-  return n?parseFloat(n[1]):0;
-}
-
-function compareTakeoffRecords(a,b){
-  var ar=takeoffLocationRank(a),br=takeoffLocationRank(b);
-  if(ar!==br)return ar-br;
-  var at=takeoffLocationTie(a),bt=takeoffLocationTie(b);
-  if(at!==bt)return at-bt;
-  var an=takeoffNormalize((a&&a.location)||""),bn=takeoffNormalize((b&&b.location)||"");
-  if(an!==bn)return an<bn?-1:1;
-  var am=takeoffMaterialRank((a&&a.matNote)||((a&&a.material)||"")),bm=takeoffMaterialRank((b&&b.matNote)||((b&&b.material)||""));
-  if(am!==bm)return am-bm;
-  return 0;
-}
-
-function sortMeasurementsForTakeoff(items){
-  return (items||[]).slice().sort(compareTakeoffRecords);
-}
-
-function compareTakeoffGroups(a,b){
-  var ae=(a.entries&&a.entries[0])||a,be=(b.entries&&b.entries[0])||b;
-  var ar=takeoffLocationRank(ae),br=takeoffLocationRank(be);
-  if(ar!==br)return ar-br;
-  var at=takeoffLocationTie(ae),bt=takeoffLocationTie(be);
-  if(at!==bt)return at-bt;
-  var an=takeoffNormalize(a.location||(ae&&ae.location)||""),bn=takeoffNormalize(b.location||(be&&be.location)||"");
-  if(an!==bn)return an<bn?-1:1;
-  var am=takeoffMaterialRank(a.material),bm=takeoffMaterialRank(b.material);
-  if(am!==bm)return am-bm;
-  return 0;
-}
 
 var C = {
   bg:"linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%)",

@@ -651,6 +651,17 @@ function sharePdfBlob(blob,filename){
   }
 }
 
+function downloadPdfBlob(blob,filename){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download=filename;
+  a.style.display="none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+}
+
 function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
   // outputMode: "blob" -> returns Promise<Blob>, "save" -> downloads directly
   return import("jspdf").then(function(mod){
@@ -898,8 +909,9 @@ function buildQuotePdf(customer,opts,salesman,outputMode,showProductInfo){
     doc.text("Licensed & Insured  •  Proudly serving Tulsa and Northeastern Oklahoma",W/2,782,{align:"center"});
 
     var filename="Quote"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-    if(outputMode==="save"){doc.save(filename);return null;}
-    return doc.output("blob");
+    var blob=doc.output("blob");
+    if(outputMode==="save"){downloadPdfBlob(blob,filename);return null;}
+    return blob;
   });
 }
 
@@ -1186,8 +1198,9 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
     }
 
     var filename="TakeOff"+(customer.jobAddress||customer.address?" - "+(customer.jobAddress||customer.address):"")+".pdf";
-    if(outputMode==="save"){doc.save(filename);return null;}
-    return doc.output("blob");
+    var blob=doc.output("blob");
+    if(outputMode==="save"){downloadPdfBlob(blob,filename);return null;}
+    return blob;
   });
 }
 

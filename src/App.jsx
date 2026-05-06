@@ -85,6 +85,82 @@ function measurementLocationKey(m){
   return (id&&id!=="custom")?id:(loc||id||"custom");
 }
 
+function takeoffNormalize(v){
+  return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," " ).trim();
+}
+
+function takeoffLocationInfo(m){
+  var loc=LOCATIONS.find(function(l){return l.id===((m&&m.locationId)||"");});
+  var name=(m&&m.location)||((loc&&loc.label)||"");
+  var id=String((m&&m.locationId)||((loc&&loc.id)||""));
+  var group=getMeasurementGroup(m);
+  var hay=takeoffNormalize([id,name,(m&&m.customLocation)||"",group,(loc&&loc.short)||"",(loc&&loc.label)||""].join(" "));
+  return {id:id,name:name,group:group,hay:hay};
+}
+
+function takeoffLocationRank(m){
+  var info=takeoffLocationInfo(m),h=info.hay,id=info.id;
+  var isGarageCeiling=isGarageCeilingMeasurement(m)||/\bgarage ceiling\b/.test(h);
+  var isWall=/\bwall(s)?\b|kneewall|knee wall|ext walls/.test(h)||info.group==="Walls";
+  var isGarage=/\bgarage\b/.test(h);
+  var isRoofline=/\broofline\b/.test(h);
+  var isAtticArea=/\battic\b/.test(h)&&(/\barea\b|slope|flat|ceiling|blown|blow/.test(h));
+
+  if(id==="ext_walls_house"||(/\bexterior wall(s)?\b/.test(h)&&!isGarage))return 0;
+  if(id==="garage_common"||/\bcommon wall\b/.test(h))return 1;
+  if(id==="attic_kneewall"||id==="ext_kneewall"||id==="open_attic_walls"||(/\battic\b/.test(h)&&(/kneewall|knee wall|\bwall(s)?\b/.test(h))))return 2;
+  if(isWall&&!(id==="ext_walls_garage")&&!(/\bgarage exterior wall(s)?\b|exterior walls of garage|ext walls garage/.test(h)))return 3;
+  if(id==="ext_walls_garage"||/\bgarage exterior wall(s)?\b|exterior walls of garage|ext walls garage/.test(h))return 4;
+  if(isGarageCeiling||(isGarage&&!isRoofline))return 5;
+  if(id==="band_joist"||id==="porch_blocking"||/blocking|block out|blockout|band joist|porch/.test(h)||info.group==="Porch / Blocking")return 6;
+  if(id==="gable_end"||/gable/.test(h))return 7;
+  if(isRoofline||isAtticArea||info.group==="Roofline"||info.group==="Attic")return 8;
+  return 9;
+}
+
+function takeoffLocationTie(m){
+  var id=String((m&&m.locationId)||"");
+  var order=["ext_walls_house","garage_common","open_attic_walls","ext_kneewall","attic_kneewall","ext_walls_garage","attic_area_garage","band_joist","porch_blocking","porch","gable_end","roofline_house","roofline_garage","roofline","ext_slopes","attic_slopes","flat_ceiling","flat_areas_no_blow","attic_area_house"];
+  var idx=order.indexOf(id);
+  return idx>=0?idx:999;
+}
+
+function takeoffMaterialRank(v){
+  var m=String(v||"");
+  if(/foam|open cell|closed cell/i.test(m))return -1;
+  var n=m.match(/(\d+(?:\.\d+)?)/);
+  return n?parseFloat(n[1]):0;
+}
+
+function compareTakeoffRecords(a,b){
+  var ar=takeoffLocationRank(a),br=takeoffLocationRank(b);
+  if(ar!==br)return ar-br;
+  var at=takeoffLocationTie(a),bt=takeoffLocationTie(b);
+  if(at!==bt)return at-bt;
+  var an=takeoffNormalize((a&&a.location)||""),bn=takeoffNormalize((b&&b.location)||"");
+  if(an!==bn)return an<bn?-1:1;
+  var am=takeoffMaterialRank((a&&a.matNote)||((a&&a.material)||"")),bm=takeoffMaterialRank((b&&b.matNote)||((b&&b.material)||""));
+  if(am!==bm)return am-bm;
+  return 0;
+}
+
+function sortMeasurementsForTakeoff(items){
+  return (items||[]).slice().sort(compareTakeoffRecords);
+}
+
+function compareTakeoffGroups(a,b){
+  var ae=(a.entries&&a.entries[0])||a,be=(b.entries&&b.entries[0])||b;
+  var ar=takeoffLocationRank(ae),br=takeoffLocationRank(be);
+  if(ar!==br)return ar-br;
+  var at=takeoffLocationTie(ae),bt=takeoffLocationTie(be);
+  if(at!==bt)return at-bt;
+  var an=takeoffNormalize(a.location||(ae&&ae.location)||""),bn=takeoffNormalize(b.location||(be&&be.location)||"");
+  if(an!==bn)return an<bn?-1:1;
+  var am=takeoffMaterialRank(a.material),bm=takeoffMaterialRank(b.material);
+  if(am!==bm)return am-bm;
+  return 0;
+}
+
 var C = {
   bg:"linear-gradient(135deg, #e8eef8 0%, #dde6f5 40%, #cdd9f0 100%)",
   bgSolid:"#e8eef8",
@@ -586,7 +662,8 @@ function CustomerInfo(p){
   </div>);
 }
 
-function groupMeasurements(items){var g={};items.forEach(function(m){var k=getMeasurementGroup(m);if(!g[k])g[k]=[];g[k].push(m);});return g;}
+function groupMeasurements(items){var g={};sortMeasurementsForTakeoff(items).forEach(function(m){var k=getMeasurementGroup(m);if(!g[k])g[k]=[];g[k].push(m);});return g;}
+function orderedMeasurementGroupNames(groups){return Object.keys(groups).sort(function(a,b){var ar=Math.min.apply(null,groups[a].map(takeoffLocationRank)),br=Math.min.apply(null,groups[b].map(takeoffLocationRank));if(ar!==br)return ar-br;var ai=GROUP_ORDER.indexOf(a),bi=GROUP_ORDER.indexOf(b);ai=ai<0?999:ai;bi=bi<0?999:bi;if(ai!==bi)return ai-bi;return a<b?-1:a>b?1:0;});}
 
 /* ──────── PRINT / DOWNLOAD FUNCTIONS ──────── */
 
@@ -596,7 +673,7 @@ function buildSalesmanBlock(salesman){
 }
 
 function buildTakeOffHtml(customer,jobNotes,measurements,salesman,quoteOpts){
-  var groups=groupMeasurements(measurements);var sorted=GROUP_ORDER.filter(function(g){return groups[g];}).concat(Object.keys(groups).filter(function(g){return GROUP_ORDER.indexOf(g)<0;}));
+  var groups=groupMeasurements(measurements);var sorted=orderedMeasurementGroupNames(groups);
   var total=measurements.reduce(function(s,m){return s+m.sqft;},0);
   var today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   var notesHtml=jobNotes?'<div style="margin-bottom:20px;padding:12px 14px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px"><div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Job Notes</div><div style="font-size:13px;color:#333;white-space:pre-wrap;line-height:1.5">'+jobNotes.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div></div>':"";
@@ -963,18 +1040,8 @@ function buildTakeOffPdf(customer,jobNotes,measurements,salesman,quoteOpts,outpu
         if(g){g.entries.push(r);g.totalSqft+=sqft;}
         else groups2.push({key:key,location:(r.location||"")+(r.cavityWidth?" ("+r.cavityWidth+")":""),material:matLabel,pricePerUnit:r.pricePerUnit,entries:[r],totalSqft:sqft});
       });
-      // Sort: foam first (no R-number), then by R-value, attics last
-      var atticLocIds=["attic_area_garage","attic_area_house"];
-      function takeoffR(g){var m=String(g.material||"");var n=m.match(/(\d+)/);return n?parseInt(n[1],10):0;}
-      function isFoamG(g){return /foam|open cell|closed cell/i.test(g.material||"");}
-      function isAtticG(g){return atticLocIds.some(function(id){return (g.entries[0]&&g.entries[0].locationId===id);});}
-      groups2.sort(function(a,b){
-        var aAttic=isAtticG(a),bAttic=isAtticG(b);
-        if(aAttic!==bAttic) return aAttic?1:-1;
-        var aFoam=isFoamG(a),bFoam=isFoamG(b);
-        if(aFoam!==bFoam) return aFoam?-1:1;
-        return takeoffR(a)-takeoffR(b);
-      });
+      // Sort by field takeoff flow first, keeping identical location/material/cavity rows grouped.
+      groups2.sort(compareTakeoffGroups);
 
       groups2.forEach(function(g,gi){
         var DIM_H=14;
@@ -1518,7 +1585,7 @@ function TakeOff(p){
   function removeM(id){p.setMeasurements(function(prev){return prev.filter(function(m){return m.id!==id;});});}
   var regularItems=p.measurements.filter(function(m){return !m.isRemoval;});
   var removalItems=p.measurements.filter(function(m){return m.isRemoval;});
-  var groups=groupMeasurements(regularItems);var sorted=GROUP_ORDER.filter(function(g){return groups[g];}).concat(Object.keys(groups).filter(function(g){return GROUP_ORDER.indexOf(g)<0;}));
+  var groups=groupMeasurements(regularItems);var sorted=orderedMeasurementGroupNames(groups);
   var total=p.measurements.reduce(function(s,m){return s+m.sqft;},0);
   var removalTotal=removalItems.reduce(function(s,m){return s+m.sqft;},0);
   return(<div>
